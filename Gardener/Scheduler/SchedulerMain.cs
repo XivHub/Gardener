@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using ECommons.UIHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Gardener.Game;
 using Gardener.Helpers;
@@ -36,6 +38,15 @@ public static class SchedulerMain
     public static Patch? CurrentPatch;
     public static readonly Queue<int> Worklist = new();
     public static int? CurrentBedNumber;
+
+    // A TALK_* line the player produced by interacting with a bed themselves, waiting for the bed menu
+    // that interaction opened to become readable so it can be tied to a bed number.
+    private static CropChatLine? pendingManualLine;
+
+    // How long a hand-interaction's chat line stays eligible for attribution. Long enough to cover the
+    // menu opening a few frames after the line, short enough that a line can never be attached to a
+    // different bed the player opens afterwards.
+    private static readonly TimeSpan ManualObservationWindow = TimeSpan.FromSeconds(5);
 
     /// <summary>Player position when the current run started; <see cref="GardenerGuard.PlayerMovedFrom"/>
     /// measures against this, never against the previous frame's position.</summary>
@@ -160,6 +171,8 @@ public static class SchedulerMain
     public static void Tick()
     {
         Plugin.Telemetry?.Snapshot(BuildSnapshot);
+
+        AttributeManualObservation();
 
         if (State == GardenerState.Idle)
             return;
@@ -389,15 +402,18 @@ public static class SchedulerMain
 
     /// <summary>
     /// Attributes a classified <c>TALK_*</c> chat line to whichever bed this scheduler currently has
-    /// open — the one place a chat line can be tied to a specific bed with certainty, since an
-    /// interaction outside of a sweep gives this plugin no addon or event to key off. Lines that
-    /// arrive with no bed open are still classified and buffered by <see cref="CropChatState"/>, just
-    /// never attributed here.
+    /// open. A line that arrives with no sweep bed open came from the player interacting by hand, and
+    /// is handed to <see cref="AttributeManualObservation"/> rather than dropped — the bed menu that
+    /// interaction opened names the bed just as well as a sweep's own does.
     /// </summary>
     private static void OnCropChatClassified(CropChatLine line)
     {
         if (CurrentPatch is not { } patch || CurrentBedNumber is not { } bedNumber)
+        {
+            pendingManualLine = line;
+            AttributeManualObservation();
             return;
+        }
 
         // The two open questions the chat sentences settle, each read straight off the live DataMap
         // value alongside the sentence rather than guessed: whether Value3/Value4 ever carry a wilt
@@ -425,6 +441,53 @@ public static class SchedulerMain
         }
 
         GardenJournal.ReconcileCropObservation(patch.Key, bedNumber, line.Key, line.At);
+    }
+
+    /// <summary>Attributes a hand-interaction's <c>TALK_*</c> line to the bed whose menu that
+    /// interaction opened. The line and the menu do not arrive in a fixed order — the chat message can
+    /// land a frame before the addon is ready — so the line is held and retried each tick until the
+    /// menu can be read or <see cref="ManualObservationWindow"/> passes.</summary>
+    private static void AttributeManualObservation()
+    {
+        if (pendingManualLine is not { } line)
+            return;
+
+        if (DateTimeOffset.UtcNow - line.At > ManualObservationWindow)
+        {
+            pendingManualLine = null;
+            return;
+        }
+
+        if (OpenBedFromMenu() is not { } open)
+            return;
+
+        pendingManualLine = null;
+        Plugin.Logger.Information(
+            $"[Gardener] {open.Patch.Key} bed {open.BedNumber}: {line.Key} from a hand interaction.");
+        GardenJournal.ReconcileCropObservation(open.Patch.Key, open.BedNumber, line.Key, line.At);
+    }
+
+    /// <summary>The patch and bed number of the bed menu open right now, from the menu's own "Nth Bed"
+    /// prompt plus the bed <c>EventObj</c> the player is targeting — the same two facts
+    /// <see cref="Task_OpenBed"/> reads back during a sweep, read outside one. Falls back to the only
+    /// discovered patch when nothing is targeted, since a plot with one patch leaves nothing to
+    /// confuse it with. Null when no menu is open, the prompt does not parse, or the patch cannot be
+    /// pinned down.</summary>
+    private static (Patch Patch, int BedNumber)? OpenBedFromMenu()
+    {
+        var select = AddonFinder.SelectString.FirstOrDefault();
+        if (select is not { IsAddonReady: true })
+            return null;
+
+        if (GardenMenuText.ParseBedPatch(select.Text) is not { } bedPatch)
+            return null;
+
+        var patches = PatchDiscovery.Patches;
+        var patch = Plugin.TargetManager.Target is { } target
+            ? patches.FirstOrDefault(p => p.Beds.Any(b => b.EntityId == target.EntityId))
+            : patches.Count == 1 ? patches[0] : null;
+
+        return patch is null ? null : (patch, bedPatch.Bed);
     }
 
     private static void EnterPause()

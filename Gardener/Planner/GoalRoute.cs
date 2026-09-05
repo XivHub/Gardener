@@ -33,12 +33,14 @@ public static class GoalRoute
     private static readonly int AssumedPatchBeds = PatchKind.Deluxe.BedCount();
     private static readonly int AssumedPatchPairs = AssumedPatchBeds / 2;
 
-    public static GoalPlan? Solve(uint goalRow, IReadOnlyDictionary<uint, int> held, SoilPreference crossSoil)
+    public static GoalPlan? Solve(
+        uint goalRow, IReadOnlyDictionary<uint, int> held, SoilPreference crossSoil, SoilPreference yieldSoil)
     {
         if (SeedTable.Gatherable(goalRow) == true)
             return null; // nothing to plan: the tab shows "you do not need to crossbreed this" instead
 
         var family = FamilyFor(crossSoil);
+        var yieldFamily = FamilyFor(yieldSoil);
         var (cost, winner) = Relax(held, family);
         if (!cost.TryGetValue(goalRow, out var goalCost) || double.IsPositiveInfinity(goalCost))
             return null;
@@ -165,7 +167,7 @@ public static class GoalRoute
             var consumerPhrase = ConsumerPhrase(target, goalRow, consumersOf);
 
             steps.Add(BuildCrossStep(
-                stepNumber++, first, second, target, outcomes, crossSoil, family, isFinal,
+                stepNumber++, first, second, target, outcomes, crossSoil, family, yieldFamily, isFinal,
                 attemptsNeeded[target], roundsNeeded[target], ownDemand, SeedYieldAtAssumedGrade(target),
                 consumerPhrase, explainedFamilies));
         }
@@ -307,7 +309,7 @@ public static class GoalRoute
 
     private static CrossStep BuildCrossStep(
         int number, uint first, uint second, uint target, uint[] outcomes, SoilPreference soilPreference,
-        SoilFamily family, bool isFinal, int attempts, int rounds, int ownDemand, int? yieldAtGrade,
+        SoilFamily family, SoilFamily yieldFamily, bool isFinal, int attempts, int rounds, int ownDemand, int? yieldAtGrade,
         string consumerPhrase, HashSet<SoilFamily> explainedFamilies)
     {
         var targetName = SeedItems.ProduceName(target);
@@ -361,8 +363,24 @@ public static class GoalRoute
                 "Gardener could not work out how many rounds that takes; watch your seed count and plant another round if you come up short.");
         }
 
-        var explain = explainedFamilies.Add(family) ? $" {family} soil {SoilSources.Does(family)}." : "";
-        body.Add($"Soil: Grade {AssumedSoilGrade} {family} Topsoil in every bed.{explain}");
+        // Two soils, not one: a bed planted while its ring neighbours are still empty crosses with
+        // nothing, so it is harvested for its own seed and takes the yield soil, and only the beds
+        // planted against it take the soil that moves the intercross rate.
+        var crossExplain = explainedFamilies.Add(family) ? $" {family} soil {SoilSources.Does(family)}." : "";
+        if (yieldFamily == family)
+        {
+            body.Add($"Soil: Grade {AssumedSoilGrade} {family} Topsoil in every bed.{crossExplain}");
+        }
+        else
+        {
+            var yieldExplain = explainedFamilies.Add(yieldFamily)
+                ? $" {yieldFamily} soil {SoilSources.Does(yieldFamily)}."
+                : "";
+            body.Add(
+                $"Soil: Grade {AssumedSoilGrade} {family} Topsoil in the beds you plant second, the ones that " +
+                $"cross; Grade {AssumedSoilGrade} {yieldFamily} Topsoil in the beds you plant first, which cross " +
+                $"with nothing and are harvested for seed.{crossExplain}{yieldExplain}");
+        }
 
         body.Add($"Beds: {AssumedPatchBeds} ({AssumedPatchPairs} pairs). Ready {DurationPhrase(targetGrowHours)} after you plant.");
 

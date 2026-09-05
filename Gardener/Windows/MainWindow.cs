@@ -33,6 +33,7 @@ namespace Gardener.Windows
         // SeedInventory.Counts()' own once-a-second cache so neither reruns every frame.
         private static IReadOnlyDictionary<uint, int>? goalPlanHeldCache;
         private static uint goalPlanRowCache;
+        private static (SoilPreference Cross, SoilPreference Yield) goalPlanSoilCache;
         private static GoalPlan? goalPlanCache;
         private static IReadOnlyDictionary<uint, int>? quickPicksHeldCache;
         private static List<(uint Row, GoalPlan Plan)> quickPicksCache = new();
@@ -382,12 +383,14 @@ namespace Gardener.Windows
         /// never every frame the tab happens to be open.</summary>
         private static GoalPlan? GetOrSolveGoalPlan(uint goalRow, IReadOnlyDictionary<uint, int> held)
         {
-            if (goalRow == goalPlanRowCache && ReferenceEquals(held, goalPlanHeldCache))
+            var soil = (Plugin.C.SoilForCross, Plugin.C.SoilForYield);
+            if (goalRow == goalPlanRowCache && ReferenceEquals(held, goalPlanHeldCache) && soil == goalPlanSoilCache)
                 return goalPlanCache;
 
-            var plan = GoalRoute.Solve(goalRow, held, Plugin.C.SoilForCross);
+            var plan = GoalRoute.Solve(goalRow, held, soil.SoilForCross, soil.SoilForYield);
             goalPlanRowCache = goalRow;
             goalPlanHeldCache = held;
+            goalPlanSoilCache = soil;
             goalPlanCache = plan;
             return plan;
         }
@@ -462,7 +465,7 @@ namespace Gardener.Windows
                 {
                     if (SeedTable.Gatherable(row) == true)
                         continue;
-                    if (GoalRoute.Solve(row, held, Plugin.C.SoilForCross) is { } plan)
+                    if (GoalRoute.Solve(row, held, Plugin.C.SoilForCross, Plugin.C.SoilForYield) is { } plan)
                         found.Add((row, plan));
                 }
                 quickPicksCache = found.OrderBy(f => f.Plan.BestCaseDuration).Take(3).ToList();
@@ -748,13 +751,19 @@ namespace Gardener.Windows
                 return;
             }
 
-            var stepSoilPreference = Plugin.C.SoilForCross;
+            // A fill step needs both soils: the yield soil for the parent beds and the cross soil for
+            // the beds planted against them.
             var bag = Bags.Scan();
-            if (GardeningItems.BestSoil(stepSoilPreference, bag) is null)
+            foreach (var preference in new[] { Plugin.C.SoilForCross, Plugin.C.SoilForYield })
             {
-                var family = SoilFamilyForPreference(stepSoilPreference);
-                DrawGoalHandoffDisabled(
-                    $"You have no {family} Topsoil. Mine Grade 3 in {SoilSources.Where(family, 3)}.");
+                if (GardeningItems.BestSoil(preference, bag) is not null)
+                    continue;
+
+                var reason = GardeningItems.SoilUnavailable(preference) ?? "You have no soil for this step.";
+                var hint = preference == SoilPreference.Fixed
+                    ? ""
+                    : $" Mine Grade 3 in {SoilSources.Where(SoilFamilyForPreference(preference), 3)}.";
+                DrawGoalHandoffDisabled($"{reason}{hint}");
                 return;
             }
 
@@ -838,8 +847,7 @@ namespace Gardener.Windows
             // gives the popup a width to size itself to.
             ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + ConfirmWrapWidth);
             ImGui.TextUnformatted(
-                $"Gardener will plant {PlantingPhrase(singleStepPlan)}, using {ItemSheet.Name(singleStepPlan.Steps[0].SoilItemId)}. " +
-                "It plants this one step and stops.");
+                $"Gardener will plant {PlantingPhrase(singleStepPlan)}. It plants this one step and stops.");
             ImGui.PopTextWrapPos();
             if (ImGui.Button("Plant it"))
             {
@@ -862,15 +870,20 @@ namespace Gardener.Windows
         /// own <see cref="WindowSizeConstraints"/>.</summary>
         private const float ConfirmWrapWidth = 340f;
 
-        /// <summary>The confirm's roster of what goes where, grouped by seed so a full patch reads as
-        /// two clauses rather than eight: "Mandrake Seeds in beds 1, 3, 5 and 7; Almond Seeds in beds
-        /// 2, 4, 6 and 8".</summary>
+        /// <summary>The confirm's roster of what goes where, grouped by seed and soil so a full patch
+        /// reads as two clauses rather than eight: "Mandrake Seeds in beds 1, 3, 5 and 7, using Grade 3
+        /// Shroud Topsoil; Almond Seeds in beds 2, 4, 6 and 8, using Grade 3 Thanalan Topsoil". A fill
+        /// step plants two soils, since only the crossing beds take the soil that moves the intercross
+        /// rate, so naming one for the whole plan would misreport half of it.</summary>
         private static string PlantingPhrase(LayoutPlan plan)
         {
             var clauses = plan.Steps
-                .GroupBy(s => s.SeedRow, (seed, steps) => (Seed: seed, Beds: steps.Select(s => s.BedNumber).OrderBy(n => n).ToList()))
+                .GroupBy(s => (s.SeedRow, s.SoilItemId),
+                    (key, steps) => (key.SeedRow, key.SoilItemId, Beds: steps.Select(s => s.BedNumber).OrderBy(n => n).ToList()))
                 .OrderBy(g => g.Beds[0])
-                .Select(g => $"{SeedItemName(g.Seed)} in {(g.Beds.Count == 1 ? "bed" : "beds")} {JoinBedNumbers(g.Beds)}");
+                .Select(g =>
+                    $"{SeedItemName(g.SeedRow)} in {(g.Beds.Count == 1 ? "bed" : "beds")} {JoinBedNumbers(g.Beds)}, " +
+                    $"using {ItemSheet.Name(g.SoilItemId)}");
             return string.Join("; ", clauses);
         }
 

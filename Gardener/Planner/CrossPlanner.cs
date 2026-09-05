@@ -65,16 +65,19 @@ public static class CrossPlanner
 
     /// <summary>
     /// Fills a Deluxe patch with as many pairs of <paramref name="target"/> as <paramref name="requestedBeds"/>
-    /// calls for, bounded by whichever of the step's own bed budget, the patch's free beds or the parents
-    /// actually held runs out first. The beds alternate around the ring — one parent across every bed of
-    /// one <see cref="TwoColorRing"/> colour, the other parent across every bed of the other — the layout
-    /// the official strategy guide's own worked example and the community's 4x4 setup guide both use.
+    /// calls for, bounded by whichever of the step's own bed budget, the patch's free beds, the parents
+    /// actually held or the topsoil actually held runs out first. The beds alternate around the ring —
+    /// one parent across every bed of one <see cref="TwoColorRing"/> colour, the other parent across
+    /// every bed of the other — the layout the official strategy guide's own worked example and the
+    /// community's 4x4 setup guide both use.
     /// Every cross bed then has the same seed on both ring sides, so the intercross walk's right/down/up/
     /// left order never decides the outcome and no isolated bed is needed. Steps are emitted anchor beds
     /// first and cross beds second: an anchor planted while its ring neighbours are still empty crosses
     /// with nothing and stays itself, so only once every anchor is down does planting a cross bed land it
-    /// against a same-seed neighbour on both sides. The plan is re-checked against itself with
-    /// <see cref="Verify"/> before it is returned.
+    /// against a same-seed neighbour on both sides. That also decides the soil: an anchor crosses with
+    /// nothing and is harvested for its own seed, so it takes <c>SoilForYield</c>, and only the cross beds
+    /// take <c>SoilForCross</c>, the one that moves the intercross rate. The plan is re-checked against
+    /// itself with <see cref="Verify"/> before it is returned.
     /// </summary>
     public static LayoutPlan PlanFillStep(
         ushort target, int requestedBeds, Patch patch, IReadOnlyList<BedState> memory, IReadOnlyList<SlotView> inventory)
@@ -147,16 +150,52 @@ public static class CrossPlanner
         var crossFreeSlots = colors.Where(kv => kv.Value == crossColor && IsFree(kv.Key))
             .Select(kv => kv.Key).OrderBy(b => b).ToList();
 
+        // Anchors and crosses take different soil: an anchor is planted with empty neighbours, so it
+        // crosses with nothing and is harvested for its own seeds, which is what SoilForYield is for;
+        // only the cross bed's soil moves the intercross rate.
+        var crossSoil = GardeningItems.BestSoil(Plugin.C.SoilForCross, inventory);
+        if (crossSoil is null)
+        {
+            plan.Warnings.Add(
+                GardeningItems.SoilUnavailable(Plugin.C.SoilForCross) ?? "No soil available for the crossing step.");
+            return plan;
+        }
+        var parentSoil = GardeningItems.BestSoil(Plugin.C.SoilForYield, inventory);
+
+        int HeldItemCount(uint itemId) => inventory.Where(s => s.ItemId == itemId).Sum(s => (int)s.Qty);
+
         var pairsFromBeds = Math.Min(existingAnchorBeds.Count + anchorFreeSlots.Count, crossFreeSlots.Count);
         var pairsFromSeeds = Math.Min(existingAnchorBeds.Count + HeldCount(anchorRow), HeldCount(crossRow));
-        var pairs = new[] { requestedPairs, pairsFromBeds, pairsFromSeeds }.Min();
+        var parentStock = parentSoil is null ? 0 : HeldItemCount(parentSoil.ItemId);
+        var crossStock = HeldItemCount(crossSoil.ItemId);
+
+        // Both halves draw on the same bag, so when the two preferences resolve to the same item its
+        // stock has to cover the anchors and the crosses together rather than each on its own.
+        var pairsFromSoil = parentSoil is not null && parentSoil.ItemId == crossSoil.ItemId
+            ? (crossStock + existingAnchorBeds.Count) / 2
+            : Math.Min(crossStock, existingAnchorBeds.Count + parentStock);
+
+        var pairs = new[] { requestedPairs, pairsFromBeds, pairsFromSeeds, pairsFromSoil }.Min();
 
         string PairWord(int n) => $"{n} pair{(n == 1 ? "" : "s")}";
 
+        string SoilShortfall()
+        {
+            if (parentSoil is null)
+                return GardeningItems.SoilUnavailable(Plugin.C.SoilForYield) ?? "No soil for the parent beds.";
+            if (parentSoil.ItemId == crossSoil.ItemId)
+                return $"You hold {crossStock} {ItemSheet.Name(crossSoil.ItemId)}, and a pair needs one for " +
+                       "the parent bed and one for the cross bed.";
+            return crossStock <= 0
+                ? $"No {ItemSheet.Name(crossSoil.ItemId)} left for the cross beds."
+                : $"You hold {parentStock} {ItemSheet.Name(parentSoil.ItemId)} for the parent beds.";
+        }
+
         if (pairs <= 0)
         {
-            plan.Warnings.Add(pairsFromSeeds <= 0
-                ? $"You need {anchorName} and {crossName} to start this pair; none held."
+            plan.Warnings.Add(
+                pairsFromSeeds <= 0 ? $"You need {anchorName} and {crossName} to start this pair; none held."
+                : pairsFromSoil <= 0 ? SoilShortfall()
                 : "No free beds are left on this patch to start a new pair.");
             return plan;
         }
@@ -168,33 +207,19 @@ public static class CrossPlanner
                 reasons.Add($"only {PairWord(pairsFromBeds)} of free beds fit on this patch");
             if (pairsFromSeeds == pairs && pairsFromSeeds < requestedPairs)
                 reasons.Add($"you hold enough {anchorName} and {crossName} for {PairWord(pairsFromSeeds)}");
+            if (pairsFromSoil == pairs && pairsFromSoil < requestedPairs)
+                reasons.Add($"you hold enough topsoil for {PairWord(pairsFromSoil)}");
             plan.Warnings.Add($"Planting {PairWord(pairs)} instead of {requestedPairs}: {string.Join(" and ", reasons)}.");
         }
 
         var newAnchorBeds = anchorFreeSlots.Take(Math.Max(0, pairs - existingAnchorBeds.Count)).ToList();
         var newCrossBeds = crossFreeSlots.Take(pairs).ToList();
 
-        if (newAnchorBeds.Count > 0)
+        if (newAnchorBeds.Count > 0 && parentSoil is not null)
         {
-            var parentSoil = GardeningItems.BestSoil(Plugin.C.SoilForYield, inventory);
-            if (parentSoil is null)
-            {
-                plan.Warnings.Add(
-                    GardeningItems.SoilUnavailable(Plugin.C.SoilForYield) ?? "No soil available for the parent step.");
-                return plan;
-            }
             foreach (var bed in newAnchorBeds)
                 plan.Steps.Add(new PlantStep(bed, (ushort)anchorRow, parentSoil.ItemId,
                     $"Parent for {targetName}: plant here first so its neighbours can cross with it."));
-        }
-
-        var crossSoil = GardeningItems.BestSoil(Plugin.C.SoilForCross, inventory);
-        if (crossSoil is null)
-        {
-            plan.Steps.Clear(); // anchors alone plant nothing worth doing without the crosses after them
-            plan.Warnings.Add(
-                GardeningItems.SoilUnavailable(Plugin.C.SoilForCross) ?? "No soil available for the crossing step.");
-            return plan;
         }
 
         var effText = SeedTable.EfficiencyFor(anchorRow, crossRow, target) is { } pct
