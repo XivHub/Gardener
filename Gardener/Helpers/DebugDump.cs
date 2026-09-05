@@ -168,7 +168,10 @@ public static class DebugDump
         AppendDiscoveryDiagnostics(sb, PatchDiscovery.LastDiagnostics);
 
         sb.AppendLine();
-        sb.AppendLine($"Patches: {patches.Count}");
+        AppendPlotAttribution(sb, PatchDiscovery.LastDiagnostics);
+
+        sb.AppendLine();
+        sb.AppendLine($"Patches (own plot only): {patches.Count}");
         foreach (var patch in patches)
             AppendPatch(sb, patch);
 
@@ -176,6 +179,52 @@ public static class DebugDump
         AppendDataMap(sb, patches);
 
         return sb.ToString();
+    }
+
+    /// <summary>Shows which plot each discovered patch was attributed to and whether it was kept
+    /// (player's own plot) or rejected, plus the raw marker/plot table so a wrong attribution above
+    /// can be cross-checked by hand against the in-game map's plot numbers.</summary>
+    private static unsafe void AppendPlotAttribution(StringBuilder sb, DiscoveryDiagnostics diag)
+    {
+        sb.AppendLine("== Plot attribution ==");
+        sb.AppendLine(diag.CurrentPlot is { } p
+            ? $"Current plot: {p} (owned={diag.CurrentPlotOwned})"
+            : $"Current plot: none (apartment or unresolved) (owned={diag.CurrentPlotOwned})");
+
+        sb.AppendLine("Per-patch attribution:");
+        if (diag.AttributedPatches.Count == 0)
+            sb.AppendLine("  (no patches discovered)");
+        foreach (var a in diag.AttributedPatches)
+        {
+            var plotText = a.PlotIndex is { } pi ? pi.ToString() : "unresolved";
+            var distText = a.DistanceToMarker is { } d ? $"{d:F2}y" : "n/a";
+            sb.AppendLine($"  {a.Patch.Key}: nearest plot marker={plotText} distance={distText} " +
+                          $"=> {(a.Kept ? "KEPT (player's own plot)" : "REJECTED")}");
+        }
+
+        // SAFETY: HousingManager.Instance() is a static client pointer; OutdoorTerritory is only
+        // non-null while standing in an outdoor housing territory.
+        var housing = HousingManager.Instance();
+        if (housing == null || housing->OutdoorTerritory == null)
+        {
+            sb.AppendLine("Markers/plots: unavailable (not in an outdoor housing territory)");
+            return;
+        }
+
+        // Marker index == plot index is inferred from array cardinality (62 markers = 60 plots + 2
+        // apartment-building icons, matching _apartmentBuildings's own count of 2), not yet
+        // confirmed by a live capture of marker positions against known plot numbers.
+        var markers = housing->OutdoorTerritory->HousingMapMarkerInfos;
+        var plots = housing->OutdoorTerritory->Plots;
+        sb.AppendLine($"Markers ({markers.Length}) / Plots ({plots.Length}):");
+        for (var i = 0; i < markers.Length; i++)
+        {
+            var m = markers[i];
+            var plotText = i < plots.Length
+                ? $"state={plots[i].State} size={plots[i].Size} owner={plots[i].OwnerType}"
+                : "(apartment building marker)";
+            sb.AppendLine($"  [{i}] marker=({m.X:F2},{m.Y:F2},{m.Z:F2}) {plotText}");
+        }
     }
 
     /// <summary>Says why <see cref="PatchDiscovery.Patches"/> is empty when it is empty, so a
@@ -211,17 +260,18 @@ public static class DebugDump
             $"- {patch.Key} kind={patch.Kind} cols={patch.Cols} baseId=131128 dataId=131128 " +
             $"center=({patch.Center.X:F2},{patch.Center.Y:F2},{patch.Center.Z:F2}) rotation={patch.Rotation:F4} " +
             $"housingObjectId={patch.HousingObjectId} furnitureIndex={patch.FurnitureIndex} entityId=0x{patch.EntityId:X8}");
-        // patch.Beds is already row-major by construction (PatchDiscovery.Refresh).
-        foreach (var bed in patch.Beds)
-            AppendBed(sb, bed);
+        // patch.Beds is sorted by EntityId (PatchDiscovery.Refresh); the bracketed index below is
+        // that array position, not the game's own "Nth Bed" number (see docs/RESEARCH.md).
+        for (var i = 0; i < patch.Beds.Count; i++)
+            AppendBed(sb, i, patch.Beds[i]);
     }
 
-    private static unsafe void AppendBed(StringBuilder sb, Bed bed)
+    private static unsafe void AppendBed(StringBuilder sb, int index, Bed bed)
     {
         var obj = Plugin.ObjectTable.SearchByEntityId(bed.EntityId);
         if (obj is null)
         {
-            sb.AppendLine($"    [{bed.SpatialIndex}] entityId=0x{bed.EntityId:X8} (no longer in the object table)");
+            sb.AppendLine($"    [{index}] entityId=0x{bed.EntityId:X8} (no longer in the object table)");
             return;
         }
 
@@ -230,10 +280,9 @@ public static class DebugDump
         // offsets independent of the object's subtype.
         var go = (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)obj.Address;
         sb.AppendLine(
-            $"    [{bed.SpatialIndex}] entityId=0x{bed.EntityId:X8} dataId={obj.BaseId} objectKind={obj.ObjectKind} " +
+            $"    [{index}] entityId=0x{bed.EntityId:X8} dataId={obj.BaseId} objectKind={obj.ObjectKind} " +
             $"isTargetable={obj.IsTargetable} eventState=0x{go->EventState:X2} eventId={(uint)go->EventId} " +
-            $"pos=({bed.Position.X:F2},{bed.Position.Y:F2},{bed.Position.Z:F2}) " +
-            $"local=({bed.LocalPosition.X:F2},{bed.LocalPosition.Y:F2},{bed.LocalPosition.Z:F2})");
+            $"pos=({bed.Position.X:F2},{bed.Position.Y:F2},{bed.Position.Z:F2})");
     }
 
     private static unsafe void AppendDataMap(StringBuilder sb, IReadOnlyList<Patch> patches)
@@ -269,7 +318,10 @@ public static class DebugDump
         }
 
         sb.AppendLine();
-        sb.AppendLine("Per-patch correlation (DataMap[patch.FurnitureIndex], labelled by spatial bed index):");
+        sb.AppendLine(
+            "Per-patch correlation (DataMap[patch.FurnitureIndex]; slot index N is bed \"(N+1)th Bed\" — " +
+            "proven live, see docs/RESEARCH.md. The DataMap has no link to the patch's EventObj beds; " +
+            "which EventObj is which bed is a separate, still-unverified question, see the menu dump):");
         foreach (var patch in patches)
         {
             sb.AppendLine($"  {patch.Key} furnitureIndex={patch.FurnitureIndex}:");
@@ -286,13 +338,10 @@ public static class DebugDump
             }
 
             var valueSets = dataPtr->ValueSets;
-            // patch.Beds is already row-major by construction (PatchDiscovery.Refresh).
-            var beds = patch.Beds;
             for (var i = 0; i < valueSets.Length; i++)
             {
                 var vs = valueSets[i];
-                var label = i < beds.Count ? $"bed[{beds[i].SpatialIndex}]" : $"slot[{i}] (no bed)";
-                sb.AppendLine($"    {label} V1=0x{vs.Value1:X4}({vs.Value1}) V2={vs.Value2} V3={vs.Value3} V4={vs.Value4} V5={vs.Value5}{AnnotateSeed(vs.Value1)}");
+                sb.AppendLine($"    bed {i + 1} (slot {i}) V1=0x{vs.Value1:X4}({vs.Value1}) V2={vs.Value2} V3={vs.Value3} V4={vs.Value4} V5={vs.Value5}{AnnotateSeed(vs.Value1)}");
             }
         }
     }
@@ -316,9 +365,50 @@ public static class DebugDump
 
         AppendSelectString(sb);
         sb.AppendLine();
+        AppendTarget(sb);
+        sb.AppendLine();
         AppendTalk(sb);
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Records the current target's <c>EntityId</c> alongside the sorted <c>EntityId</c> list of its
+    /// enclosing patch's beds and the index the target holds in that list. Sorted-EntityId order is
+    /// the candidate for the game's own bed numbering (see docs/RESEARCH.md), unconfirmed; this
+    /// capture is what two dumps at known different beds can use to prove or refute it. Record and
+    /// report only — nothing here drives targeting.
+    /// </summary>
+    private static void AppendTarget(StringBuilder sb)
+    {
+        sb.AppendLine("== Target ==");
+        var target = Plugin.TargetManager.Target;
+        if (target is null)
+        {
+            sb.AppendLine("(no target)");
+            return;
+        }
+
+        sb.AppendLine(
+            $"EntityId: 0x{target.EntityId:X8} dataId={target.BaseId} objectKind={target.ObjectKind} " +
+            $"pos=({target.Position.X:F2},{target.Position.Y:F2},{target.Position.Z:F2})");
+
+        PatchDiscovery.Refresh();
+        var patch = PatchDiscovery.Patches.FirstOrDefault(p => p.Beds.Any(b => b.EntityId == target.EntityId));
+        if (patch is null)
+        {
+            sb.AppendLine("Enclosing patch: not found among discovered patches (target may be on a plot " +
+                          "that was filtered out, or is not a bed)");
+            return;
+        }
+
+        sb.AppendLine($"Enclosing patch: {patch.Key} furnitureIndex={patch.FurnitureIndex}");
+        var sortedIds = patch.Beds.Select(b => b.EntityId).OrderBy(id => id).ToList();
+        sb.AppendLine($"Sorted bed EntityIds ({sortedIds.Count}): {string.Join(", ", sortedIds.Select(id => $"0x{id:X8}"))}");
+        var index = sortedIds.IndexOf(target.EntityId);
+        sb.AppendLine(index >= 0
+            ? $"Target's index in sorted list: {index}"
+            : "Target's index in sorted list: not found");
     }
 
     private static unsafe void AppendSelectString(StringBuilder sb)

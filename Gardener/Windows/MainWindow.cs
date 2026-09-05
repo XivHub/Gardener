@@ -42,9 +42,11 @@ namespace Gardener.Windows
         }
 
         /// <summary>
-        /// Lists discovered patches and, per patch, a grid of bed cells laid out <c>Cols</c> wide
-        /// showing each bed's spatial index and live <c>EventState</c> byte — the eyeball check that
-        /// the computed layout matches what the player sees standing in the yard.
+        /// Lists discovered patches (already filtered to the plot the player is standing on) and,
+        /// per patch, a grid of bed cells laid out <c>Cols</c> wide showing each bed's live
+        /// <c>EventState</c> byte. The cell number is the bed's position in <c>Patch.Beds</c>
+        /// (sorted by <c>EntityId</c>), not the game's own "Nth Bed" number — see docs/RESEARCH.md
+        /// for why the two are not yet known to agree.
         /// </summary>
         private static void DrawGardenTab()
         {
@@ -61,16 +63,16 @@ namespace Gardener.Windows
 
                 if (ImGui.BeginTable($"##bedgrid-{patch.Key}", patch.Cols, ImGuiTableFlags.Borders))
                 {
-                    // patch.Beds is already row-major by construction (PatchDiscovery.Refresh).
-                    foreach (var bed in patch.Beds)
+                    for (var i = 0; i < patch.Beds.Count; i++)
                     {
-                        if (bed.SpatialIndex % patch.Cols == 0)
+                        if (i % patch.Cols == 0)
                             ImGui.TableNextRow();
                         ImGui.TableNextColumn();
 
+                        var bed = patch.Beds[i];
                         var state = PatchDiscovery.EventStateFor(bed.EntityId);
                         var stateText = state is { } s ? $"0x{s:X2}" : "?";
-                        ImGui.TextUnformatted($"#{bed.SpatialIndex}\nstate={stateText}");
+                        ImGui.TextUnformatted($"#{i}\nstate={stateText}");
                     }
 
                     ImGui.EndTable();
