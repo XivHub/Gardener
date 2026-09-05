@@ -10,6 +10,7 @@ using ECommons;
 using ECommons.UIHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Gardener.Game;
 
@@ -188,7 +189,7 @@ public static class DebugDump
     {
         sb.AppendLine("== Plot attribution ==");
         sb.AppendLine(diag.CurrentPlot is { } p
-            ? $"Current plot: {p} (owned={diag.CurrentPlotOwned})"
+            ? $"Current plot: plot {p + 1} (index {p}) (owned={diag.CurrentPlotOwned})"
             : $"Current plot: none (apartment or unresolved) (owned={diag.CurrentPlotOwned})");
 
         sb.AppendLine("Per-patch attribution:");
@@ -196,7 +197,7 @@ public static class DebugDump
             sb.AppendLine("  (no patches discovered)");
         foreach (var a in diag.AttributedPatches)
         {
-            var plotText = a.PlotIndex is { } pi ? pi.ToString() : "unresolved";
+            var plotText = a.PlotIndex is { } pi ? $"plot {pi + 1} (index {pi})" : "unresolved";
             var distText = a.DistanceToMarker is { } d ? $"{d:F2}y" : "n/a";
             sb.AppendLine($"  {a.Patch.Key}: nearest plot marker={plotText} distance={distText} " +
                           $"=> {(a.Kept ? "KEPT (player's own plot)" : "REJECTED")}");
@@ -221,9 +222,9 @@ public static class DebugDump
         {
             var m = markers[i];
             var plotText = i < plots.Length
-                ? $"state={plots[i].State} size={plots[i].Size} owner={plots[i].OwnerType}"
-                : "(apartment building marker)";
-            sb.AppendLine($"  [{i}] marker=({m.X:F2},{m.Y:F2},{m.Z:F2}) {plotText}");
+                ? $"plot {i + 1} (index {i}) state={plots[i].State} size={plots[i].Size} owner={plots[i].OwnerType}"
+                : $"index {i} (apartment building marker)";
+            sb.AppendLine($"  marker=({m.X:F2},{m.Y:F2},{m.Z:F2}) {plotText}");
         }
     }
 
@@ -365,6 +366,10 @@ public static class DebugDump
 
         AppendSelectString(sb);
         sb.AppendLine();
+        AppendHousingGardening(sb);
+        sb.AppendLine();
+        AppendAgentHousingPlant(sb);
+        sb.AppendLine();
         AppendTarget(sb);
         sb.AppendLine();
         AppendTalk(sb);
@@ -427,8 +432,20 @@ public static class DebugDump
         sb.AppendLine(bedPatch is { } bp ? $"Parsed: bed={bp.Bed} patch={bp.Patch}" : "Parsed: (no two numbers found)");
 
         sb.AppendLine("Entries:");
+        var entryKeys = new List<MenuKey>();
         foreach (var entry in select.Entries)
-            sb.AppendLine($"  [{entry.Index}] \"{entry.Text}\" => {GardenMenuText.Classify(entry.Text)}");
+        {
+            var key = GardenMenuText.Classify(entry.Text);
+            entryKeys.Add(key);
+            sb.AppendLine($"  [{entry.Index}] \"{entry.Text}\" => {key}");
+        }
+
+        // The menu offers SetSeed only on an empty bed and Harvest only on a ripe one; every other
+        // entry set (Fertilize/Tend/Remove/Quit) means something is growing. See docs/RESEARCH.md.
+        var bedState = entryKeys.Contains(MenuKey.SetSeed) ? "empty (SetSeed entry present)"
+            : entryKeys.Contains(MenuKey.Harvest) ? "ripe (Harvest entry present)"
+            : "growing (no SetSeed or Harvest entry)";
+        sb.AppendLine($"Bed state: {bedState}");
 
         sb.AppendLine("AtkValues:");
         var baseAddon = select.Base;
@@ -441,6 +458,94 @@ public static class DebugDump
         var values = baseAddon->AtkValuesSpan;
         for (var i = 0; i < values.Length; i++)
             sb.AppendLine($"  [{i}] {values[i].Type}: {values[i].GetValueAsString()}");
+    }
+
+    /// <summary>
+    /// The seed/soil dialog opened by "Plant Seeds". No <c>AddonHousingGardening</c> struct exists in
+    /// FFXIVClientStructs (only its resolved address in <c>ida/data.yml</c>), so it is read the same
+    /// way <see cref="AppendTalk"/> reads <c>AddonTalk</c> before typed fields exist for an addon:
+    /// through the generic <c>AtkUnitBase</c> layout every addon shares.
+    /// </summary>
+    private static unsafe void AppendHousingGardening(StringBuilder sb)
+    {
+        sb.AppendLine("== HousingGardening ==");
+
+        // SAFETY: GetAddonByName<AtkUnitBase> returns a possibly-null pointer into live addon
+        // memory; guarded below before any field is read.
+        var addon = Plugin.GameGui.GetAddonByName<AtkUnitBase>("HousingGardening");
+        if (addon == null || !addon->IsVisible)
+        {
+            sb.AppendLine("(none open)");
+            return;
+        }
+
+        sb.AppendLine("AtkValues:");
+        var values = addon->AtkValuesSpan;
+        for (var i = 0; i < values.Length; i++)
+            sb.AppendLine($"  [{i}] {values[i].Type}: {values[i].GetValueAsString()}");
+
+        sb.AppendLine("Visible text nodes:");
+        var nodes = addon->UldManager.Nodes;
+        var any = false;
+        for (var i = 0; i < nodes.Length; i++)
+        {
+            var node = nodes[i].Value;
+            if (node == null || node->Type != NodeType.Text || !node->IsVisible())
+                continue;
+
+            var textNode = (AtkTextNode*)node;
+            var text = GenericHelpers.ReadSeString(&textNode->NodeText).GetText();
+            sb.AppendLine($"  nodeId={node->NodeId} \"{text}\"");
+            any = true;
+        }
+        if (!any)
+            sb.AppendLine("  (none)");
+    }
+
+    /// <summary>
+    /// <c>AgentHousingPlant</c> drives the seed/soil dialog: <c>SelectedItems[0]</c> is soil,
+    /// <c>[1]</c> is seed, and <c>ConfirmSeedAndSoilSelection()</c> submits them. <c>SelectedItems2</c>
+    /// is a second, separately-offset array of the same element type whose role is not yet known —
+    /// dumped alongside <c>SelectedItems</c> so a live capture can show whether it mirrors it or
+    /// carries something else (see docs/RESEARCH.md).
+    /// </summary>
+    private static unsafe void AppendAgentHousingPlant(StringBuilder sb)
+    {
+        sb.AppendLine("== AgentHousingPlant ==");
+
+        // SAFETY: AgentModule.Instance() and GetAgentByInternalId return possibly-null pointers into
+        // live agent memory; guarded below before any field is read. AgentHousingPlant is reached by
+        // reinterpreting the AgentInterface* the module returns for AgentId.HousingPlant, matched by
+        // that id rather than assumed from call order.
+        var agentModule = AgentModule.Instance();
+        var agent = agentModule == null ? null : (AgentHousingPlant*)agentModule->GetAgentByInternalId(AgentId.HousingPlant);
+        if (agent == null)
+        {
+            sb.AppendLine("(unavailable)");
+            return;
+        }
+
+        sb.AppendLine(
+            $"PlotType={agent->PlotType} ContextAddonId={agent->ContextAddonId} " +
+            $"SelectableItemCount={agent->SelectableItemCount}");
+
+        sb.AppendLine("SelectedItems (soil, seed):");
+        AppendSelectedItems(sb, agent->SelectedItems);
+
+        sb.AppendLine("SelectedItems2 (offset 0x68, role unknown):");
+        AppendSelectedItems(sb, agent->SelectedItems2);
+    }
+
+    private static unsafe void AppendSelectedItems(StringBuilder sb, Span<AgentHousingPlant.SelectedItem> items)
+    {
+        for (var i = 0; i < items.Length; i++)
+        {
+            var item = items[i];
+            var name = item.ItemId != 0 ? XivHubPluginKit.Inventory.ItemSheet.Name(item.ItemId) : "";
+            sb.AppendLine(
+                $"  [{i}] InventoryType={item.InventoryType} InventorySlot={item.InventorySlot} " +
+                $"ItemId={item.ItemId}{(name.Length > 0 ? $" ({name})" : "")}");
+        }
     }
 
     private static unsafe void AppendTalk(StringBuilder sb)
