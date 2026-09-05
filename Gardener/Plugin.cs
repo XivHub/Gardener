@@ -9,6 +9,7 @@ using XivHubPluginKit;
 using XivHubPluginKit.UI;
 using Gardener.Game;
 using Gardener.Helpers;
+using Gardener.Journal;
 using Gardener.Windows;
 
 namespace Gardener
@@ -95,17 +96,35 @@ namespace Gardener
 
         private void OnFrameworkUpdate(IFramework framework)
         {
-            PatchDiscovery.Tick();
+            // The passive DataMap read runs at PatchDiscovery's own 2-second discovery cadence, on
+            // the ticks where it actually rescanned, never per frame.
+            if (PatchDiscovery.Tick())
+            {
+                GardenJournal.Reconcile(GardenMemory.Poll());
+
+                // Standing inside a house at all already proves the game granted this character
+                // permission to be here; record that access at the house level so a reminder for
+                // another of the player's characters' gardens can say who to switch to.
+                if (HouseKey.Current() is { } house)
+                {
+                    var characterName = ObjectTable.LocalPlayer?.Name.TextValue;
+                    GardenJournal.RecordHouseAccess(house.KeyString(), house.OwnedEstateType, characterName);
+                }
+            }
+
+            GardenJournal.Tick();
         }
 
         private void OnLogout(int type, int code)
         {
+            GardenJournal.Flush();
         }
 
         public void Dispose()
         {
             Framework.Update -= OnFrameworkUpdate;
             ClientState.Logout -= OnLogout;
+            GardenJournal.Flush();
             Telemetry.Dispose();
 
             PluginInterface.UiBuilder.Draw -= DrawUI;

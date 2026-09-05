@@ -1,15 +1,22 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 using Gardener.Game;
 using Gardener.Helpers;
+using Gardener.Journal;
 using XivHubPluginKit.UI;
 
 namespace Gardener.Windows
 {
     public class MainWindow : Window, IDisposable
     {
+        // Staged hours for each bed's "planted about N hours ago" control, keyed the same way the
+        // journal itself is (patch + bed, never a character) so the widget survives a redraw.
+        private static readonly Dictionary<(string PatchKey, int BedNumber), int> pendingEstimateHours = new();
+
         public MainWindow(Configuration configuration) : base("Gardener###GardenerMain")
         {
             SizeConstraints = new WindowSizeConstraints
@@ -42,41 +49,47 @@ namespace Gardener.Windows
         }
 
         /// <summary>
-        /// Lists discovered patches (already filtered to the plot the player is standing on) and,
-        /// per patch, a grid of bed cells laid out <c>Cols</c> wide showing each bed's live
-        /// <c>EventState</c> byte. The cell number is the bed's position in <c>Patch.Beds</c>
-        /// (sorted by <c>EntityId</c>), not the game's own "Nth Bed" number — see docs/RESEARCH.md
-        /// for why the two are not yet known to agree.
+        /// Lists discovered patches (already filtered to the plot the player is standing on), built
+        /// entirely around the passive <see cref="GardenMemory"/> read: per patch, one row per bed
+        /// number <c>1..BedCount()</c> — the game's own "Nth Bed" numbering, not a spatial index —
+        /// showing the seed, stage, wilt time and harvest window. A patch whose <see
+        /// cref="GardenMemory.Read"/> came back empty renders as "no data for this patch", never as
+        /// eight empty beds: those are different facts.
         /// </summary>
         private static void DrawGardenTab()
         {
             var patches = PatchDiscovery.Patches;
             if (patches.Count == 0)
-            {
                 ImGui.TextColored(HubStyle.Faint, "No patches discovered. Stand in an outdoor housing plot.");
-            }
+
+            var plot = PatchDiscovery.LastDiagnostics.CurrentPlot;
+            var plotText = plot is { } p ? $"plot {p + 1}" : "plot unknown";
 
             foreach (var patch in patches)
             {
-                ImGui.TextUnformatted($"{patch.Kind} patch — {patch.Beds.Count} beds, {patch.Cols} cols");
+                var houseKey = patch.Key.Split(':')[0];
+                ImGui.TextUnformatted($"{patch.Kind} patch — {plotText}");
                 ImGui.TextColored(HubStyle.Faint, patch.Key);
 
-                if (ImGui.BeginTable($"##bedgrid-{patch.Key}", patch.Cols, ImGuiTableFlags.Borders))
+                var estateType = GardenJournal.EstateTypeFor(houseKey);
+                var accessible = GardenJournal.CharactersWithAccess(houseKey);
+                if (estateType is not null || accessible.Count > 0)
                 {
-                    for (var i = 0; i < patch.Beds.Count; i++)
-                    {
-                        if (i % patch.Cols == 0)
-                            ImGui.TableNextRow();
-                        ImGui.TableNextColumn();
-
-                        var bed = patch.Beds[i];
-                        var state = PatchDiscovery.EventStateFor(bed.EntityId);
-                        var stateText = state is { } s ? $"0x{s:X2}" : "?";
-                        ImGui.TextUnformatted($"#{i}\nstate={stateText}");
-                    }
-
-                    ImGui.EndTable();
+                    var estateText = estateType is { } et ? et.ToString() : "unknown";
+                    var accessText = accessible.Count > 0 ? string.Join(", ", accessible) : "unknown";
+                    ImGui.TextColored(HubStyle.Faint, $"Estate: {estateText} — reachable by: {accessText}");
                 }
+
+                var states = GardenMemory.Read(patch);
+                if (states.Count == 0)
+                {
+                    ImGui.TextColored(HubStyle.Faint, "no data for this patch");
+                    ImGui.Spacing();
+                    continue;
+                }
+
+                var byBed = states.ToDictionary(s => s.BedNumber);
+                DrawBedTable(patch, byBed);
 
                 ImGui.Spacing();
             }
@@ -95,6 +108,154 @@ namespace Gardener.Windows
                 ImGui.SameLine();
                 if (ImGui.Button("Copy##copyLastDump"))
                     DebugDump.QueueClipboardCopy();
+            }
+        }
+
+        private static void DrawBedTable(Patch patch, IReadOnlyDictionary<int, BedState> byBed)
+        {
+            if (!ImGui.BeginTable($"##bedgrid-{patch.Key}", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg))
+                return;
+
+            ImGui.TableSetupColumn("Bed");
+            ImGui.TableSetupColumn("Seed / stage");
+            ImGui.TableSetupColumn("Wilt");
+            ImGui.TableSetupColumn("Harvest window");
+            ImGui.TableHeadersRow();
+
+            for (var bedNumber = 1; bedNumber <= patch.Kind.BedCount(); bedNumber++)
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.TextUnformatted(bedNumber.ToString());
+                ImGui.TableNextColumn();
+
+                if (!byBed.TryGetValue(bedNumber, out var state) || state.IsEmpty)
+                {
+                    ImGui.TextColored(HubStyle.Faint, "empty");
+                    ImGui.TableNextColumn();
+                    ImGui.TableNextColumn();
+                    continue;
+                }
+
+                var record = GardenJournal.Get(patch.Key, bedNumber);
+                DrawSeedAndStage(state, record);
+
+                ImGui.TableNextColumn();
+                DrawWilt(record);
+
+                ImGui.TableNextColumn();
+                DrawHarvestWindow(patch.Key, bedNumber, record);
+            }
+
+            ImGui.EndTable();
+        }
+
+        private static void DrawSeedAndStage(BedState state, BedRecord? record)
+        {
+            var seedItemId = SeedItems.SeedItemForRow(state.SeedRow);
+            var seedName = seedItemId is { } id ? XivHubPluginKit.Inventory.ItemSheet.Name(id) : $"row {state.SeedRow}";
+            var stageText = state.Maturity switch
+            {
+                Maturity.MatureCandidate => "mature (4)",
+                Maturity.Growing => $"growing ({state.Stage} of 4)",
+                _ => "empty",
+            };
+
+            ImGui.TextUnformatted(seedName);
+            ImGui.TextColored(StageColor(state, record), stageText);
+
+            if (record?.LastSeenByCharacter is { Length: > 0 } observer)
+            {
+                var agoHours = (DateTimeOffset.UtcNow - record.LastSeenAt).TotalHours;
+                ImGui.TextColored(HubStyle.Faint, $"seen by {observer}, {agoHours:F0}h ago");
+            }
+        }
+
+        /// <summary>Semantic bed-state colour per THEME.md: mature → Good, due to tend → Warn, about
+        /// to wither → Bad, empty or timing-unknown → Faint. Nothing here is a domain palette; these
+        /// are the four roles HubStyle already exposes.</summary>
+        private static Vector4 StageColor(BedState state, BedRecord? record)
+        {
+            if (state.IsEmpty)
+                return HubStyle.Faint;
+            if (state.Maturity == Maturity.MatureCandidate)
+                return HubStyle.Good;
+
+            if (record is { } r)
+            {
+                var wiltsAt = Growth.WiltsAt(r);
+                if (wiltsAt is { } wa)
+                {
+                    var now = DateTimeOffset.UtcNow;
+                    if (now >= wa)
+                        return HubStyle.Bad; // already wilted; on the wither clock
+                    if (now >= wa - TimeSpan.FromHours(Plugin.C.WiltWarningHours))
+                        return HubStyle.Warn; // due to tend soon
+                }
+            }
+
+            return HubStyle.Text;
+        }
+
+        private static void DrawWilt(BedRecord? record)
+        {
+            if (record is { } r && Growth.WiltsAt(r) is { } wiltsAt)
+                ImGui.TextUnformatted(wiltsAt.ToLocalTime().ToString("g"));
+            else
+                ImGui.TextColored(HubStyle.Faint, "unknown");
+        }
+
+        private static void DrawHarvestWindow(string patchKey, int bedNumber, BedRecord? record)
+        {
+            if (record is not { } rec)
+            {
+                ImGui.TextColored(HubStyle.Faint, "planted-at unknown — set an estimate");
+                return;
+            }
+
+            if (rec.PlantedAt is null)
+            {
+                ImGui.TextColored(HubStyle.Faint, "planted-at unknown — set an estimate");
+                DrawPlantedAtEstimate(patchKey, bedNumber, rec);
+                return;
+            }
+
+            var window = Growth.HarvestWindow(rec);
+            if (window.Confidence == HarvestConfidence.Unknown)
+            {
+                ImGui.TextColored(HubStyle.Faint, "no timing data for this seed");
+                return;
+            }
+
+            var confidenceText = window.Confidence switch
+            {
+                HarvestConfidence.Estimated => "estimated",
+                HarvestConfidence.Bundled => "bundled",
+                HarvestConfidence.Calibrated => $"observed, {window.SampleCount} sample(s)",
+                _ => "unknown",
+            };
+            var when = window.Earliest is { } e ? e.ToLocalTime().ToString("g") : "?";
+            ImGui.TextUnformatted($"{when} ({confidenceText})");
+        }
+
+        private static void DrawPlantedAtEstimate(string patchKey, int bedNumber, BedRecord record)
+        {
+            var key = (patchKey, bedNumber);
+            if (!pendingEstimateHours.TryGetValue(key, out var hours))
+                hours = 1;
+
+            ImGui.SetNextItemWidth(60);
+            ImGui.InputInt($"##estimateHours-{patchKey}-{bedNumber}", ref hours);
+            hours = Math.Max(0, hours);
+            pendingEstimateHours[key] = hours;
+
+            ImGui.SameLine();
+            if (ImGui.Button($"Planted {hours}h ago##setEstimate-{patchKey}-{bedNumber}"))
+            {
+                record.PlantedAt = DateTimeOffset.UtcNow - TimeSpan.FromHours(hours);
+                record.PlantedAtEstimated = true;
+                GardenJournal.Upsert(record);
+                pendingEstimateHours.Remove(key);
             }
         }
     }

@@ -31,6 +31,14 @@ public static class PatchKindExtensions
         PatchKind.Round => 2,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "unhandled PatchKind"),
     };
+
+    public static int BedCount(this PatchKind kind) => kind switch
+    {
+        PatchKind.Deluxe => 8,
+        PatchKind.Oblong => 6,
+        PatchKind.Round => 4,
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "unhandled PatchKind"),
+    };
 }
 
 /// <summary>
@@ -106,9 +114,9 @@ public static class PatchDiscovery
 
     // Every housing ward has exactly 60 numbered plots. OutdoorTerritory._housingMapMarkerInfos
     // holds 62 entries — 60 plot markers followed by 2 apartment-building markers, matching
-    // _apartmentBuildings's own count of 2 (main and sub division). That cardinality match is the
-    // basis for treating marker index == plot index below; it has not yet been confirmed by a live
-    // capture of marker positions against known plot numbers (see docs/RESEARCH.md).
+    // _apartmentBuildings's own count of 2 (main and sub division). Marker index == plot index is
+    // proven, not inferred: GetCurrentPlot() returned 39 on the plot the game calls plot 40, and that
+    // plot's own marker sits at index 39 (see docs/RESEARCH.md).
     private const int PlotsPerWard = 60;
 
     private const long RefreshIntervalMs = 2000;
@@ -118,14 +126,17 @@ public static class PatchDiscovery
 
     public static DiscoveryDiagnostics LastDiagnostics { get; private set; } = DiscoveryDiagnostics.Empty;
 
-    /// <summary>Call once per frame; actually rescans at most once every <see cref="RefreshIntervalMs"/>.</summary>
-    public static void Tick()
+    /// <summary>Call once per frame; actually rescans at most once every <see cref="RefreshIntervalMs"/>.
+    /// Returns true on the ticks where it actually rescanned, so callers that only need to act on a
+    /// fresh read (the passive <c>DataMap</c> poll) don't have to re-derive the same cadence.</summary>
+    public static bool Tick()
     {
         var now = Environment.TickCount64;
         if (now - lastRefreshTick < RefreshIntervalMs)
-            return;
+            return false;
         lastRefreshTick = now;
         Refresh();
+        return true;
     }
 
     /// <summary>Rescans immediately, bypassing the timer.</summary>
@@ -337,17 +348,4 @@ public static class PatchDiscovery
         return (patches, walked, nearbyBaseIdCounts);
     }
 
-    /// <summary>The live <c>GameObject.EventState</c> byte for a bed, if it is still in the object
-    /// table. Shared by the debug dump and the Garden tab so neither re-derives the read.</summary>
-    public static unsafe byte? EventStateFor(uint entityId)
-    {
-        var obj = Plugin.ObjectTable.SearchByEntityId(entityId);
-        if (obj is null)
-            return null;
-
-        // SAFETY: obj was just looked up live from the object table; EventState is a plain byte
-        // field on the base GameObject struct that every entity kind shares, at a fixed offset
-        // independent of the object's subtype.
-        return ((GameObject*)obj.Address)->EventState;
-    }
 }
