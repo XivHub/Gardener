@@ -8,11 +8,6 @@ bin/
 # Local publish script (deploy paths are environment-specific)
 publish.sh
 
-# Local dev notes (not part of the plugin)
-CLAUDE.md
-AGENTS.md
-HANDOFF.md
-docs/PLAN.md
 __pycache__/
 *.pyc
 
