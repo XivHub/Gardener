@@ -832,11 +832,15 @@ namespace Gardener.Windows
                 return;
 
             ImGui.TextUnformatted("Plant this step?");
-            var lines = singleStepPlan.Steps.OrderBy(s => s.BedNumber)
-                .Select(s => $"{SeedItemName(s.SeedRow)} in bed {s.BedNumber}");
-            ImGui.TextWrapped(
-                $"Gardener will plant {string.Join(" and ", lines)}, using {ItemSheet.Name(singleStepPlan.Steps[0].SoilItemId)}. " +
+
+            // Prose in an auto-sized popup has nothing to wrap against, so ImGui sizes the popup to the
+            // button row instead and the sentence stacks into a narrow column. A fixed wrap position
+            // gives the popup a width to size itself to.
+            ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + ConfirmWrapWidth);
+            ImGui.TextUnformatted(
+                $"Gardener will plant {PlantingPhrase(singleStepPlan)}, using {ItemSheet.Name(singleStepPlan.Steps[0].SoilItemId)}. " +
                 "It plants this one step and stops.");
+            ImGui.PopTextWrapPos();
             if (ImGui.Button("Plant it"))
             {
                 StartGoalStep(singleStepPlan, patch);
@@ -853,6 +857,28 @@ namespace Gardener.Windows
             SchedulerMain.PendingPlan = singleStepPlan;
             SchedulerMain.EnablePlugin(SweepKind.Plan, patch);
         }
+
+        /// <summary>What a confirm popup's prose wraps at, in the same unscaled pixels as the window's
+        /// own <see cref="WindowSizeConstraints"/>.</summary>
+        private const float ConfirmWrapWidth = 340f;
+
+        /// <summary>The confirm's roster of what goes where, grouped by seed so a full patch reads as
+        /// two clauses rather than eight: "Mandrake Seeds in beds 1, 3, 5 and 7; Almond Seeds in beds
+        /// 2, 4, 6 and 8".</summary>
+        private static string PlantingPhrase(LayoutPlan plan)
+        {
+            var clauses = plan.Steps
+                .GroupBy(s => s.SeedRow, (seed, steps) => (Seed: seed, Beds: steps.Select(s => s.BedNumber).OrderBy(n => n).ToList()))
+                .OrderBy(g => g.Beds[0])
+                .Select(g => $"{SeedItemName(g.Seed)} in {(g.Beds.Count == 1 ? "bed" : "beds")} {JoinBedNumbers(g.Beds)}");
+            return string.Join("; ", clauses);
+        }
+
+        /// <summary>"1", "1 and 2", "1, 3, 5 and 7".</summary>
+        private static string JoinBedNumbers(IReadOnlyList<int> beds) =>
+            beds.Count == 1
+                ? beds[0].ToString()
+                : $"{string.Join(", ", beds.Take(beds.Count - 1))} and {beds[^1]}";
 
         private static string SeedItemName(uint row) =>
             SeedItems.SeedItemForRow(row) is { } itemId ? XivHubPluginKit.Inventory.ItemSheet.Name(itemId) : $"row {row}'s seed";
