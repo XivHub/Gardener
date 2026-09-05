@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using Gardener.Game;
 using XivHubPluginKit.UI;
 
 namespace Gardener.Windows
@@ -31,7 +34,61 @@ namespace Gardener.Windows
                 ImGui.TextDisabled("e.g. http://192.168.88.248:9999/log");
             }
 
+            DrawDataSection();
             DrawThemeSection();
+        }
+
+        /// <summary>
+        /// Shows the bundled table's provenance and the gaps <see cref="SeedTable.Validate"/> found
+        /// against the live sheet, so a stale bundle is visible in settings instead of silently
+        /// planting the wrong seed or dropping one from the planner.
+        /// </summary>
+        private void DrawDataSection()
+        {
+            ImGui.Separator();
+            ImGui.TextDisabled("Data");
+
+            BoolInput("Show data gap warnings", () => cfg.ShowDataGapWarnings, v => cfg.ShowDataGapWarnings = v);
+            if (!cfg.ShowDataGapWarnings)
+                return;
+
+            var provenance = SeedTable.Provenance;
+            using (ImRaii.PushColor(ImGuiCol.Text, HubStyle.Faint))
+            {
+                ImGui.TextUnformatted($"Generated {provenance.Generated}");
+                ImGui.TextUnformatted($"Lotlab commit {provenance.LotlabCommit}");
+                ImGui.TextUnformatted($"nick75g commit {provenance.Nick75gCommit}");
+                ImGui.TextUnformatted($"XIVAPI schema {provenance.XivapiSchema}");
+                ImGui.TextUnformatted($"XIVAPI version {provenance.XivapiVersion}");
+            }
+
+            ImGui.Spacing();
+            var gaps = SeedTable.DataGaps;
+            DrawGapList("Bundled rows missing from the live sheet", gaps.BundledRowsMissingFromSheet);
+            DrawGapList("Live outdoor rows missing from the bundle", gaps.LiveRowsMissingFromBundle);
+            DrawGapList("Rows with no grow time", gaps.RowsWithNoGrowTime);
+            DrawGapList("Rows absent from the cross data", gaps.RowsAbsentFromCrossData);
+        }
+
+        private static void DrawGapList(string label, IReadOnlyList<SeedGap> gaps)
+        {
+            var header = $"{label} ({gaps.Count})###gap-{label}";
+            bool open;
+            if (gaps.Count > 0)
+            {
+                using (ImRaii.PushColor(ImGuiCol.Text, HubStyle.Warn))
+                    open = ImGui.CollapsingHeader(header);
+            }
+            else
+            {
+                open = ImGui.CollapsingHeader(header);
+            }
+
+            if (!open)
+                return;
+
+            foreach (var gap in gaps)
+                ImGui.BulletText($"{gap.Row}: {gap.Name}");
         }
 
         /// <summary>

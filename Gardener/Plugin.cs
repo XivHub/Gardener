@@ -7,6 +7,7 @@ using ECommons;
 using ECommons.Automation.NeoTaskManager;
 using XivHubPluginKit;
 using XivHubPluginKit.UI;
+using Gardener.Game;
 using Gardener.Windows;
 
 namespace Gardener
@@ -57,6 +58,16 @@ namespace Gardener
                 PluginInterface.GetPluginConfigDirectory(),
                 (msg, ex) => Logger.Warning(ex, msg));
             HubStyle.Init(ThemeConfig);
+
+            // Touch SeedTable now so its load-time validation against the live GardeningSeed
+            // sheet runs at startup, not lazily the first time a window happens to read it.
+            var gaps = SeedTable.DataGaps;
+            Logger.Information(
+                $"[Gardener] seed table loaded (generated {SeedTable.Provenance.Generated}); " +
+                $"gaps: bundled={gaps.BundledRowsMissingFromSheet.Count} " +
+                $"live={gaps.LiveRowsMissingFromBundle.Count} " +
+                $"grow={gaps.RowsWithNoGrowTime.Count} " +
+                $"cross={gaps.RowsAbsentFromCrossData.Count}");
 
             TaskManager = new TaskManager(new TaskManagerConfiguration { TimeLimitMS = 20000, ShowDebug = false });
 
