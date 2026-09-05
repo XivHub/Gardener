@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+	<PropertyGroup>
+		<Version>0.1.0</Version>
+		<AssemblyName>Gardener</AssemblyName>
+		<RootNamespace>Gardener</RootNamespace>
+		<LangVersion>latest</LangVersion>
+		<IsPackable>false</IsPackable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/XivHub/Gardener</PackageProjectUrl>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="ECommons" Version="3.2.1.6" />
+	</ItemGroup>
+
+	<!-- Shared helpers (linked source from the sibling XivHubPluginKit repo). -->
+	<ItemGroup>
+		<Compile Include="..\..\XivHubPluginKit\KitServices.cs" Link="Kit\KitServices.cs" />
+		<Compile Include="..\..\XivHubPluginKit\DevTelemetry.cs" Link="Kit\DevTelemetry.cs" />
+		<Compile Include="..\..\XivHubPluginKit\Inventory\ItemSheet.cs" Link="Kit\Inventory\ItemSheet.cs" />
+		<Compile Include="..\..\XivHubPluginKit\Inventory\SlotView.cs" Link="Kit\Inventory\SlotView.cs" />
+		<Compile Include="..\..\XivHubPluginKit\Inventory\InventoryScan.cs" Link="Kit\Inventory\InventoryScan.cs" />
+		<Compile Include="..\..\XivHubPluginKit\UI\HubColors.cs" Link="Kit\UI\HubColors.cs" />
+		<Compile Include="..\..\XivHubPluginKit\UI\HubStyle.cs" Link="Kit\UI\HubStyle.cs" />
+		<Compile Include="..\..\XivHubPluginKit\UI\HubThemeConfig.cs" Link="Kit\UI\HubThemeConfig.cs" />
+		<Compile Include="..\..\XivHubPluginKit\UI\HubThemeEditor.cs" Link="Kit\UI\HubThemeEditor.cs" />
+	</ItemGroup>
+
+</Project>

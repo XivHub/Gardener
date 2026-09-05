@@ -1,0 +1,50 @@
+Gardener
+Copyright (C) 2026 Zhyra
+
+This program is free software: you can redistribute it and/or modify it under the
+terms of the GNU Affero General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later version.
+
+This product includes work adapted from the following projects:
+
+- nick75g/FFXIV-Crossbreed-Helper (https://github.com/nick75g/FFXIV-Crossbreed-Helper),
+  licensed MIT. Gardener's bundled crossbreed dataset (working set) is generated from
+  its crossbreeding.json, onlycross.json, seeds.json, gatherlist.json and
+  othersources.json.
+
+  MIT License
+
+  Copyright (c) 2024 Nick75
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+- Lotlab/FFXIV-Gardening-Tracker (https://github.com/Lotlab/FFXIV-Gardening-Tracker),
+  licensed GPL-3.0. Gardener's bundled per-seed grow-time table is generated from its
+  data/seeds_time.json.
+
+- The Big Triangle spreadsheet
+  (https://docs.google.com/spreadsheets/d/1pKmca2fMSCUNVDTq75BPFzDyFrRdarF39SsC3StnUSY)
+  and the Gardening Spreadsheet
+  (https://docs.google.com/spreadsheets/d/1e4Up6pPM_lWcGqc8XnE5hJsodXDUbSACEg0O0rmgsj4),
+  both maintained by the FFXIV gardening community — see also
+  https://www.ffxivgardening.com. Gardener's bundled crossbreed validation matrix and
+  per-seed wilt/yield table are generated from snapshots of these spreadsheets.
+
+Nothing in Gardener is taken from Lunauryae/Gaia (https://github.com/Lunauryae/Gaia),
+code or data.
