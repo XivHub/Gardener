@@ -76,6 +76,12 @@ public static class GardenJournal
     public static IReadOnlyList<string> AllPatchKeys =>
         records.Values.Select(r => r.PatchKey).Distinct().ToList();
 
+    /// <summary>Every bed record the journal holds, across every house on the account. The only
+    /// source <see cref="Helpers.Reminders"/> is allowed to read: unlike <see cref="AllForHouse"/>,
+    /// this needs no live house to filter by, which is what lets a reminder work from a house, or a
+    /// world, the plugin is not currently standing in.</summary>
+    public static IReadOnlyList<BedRecord> AllRecords => records.Values.ToList();
+
     /// <summary>Records whose <see cref="BedRecord.PatchKey"/> is not among the patches currently
     /// discovered live — the patch was physically moved, or its house is unreachable right now. An
     /// explicit list for the UI, never silently dropped.</summary>

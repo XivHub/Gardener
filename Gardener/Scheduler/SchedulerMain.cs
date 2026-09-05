@@ -334,7 +334,7 @@ public static class SchedulerMain
 
             if (line.Key == MenuKey.TalkDepressed && state.Value3 == 0 && state.Value4 == 0)
                 Plugin.Logger.Information(
-                    $"[Gardener] {patch.Key} bed {bedNumber}: TALK_DEPRESSED with Value3=0 Value4=0 — " +
+                    $"[Gardener] {patch.Key} bed {bedNumber}: TALK_DEPRESSED with Value3=0 Value4=0; " +
                     "DataMap carries no wilt flag here.");
 
             if (line.Key == MenuKey.TalkRipe)

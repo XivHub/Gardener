@@ -97,7 +97,7 @@ public static class BedTargeting
         map.Verified[wrongIndex] = false;
 
         Plugin.Logger.Warning(
-            $"[BedTargeting] {patch.Key}: corrected — entity 0x{targetedEntityId:X8} was predicted as " +
+            $"[BedTargeting] {patch.Key}: corrected. Entity 0x{targetedEntityId:X8} was predicted as " +
             $"bed {wrongIndex + 1} but the menu reports it as bed {observedBedNumber}; swapped with bed " +
             $"{observedBedNumber}'s prior prediction 0x{displaced:X8}");
     }

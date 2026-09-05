@@ -42,7 +42,10 @@ namespace Gardener.Windows
             if (ImGui.BeginTabItem("Plan"))
                 ImGui.EndTabItem();
             if (ImGui.BeginTabItem("Reminders"))
+            {
+                DrawRemindersTab();
                 ImGui.EndTabItem();
+            }
             if (ImGui.BeginTabItem("Log"))
             {
                 DrawLogTab();
@@ -75,7 +78,7 @@ namespace Gardener.Windows
             foreach (var patch in patches)
             {
                 var houseKey = patch.Key.Split(':')[0];
-                ImGui.TextUnformatted($"{patch.Kind} patch — {plotText}");
+                ImGui.TextUnformatted($"{patch.Kind} patch, {plotText}");
                 ImGui.TextColored(HubStyle.Faint, patch.Key);
 
                 var estateType = GardenJournal.EstateTypeFor(houseKey);
@@ -84,7 +87,7 @@ namespace Gardener.Windows
                 {
                     var estateText = estateType is { } et ? et.ToString() : "unknown";
                     var accessText = accessible.Count > 0 ? string.Join(", ", accessible) : "unknown";
-                    ImGui.TextColored(HubStyle.Faint, $"Estate: {estateText} — reachable by: {accessText}");
+                    ImGui.TextColored(HubStyle.Faint, $"Estate: {estateText}. Reachable by: {accessText}");
                 }
 
                 var states = GardenMemory.Read(patch);
@@ -103,6 +106,8 @@ namespace Gardener.Windows
                 ImGui.Spacing();
             }
 
+            DrawOrphans();
+
             ImGui.Separator();
             ImGui.TextDisabled("Debug dump");
             if (ImGui.Button("Dump"))
@@ -118,6 +123,45 @@ namespace Gardener.Windows
                 if (ImGui.Button("Copy##copyLastDump"))
                     DebugDump.QueueClipboardCopy();
             }
+        }
+
+        /// <summary>
+        /// Journal records for the house the player is currently standing in whose patch key is not
+        /// among the patches discovery just found — the patch was physically moved, most likely.
+        /// Never lists a record for a house the player is not currently in: without a live patch list
+        /// to compare against, "not found" and "not looked at" are indistinguishable, so a house that
+        /// was never scanned this visit must not show up here at all.
+        /// </summary>
+        private static void DrawOrphans()
+        {
+            if (HouseKey.Current() is not { } house)
+                return;
+
+            var houseKey = house.KeyString();
+            var livePatchKeys = PatchDiscovery.Patches.Select(p => p.Key);
+            var orphans = GardenJournal.Orphans(livePatchKeys)
+                .Where(r => r.PatchKey.StartsWith(houseKey + ":", StringComparison.Ordinal))
+                .OrderBy(r => r.PatchKey).ThenBy(r => r.BedNumber)
+                .ToList();
+            if (orphans.Count == 0)
+                return;
+
+            ImGui.Separator();
+            ImGui.TextColored(HubStyle.Warn, $"Beds recorded here before, not found this visit ({orphans.Count})");
+            ImGui.TextColored(HubStyle.Faint, "The patch likely moved. Forget a record to stop it showing up as moved.");
+            foreach (var orphan in orphans)
+            {
+                ImGui.TextUnformatted($"{orphan.PatchKey}, bed {orphan.BedNumber}: {SeedName(orphan.SeedRow)}");
+                ImGui.SameLine();
+                if (ImGui.Button($"Forget##orphan-{orphan.PatchKey}-{orphan.BedNumber}"))
+                    GardenJournal.Remove(orphan.PatchKey, orphan.BedNumber);
+            }
+        }
+
+        private static string SeedName(ushort row)
+        {
+            var produceItemId = SeedItems.ProduceItemForRow(row);
+            return produceItemId is { } id ? XivHubPluginKit.Inventory.ItemSheet.Name(id) : $"row {row}";
         }
 
         private static void DrawBedTable(Patch patch, IReadOnlyDictionary<int, BedState> byBed)
@@ -250,6 +294,107 @@ namespace Gardener.Windows
                 ImGui.TextColored(entry.Color, $"[{entry.Time}] {entry.Message}");
         }
 
+        /// <summary>
+        /// The four journal-only due lists from <see cref="Reminders"/>, grouped by house then patch,
+        /// coloured per THEME.md's semantic roles. Wilt and wither times are stated as exact local
+        /// times, never hedged; a harvest reminder built only from <c>LastSeenStage == 4</c> says
+        /// "mature", never "ready", until a passed harvest window backs that claim up.
+        /// </summary>
+        private static void DrawRemindersTab()
+        {
+            ImGui.TextColored(HubStyle.Warn, "Due to tend");
+            DrawReminderGroup(Reminders.DueToTend, HubStyle.Warn, "Every bed is tended.",
+                e => $"{e.SeedName}, bed {e.BedNumber}: wilts {e.At.ToLocalTime():g}");
+
+            ImGui.Separator();
+            ImGui.TextColored(HubStyle.Bad, "About to wither");
+            DrawReminderGroup(Reminders.AboutToWither, HubStyle.Bad, "Nothing is close to withering.",
+                e => $"{e.SeedName}, bed {e.BedNumber}: withers {e.At.ToLocalTime():g}");
+
+            ImGui.Separator();
+            ImGui.TextColored(HubStyle.Good, "Ready to harvest");
+            DrawHarvestGroup();
+
+            ImGui.Separator();
+            ImGui.TextColored(HubStyle.Faint, "Planting time unknown");
+            DrawReminderGroup(Reminders.TimingUnknown, HubStyle.Faint, "Every bed's planting time is known.",
+                e => $"{e.SeedName}, bed {e.BedNumber}: planting time unknown");
+        }
+
+        private static void DrawReminderGroup(
+            IReadOnlyList<ReminderEntry> entries, Vector4 color, string emptyText, Func<ReminderEntry, string> lineText)
+        {
+            if (entries.Count == 0)
+            {
+                ImGui.TextColored(HubStyle.Faint, emptyText);
+                return;
+            }
+
+            foreach (var houseGroup in entries.GroupBy(e => e.HouseKey))
+            {
+                DrawHouseHeader(houseGroup.Key);
+                foreach (var patchGroup in houseGroup.GroupBy(e => e.PatchKey))
+                {
+                    ImGui.Indent();
+                    ImGui.TextColored(HubStyle.Faint, patchGroup.Key);
+                    foreach (var entry in patchGroup.OrderBy(e => e.BedNumber))
+                        DrawReminderLine(color, lineText(entry), entry.ReachableBy);
+                    ImGui.Unindent();
+                }
+            }
+        }
+
+        private static void DrawHarvestGroup()
+        {
+            if (Reminders.ReadyToHarvest.Count == 0)
+            {
+                ImGui.TextColored(HubStyle.Faint, "Nothing is ready to harvest yet.");
+                return;
+            }
+
+            foreach (var houseGroup in Reminders.ReadyToHarvest.GroupBy(h => h.Entry.HouseKey))
+            {
+                DrawHouseHeader(houseGroup.Key);
+                foreach (var patchGroup in houseGroup.GroupBy(h => h.Entry.PatchKey))
+                {
+                    ImGui.Indent();
+                    ImGui.TextColored(HubStyle.Faint, patchGroup.Key);
+                    foreach (var harvest in patchGroup.OrderBy(h => h.Entry.BedNumber))
+                    {
+                        var text = harvest.FromWindow
+                            ? $"{harvest.Entry.SeedName}, bed {harvest.Entry.BedNumber}: ready since " +
+                              $"{harvest.Window.Earliest!.Value.ToLocalTime():g} ({HarvestConfidenceText(harvest.Window)})"
+                            : $"{harvest.Entry.SeedName}, bed {harvest.Entry.BedNumber}: mature (stage 4)";
+                        DrawReminderLine(HubStyle.Good, text, harvest.Entry.ReachableBy);
+                    }
+                    ImGui.Unindent();
+                }
+            }
+        }
+
+        private static void DrawReminderLine(Vector4 color, string text, IReadOnlyList<string> reachableBy)
+        {
+            ImGui.TextColored(color, text);
+            ImGui.SameLine();
+            ImGui.TextColored(HubStyle.Faint, $"({Reminders.ReachText(reachableBy)})");
+        }
+
+        private static string HarvestConfidenceText(HarvestWindow window) => window.Confidence switch
+        {
+            HarvestConfidence.Estimated => "estimated",
+            HarvestConfidence.Bundled => "bundled",
+            HarvestConfidence.Calibrated => $"observed, {window.SampleCount} sample(s)",
+            _ => "unknown",
+        };
+
+        private static void DrawHouseHeader(string houseKey)
+        {
+            var estateType = GardenJournal.EstateTypeFor(houseKey);
+            ImGui.TextUnformatted(estateType is { } et ? et.ToString() : "House");
+            ImGui.SameLine();
+            ImGui.TextColored(HubStyle.Faint, houseKey);
+        }
+
         private static void DrawSeedAndStage(BedState state, BedRecord? record)
         {
             // What is in the ground is the produce, not the seed that grew it — "La Noscean Lettuce",
@@ -339,13 +484,13 @@ namespace Gardener.Windows
         {
             if (record is not { } rec)
             {
-                ImGui.TextColored(HubStyle.Faint, "planted-at unknown — set an estimate");
+                ImGui.TextColored(HubStyle.Faint, "planted-at unknown; set an estimate");
                 return;
             }
 
             if (rec.PlantedAt is null)
             {
-                ImGui.TextColored(HubStyle.Faint, "planted-at unknown — set an estimate");
+                ImGui.TextColored(HubStyle.Faint, "planted-at unknown; set an estimate");
                 DrawPlantedAtEstimate(patchKey, bedNumber, rec);
                 return;
             }

@@ -49,6 +49,9 @@ namespace Gardener
         private readonly MainWindow mainWindow;
         private readonly ConfigWindow configWindow;
 
+        /// <summary>What the DTR entry's click handler opens; it has no window reference of its own.</summary>
+        public static MainWindow? MainWindowInstance { get; private set; }
+
         public Plugin()
         {
             ECommonsMain.Init(PluginInterface, this, Module.DalamudReflector);
@@ -80,8 +83,10 @@ namespace Gardener
 
             mainWindow = new MainWindow(this.Configuration);
             configWindow = new ConfigWindow(this.Configuration);
+            MainWindowInstance = mainWindow;
             WindowSystem.AddWindow(mainWindow);
             WindowSystem.AddWindow(configWindow);
+            DtrEntry.Init();
 
             CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
@@ -117,6 +122,12 @@ namespace Gardener
 
             GardenJournal.Tick();
             SchedulerMain.Tick();
+
+            // Reminders reads the journal only, so this runs regardless of whether the player is
+            // anywhere near a housing territory; DtrEntry reads Reminders' just-recomputed lists on
+            // the same tick so the bar and the window never show different counts.
+            Reminders.Tick();
+            DtrEntry.Tick();
         }
 
         // Stop on logout so a character switch never resumes a sweep on a different character.
@@ -138,6 +149,7 @@ namespace Gardener
             SchedulerMain.DisablePlugin();
             GardenJournal.Flush();
             Telemetry.Dispose();
+            DtrEntry.Dispose();
 
             PluginInterface.UiBuilder.Draw -= DrawUI;
             PluginInterface.UiBuilder.OpenMainUi -= ToggleMainUi;
