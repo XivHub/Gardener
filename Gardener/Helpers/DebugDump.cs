@@ -259,13 +259,26 @@ public static class DebugDump
     private static void AppendPatch(StringBuilder sb, Patch patch)
     {
         sb.AppendLine(
-            $"- {patch.Key} kind={patch.Kind} cols={patch.Cols} baseId=131128 dataId=131128 " +
+            $"- {patch.Key} kind={patch.Kind} baseId=131128 dataId=131128 " +
             $"center=({patch.Center.X:F2},{patch.Center.Y:F2},{patch.Center.Z:F2}) rotation={patch.Rotation:F4} " +
             $"housingObjectId={patch.HousingObjectId} furnitureIndex={patch.FurnitureIndex} entityId=0x{patch.EntityId:X8}");
+        sb.AppendLine($"  layout: {DescribeLayout(patch.Kind)}");
         // patch.Beds is sorted by EntityId (PatchDiscovery.Refresh); the bracketed index below is
         // that array position, not the game's own "Nth Bed" number.
         for (var i = 0; i < patch.Beds.Count; i++)
             AppendBed(sb, i, patch.Beds[i]);
+    }
+
+    /// <summary>Bed-number adjacency, straight from <see cref="PatchKindExtensions.Neighbours"/> so the
+    /// dump can never drift from what a crossbreed walk would actually use.</summary>
+    private static string DescribeLayout(PatchKind kind)
+    {
+        if (kind != PatchKind.Deluxe)
+            return "not confirmed; Oblong and Round have no adjacency model";
+
+        var perBed = Enumerable.Range(1, kind.BedCount())
+            .Select(bed => $"{bed}:[{string.Join(",", kind.Neighbours(bed))}]");
+        return $"8-bed ring, clockwise from top-left, wraps (8-1). neighbours {string.Join(" ", perBed)}";
     }
 
     private static unsafe void AppendBed(StringBuilder sb, int index, Bed bed)

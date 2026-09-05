@@ -83,12 +83,44 @@ public static class GardenJournal
     public static IReadOnlyList<BedRecord> AllRecords => records.Values.ToList();
 
     /// <summary>Records whose <see cref="BedRecord.PatchKey"/> is not among the patches currently
-    /// discovered live — the patch was physically moved, or its house is unreachable right now. An
-    /// explicit list for the UI, never silently dropped.</summary>
+    /// discovered live — the patch was placed into storage, physically moved, or its house is
+    /// unreachable right now. An explicit list for the UI, never silently dropped.</summary>
     public static IReadOnlyList<BedRecord> Orphans(IEnumerable<string> livePatchKeys)
     {
         var live = new HashSet<string>(livePatchKeys, StringComparer.Ordinal);
         return records.Values.Where(r => !live.Contains(r.PatchKey)).ToList();
+    }
+
+    /// <summary>
+    /// Sets <see cref="BedRecord.Parked"/> for every record under <paramref name="houseKey"/> whose
+    /// patch key is not among <paramref name="livePatchKeys"/>, and clears it for every record whose
+    /// patch key is: placing a patch or flowerpot into storage freezes every timer on it and drops it
+    /// from discovery entirely, so its beds are parked, never emptied or harvested, and
+    /// <see cref="Growth"/> must stop projecting a clock for them until the same patch key is
+    /// discovered live again. Call only right after a fresh <see cref="PatchDiscovery.Refresh"/> for
+    /// this house — <paramref name="livePatchKeys"/> otherwise cannot tell "confirmed absent" from
+    /// "not looked at".
+    /// </summary>
+    public static void MarkParked(string houseKey, IEnumerable<string> livePatchKeys)
+    {
+        var live = new HashSet<string>(livePatchKeys, StringComparer.Ordinal);
+        var changed = false;
+
+        foreach (var record in records.Values)
+        {
+            if (!record.PatchKey.StartsWith(houseKey + ":", StringComparison.Ordinal))
+                continue;
+
+            var parked = !live.Contains(record.PatchKey);
+            if (record.Parked == parked)
+                continue;
+
+            record.Parked = parked;
+            changed = true;
+        }
+
+        if (changed)
+            dirty = true;
     }
 
     /// <summary>Drops records whose <see cref="BedRecord.LastSeenAt"/> is older than
@@ -145,8 +177,10 @@ public static class GardenJournal
     /// Applies a passive <see cref="GardenMemory"/> read to the journal. Every transition below is the
     /// complete set; nothing else changes a record. A bed number this call receives no
     /// <see cref="BedState"/> for — an unread patch, an out-of-range player, a missing
-    /// <c>DataMap</c> entry — is left completely untouched, which is what keeps a transient read gap
-    /// from wiping the journal.
+    /// <c>DataMap</c> entry, or a patch parked in storage — is left completely untouched, which is what
+    /// keeps a transient read gap from wiping the journal and, for the parked case, is exactly what
+    /// keeps its clock frozen. <see cref="MarkParked"/> is the only thing that ever sets or clears
+    /// <see cref="BedRecord.Parked"/>; this method never touches it.
     /// </summary>
     public static void Reconcile(IReadOnlyList<BedState> states)
     {

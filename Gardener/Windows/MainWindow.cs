@@ -18,6 +18,11 @@ namespace Gardener.Windows
         // journal itself is (patch + bed, never a character) so the widget survives a redraw.
         private static readonly Dictionary<(string PatchKey, int BedNumber), int> pendingEstimateHours = new();
 
+        // Housing wards recheck harvest readiness roughly once an hour rather than the instant a
+        // plant matures, so a harvest estimate always lags behind the plant's own clock.
+        private const string HarvestLagNote =
+            "Harvest readiness is checked roughly once an hour, so a bed can stay unlisted for a while after it matures.";
+
         public MainWindow(Configuration configuration) : base("Gardener###GardenerMain")
         {
             SizeConstraints = new WindowSizeConstraints
@@ -71,6 +76,8 @@ namespace Gardener.Windows
             var patches = PatchDiscovery.Patches;
             if (patches.Count == 0)
                 ImGui.TextColored(HubStyle.Faint, "No patches discovered. Stand in an outdoor housing plot.");
+            else
+                ImGui.TextColored(HubStyle.Faint, HarvestLagNote);
 
             var plot = PatchDiscovery.LastDiagnostics.CurrentPlot;
             var plotText = plot is { } p ? $"plot {p + 1}" : "plot unknown";
@@ -127,10 +134,11 @@ namespace Gardener.Windows
 
         /// <summary>
         /// Journal records for the house the player is currently standing in whose patch key is not
-        /// among the patches discovery just found — the patch was physically moved, most likely.
-        /// Never lists a record for a house the player is not currently in: without a live patch list
-        /// to compare against, "not found" and "not looked at" are indistinguishable, so a house that
-        /// was never scanned this visit must not show up here at all.
+        /// among the patches discovery just found — the patch was placed into storage (which freezes
+        /// its timers and drops it from discovery entirely) or physically moved; the two look the same
+        /// from here. Never lists a record for a house the player is not currently in: without a live
+        /// patch list to compare against, "not found" and "not looked at" are indistinguishable, so a
+        /// house that was never scanned this visit must not show up here at all.
         /// </summary>
         private static void DrawOrphans()
         {
@@ -148,7 +156,8 @@ namespace Gardener.Windows
 
             ImGui.Separator();
             ImGui.TextColored(HubStyle.Warn, $"Beds recorded here before, not found this visit ({orphans.Count})");
-            ImGui.TextColored(HubStyle.Faint, "The patch likely moved. Forget a record to stop it showing up as moved.");
+            ImGui.TextColored(HubStyle.Faint,
+                "This patch may be in storage, or it may have moved; either way the record stays and its timers are paused. Forget a record to stop tracking it.");
             foreach (var orphan in orphans)
             {
                 ImGui.TextUnformatted($"{orphan.PatchKey}, bed {orphan.BedNumber}: {SeedName(orphan.SeedRow)}");
@@ -302,27 +311,31 @@ namespace Gardener.Windows
         /// </summary>
         private static void DrawRemindersTab()
         {
+            // Tending and wither risk both need no house permission at all: any character can water
+            // any outdoor garden, so unlike harvesting these two never carry a "switch to" note.
             ImGui.TextColored(HubStyle.Warn, "Due to tend");
             DrawReminderGroup(Reminders.DueToTend, HubStyle.Warn, "Every bed is tended.",
-                e => $"{e.SeedName}, bed {e.BedNumber}: wilts {e.At.ToLocalTime():g}");
+                e => $"{e.SeedName}, bed {e.BedNumber}: wilts {e.At.ToLocalTime():g}", showReach: false);
 
             ImGui.Separator();
             ImGui.TextColored(HubStyle.Bad, "About to wither");
             DrawReminderGroup(Reminders.AboutToWither, HubStyle.Bad, "Nothing is close to withering.",
-                e => $"{e.SeedName}, bed {e.BedNumber}: withers {e.At.ToLocalTime():g}");
+                e => $"{e.SeedName}, bed {e.BedNumber}: withers {e.At.ToLocalTime():g}", showReach: false);
 
             ImGui.Separator();
             ImGui.TextColored(HubStyle.Good, "Ready to harvest");
+            ImGui.TextColored(HubStyle.Faint, HarvestLagNote);
             DrawHarvestGroup();
 
             ImGui.Separator();
             ImGui.TextColored(HubStyle.Faint, "Planting time unknown");
             DrawReminderGroup(Reminders.TimingUnknown, HubStyle.Faint, "Every bed's planting time is known.",
-                e => $"{e.SeedName}, bed {e.BedNumber}: planting time unknown");
+                e => $"{e.SeedName}, bed {e.BedNumber}: planting time unknown", showReach: true);
         }
 
         private static void DrawReminderGroup(
-            IReadOnlyList<ReminderEntry> entries, Vector4 color, string emptyText, Func<ReminderEntry, string> lineText)
+            IReadOnlyList<ReminderEntry> entries, Vector4 color, string emptyText, Func<ReminderEntry, string> lineText,
+            bool showReach)
         {
             if (entries.Count == 0)
             {
@@ -338,7 +351,7 @@ namespace Gardener.Windows
                     ImGui.Indent();
                     ImGui.TextColored(HubStyle.Faint, patchGroup.Key);
                     foreach (var entry in patchGroup.OrderBy(e => e.BedNumber))
-                        DrawReminderLine(color, lineText(entry), entry.ReachableBy);
+                        DrawReminderLine(color, lineText(entry), showReach ? entry.ReachableBy : null);
                     ImGui.Unindent();
                 }
             }
@@ -362,8 +375,9 @@ namespace Gardener.Windows
                     foreach (var harvest in patchGroup.OrderBy(h => h.Entry.BedNumber))
                     {
                         var text = harvest.FromWindow
-                            ? $"{harvest.Entry.SeedName}, bed {harvest.Entry.BedNumber}: ready since " +
-                              $"{harvest.Window.Earliest!.Value.ToLocalTime():g} ({HarvestConfidenceText(harvest.Window)})"
+                            ? $"{harvest.Entry.SeedName}, bed {harvest.Entry.BedNumber}: ready between " +
+                              $"{harvest.Window.Earliest!.Value.ToLocalTime():g} and " +
+                              $"{harvest.Window.Latest!.Value.ToLocalTime():t} ({HarvestConfidenceText(harvest.Window)})"
                             : $"{harvest.Entry.SeedName}, bed {harvest.Entry.BedNumber}: mature (stage 4)";
                         DrawReminderLine(HubStyle.Good, text, harvest.Entry.ReachableBy);
                     }
@@ -372,9 +386,14 @@ namespace Gardener.Windows
             }
         }
 
-        private static void DrawReminderLine(Vector4 color, string text, IReadOnlyList<string> reachableBy)
+        /// <summary>The reach note is omitted (<paramref name="reachableBy"/> null) for actions any
+        /// character can perform without house permission — tending and wither risk; see
+        /// <see cref="Reminders.ReachText"/> for the actions that still need it.</summary>
+        private static void DrawReminderLine(Vector4 color, string text, IReadOnlyList<string>? reachableBy)
         {
             ImGui.TextColored(color, text);
+            if (reachableBy is null)
+                return;
             ImGui.SameLine();
             ImGui.TextColored(HubStyle.Faint, $"({Reminders.ReachText(reachableBy)})");
         }
@@ -513,7 +532,9 @@ namespace Gardener.Windows
             // it: AnchorUncertainty is null exactly when the estimate widget last wrote PlantedAt.
             if (window.AnchorUncertainty is { } anchorUncertainty)
                 confidenceText += $", planted-at ±{FormatUncertainty(anchorUncertainty)}";
-            var when = window.Earliest is { } e ? e.ToLocalTime().ToString("g") : "?";
+            var when = window.Earliest is { } e && window.Latest is { } l
+                ? $"{e.ToLocalTime():g} to {l.ToLocalTime():t}"
+                : "?";
             ImGui.TextUnformatted($"{when} ({confidenceText})");
         }
 

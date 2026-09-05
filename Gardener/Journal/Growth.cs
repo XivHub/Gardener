@@ -15,9 +15,13 @@ public enum HarvestConfidence
     Calibrated,
 }
 
-/// <summary>A harvest-readiness window, never a countdown to the second: observed time always exceeds
-/// true grow time, because growth advances on a server tick and readiness is only observable when the
-/// player visits. <see cref="SampleCount"/> is the calibration sample count
+/// <summary>A harvest-readiness window, never a single instant: housing wards recheck readiness only
+/// every 63 minutes or so, staggered per ward (fertilizing forces an immediate check for that one
+/// plant instead), so a bed matured just after its ward's check will not read as harvestable until the
+/// next one. <see cref="Earliest"/> is the earliest the bed could plausibly be ready;
+/// <see cref="Latest"/> is <see cref="Earliest"/> plus that recheck gap — the two are never closer than
+/// an hour apart, so nothing here claims a precision the housing system itself does not have.
+/// <see cref="SampleCount"/> is the calibration sample count
 /// behind <see cref="Confidence"/> == <see cref="HarvestConfidence.Calibrated"/>, 0 otherwise.
 /// <see cref="AnchorUncertainty"/> is <see cref="BedRecord.PlantedAtUncertainty"/> passed through
 /// unchanged: how much later than the anchor the actual planting could have happened, independent of
@@ -25,6 +29,7 @@ public enum HarvestConfidence
 /// itself.</summary>
 public readonly record struct HarvestWindow(
     DateTimeOffset? Earliest,
+    DateTimeOffset? Latest,
     DateTimeOffset? Estimate,
     HarvestConfidence Confidence,
     int SampleCount,
@@ -41,10 +46,20 @@ public static class Growth
     // of the seed's own wilt time, and a mature (stage 4) planting never withers at all.
     private static readonly TimeSpan WitherAfterWilt = TimeSpan.FromHours(24);
 
-    /// <summary>Null when <c>LastTendedAt</c> is unset, the seed does not wilt, or
-    /// <see cref="BedRecord.ObservedWithered"/> is set — a withered plant has nothing left to tend.</summary>
+    // Housing wards recheck harvest readiness roughly this often, staggered per ward; fertilizing
+    // forces an immediate individual check instead. This is the floor on how tight any harvest
+    // estimate can honestly be.
+    private static readonly TimeSpan WardCheckInterval = TimeSpan.FromMinutes(63);
+
+    /// <summary>Null when <c>LastTendedAt</c> is unset, the seed does not wilt,
+    /// <see cref="BedRecord.ObservedWithered"/> is set — a withered plant has nothing left to tend —
+    /// or <see cref="BedRecord.Parked"/> is set: storage freezes every timer, so a parked bed neither
+    /// wilts nor withers while its patch is gone. <see cref="WithersAt"/> inherits this through its own
+    /// call to <see cref="WiltsAt"/>.</summary>
     public static DateTimeOffset? WiltsAt(BedRecord record)
     {
+        if (record.Parked)
+            return null;
         if (record.ObservedWithered)
             return null;
         if (record.LastTendedAt is not { } tendedAt)
@@ -94,16 +109,20 @@ public static class Growth
     }
 
     /// <summary>
-    /// Every field is null and <see cref="HarvestConfidence.Unknown"/> when <c>PlantedAt</c> is null
-    /// or when neither calibration nor the bundled table has a duration for the seed row.
+    /// Every field is null and <see cref="HarvestConfidence.Unknown"/> when <c>PlantedAt</c> is null,
+    /// when neither calibration nor the bundled table has a duration for the seed row, or when
+    /// <see cref="BedRecord.Parked"/> is set — a parked bed's patch is in storage or otherwise not
+    /// present, its timers are frozen by the game itself, and there is nothing running to project.
     /// <see cref="HarvestConfidence.Estimated"/> overrides calibration and the bundled table whenever
     /// <see cref="BedRecord.PlantedAtEstimated"/> is set, because a guessed anchor makes the resulting
     /// window only as good as that guess regardless of how good the duration estimate feeding it is.
     /// </summary>
     public static HarvestWindow HarvestWindow(BedRecord record)
     {
+        if (record.Parked)
+            return new HarvestWindow(null, null, null, HarvestConfidence.Unknown, 0, null);
         if (record.PlantedAt is not { } plantedAt)
-            return new HarvestWindow(null, null, HarvestConfidence.Unknown, 0, null);
+            return new HarvestWindow(null, null, null, HarvestConfidence.Unknown, 0, null);
 
         var calibrated = GardenJournal.Calibration.Estimate(record.SeedRow, CalibrationSeriesKind.HarvestOffered);
         var growHours = SeedTable.Grow(record.SeedRow);
@@ -130,9 +149,10 @@ public static class Growth
         }
 
         if (earliestDuration is null)
-            return new HarvestWindow(null, null, HarvestConfidence.Unknown, 0, null);
+            return new HarvestWindow(null, null, null, HarvestConfidence.Unknown, 0, null);
 
         var earliest = plantedAt + ApplyFertilizer(earliestDuration.Value, record);
+        var latest = earliest + WardCheckInterval;
         var estimate = estimateDuration is { } ed ? plantedAt + ApplyFertilizer(ed, record) : (DateTimeOffset?)null;
 
         var confidence = record.PlantedAtEstimated
@@ -141,6 +161,6 @@ public static class Growth
                 ? HarvestConfidence.Calibrated
                 : HarvestConfidence.Bundled;
 
-        return new HarvestWindow(earliest, estimate, confidence, sampleCount, record.PlantedAtUncertainty);
+        return new HarvestWindow(earliest, latest, estimate, confidence, sampleCount, record.PlantedAtUncertainty);
     }
 }

@@ -64,4 +64,11 @@ public sealed class BedRecord
     /// <summary>Set once a <see cref="MenuKey.TalkDead"/> line is observed for this bed. Growth.WiltsAt
     /// stops projecting a wilt time once this is set — there is nothing left to tend.</summary>
     public bool ObservedWithered { get; set; }
+
+    /// <summary>Set by <see cref="GardenJournal.MarkParked"/> when this bed's patch was confirmed
+    /// absent — most likely placed into storage, which freezes every timer on it and drops the patch
+    /// from discovery entirely, though a physical move looks the same from here. Every
+    /// <see cref="Growth"/> projection returns null while this is set: there is no clock running to
+    /// project from. Cleared the moment the same patch key is discovered live again.</summary>
+    public bool Parked { get; set; }
 }

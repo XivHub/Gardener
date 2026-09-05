@@ -1,3 +1,4 @@
+using System.Linq;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
@@ -117,6 +118,12 @@ namespace Gardener
                 {
                     var characterName = ObjectTable.LocalPlayer?.Name.TextValue;
                     GardenJournal.RecordHouseAccess(house.KeyString(), house.OwnedEstateType, characterName);
+
+                    // PatchDiscovery only lists patches on a plot this character owns, so only an
+                    // owned house's absence is trustworthy enough to call a patch confirmed parked
+                    // rather than merely not currently visible from here.
+                    if (house.Owned)
+                        GardenJournal.MarkParked(house.KeyString(), PatchDiscovery.Patches.Select(p => p.Key));
                 }
             }
 

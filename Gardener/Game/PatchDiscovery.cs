@@ -18,19 +18,25 @@ public enum PatchKind
     Round,
 }
 
-/// <summary>Bed columns per patch shape, used only to derive crossbreed neighbour direction
-/// (right/left vs up/down). Beds share the enclosing patch's own world position, so this has no
-/// spatial meaning of its own — it is purely a property of the patch kind.</summary>
+/// <summary>
+/// Bed adjacency for crossbreed neighbour walks. Only the Deluxe patch's layout is confirmed, by the
+/// official strategy guide's own diagram and independently by the community's 4x4 setup guide: 8 beds
+/// in a ring around the patch's own centre, numbered clockwise from the top-left:
+///
+/// <code>
+/// 1  2  3
+/// 8  .  4
+/// 7  6  5
+/// </code>
+///
+/// The centre is the patch itself, never a bed — every bed's <c>EventObj</c> reporting the patch's
+/// own world position is a consequence of that. So every bed has exactly two neighbours, the ring
+/// positions immediately before and after it, and the ring wraps: 8 is adjacent to 1. Diagonals never
+/// count. Oblong and Round have no confirmed layout, so their adjacency is not modelled: a caller
+/// must handle "layout unknown for this patch" itself rather than receive a guessed shape.
+/// </summary>
 public static class PatchKindExtensions
 {
-    public static int Cols(this PatchKind kind) => kind switch
-    {
-        PatchKind.Deluxe => 4,
-        PatchKind.Oblong => 3,
-        PatchKind.Round => 2,
-        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "unhandled PatchKind"),
-    };
-
     public static int BedCount(this PatchKind kind) => kind switch
     {
         PatchKind.Deluxe => 8,
@@ -38,6 +44,45 @@ public static class PatchKindExtensions
         PatchKind.Round => 4,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "unhandled PatchKind"),
     };
+
+    // The diagram's own grid coordinates for beds 1-8 (row 0 is the top edge, column 0 is the left
+    // edge). The centre cell (1,1) never appears here: it is the patch, not a bed.
+    private static readonly (int Row, int Col)[] DeluxeRingGrid =
+    {
+        (0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (2, 1), (2, 0), (1, 0),
+    };
+
+    // Intercross walk order — right, down, up, left — as row/column deltas over the grid above.
+    private static readonly (int DRow, int DCol)[] WalkDirections =
+    {
+        (0, 1), (1, 0), (-1, 0), (0, -1),
+    };
+
+    /// <summary>
+    /// The beds ring-adjacent to <paramref name="bedNumber"/> (1-based), in intercross walk order:
+    /// right, down, up, left, keeping only the directions that land on another bed rather than the
+    /// empty centre or off the grid. Exactly two of the four always qualify for a Deluxe patch, since
+    /// the ring never touches a corner of the 3x3 grid twice. Deluxe only; throws for Oblong and
+    /// Round, whose layout is not confirmed.
+    /// </summary>
+    public static IReadOnlyList<int> Neighbours(this PatchKind kind, int bedNumber)
+    {
+        if (kind != PatchKind.Deluxe)
+            throw new NotSupportedException(
+                $"{kind} bed layout is not confirmed; there is no adjacency model for it.");
+        if (bedNumber < 1 || bedNumber > DeluxeRingGrid.Length)
+            throw new ArgumentOutOfRangeException(nameof(bedNumber), bedNumber, "Deluxe patch has 8 beds");
+
+        var (row, col) = DeluxeRingGrid[bedNumber - 1];
+        var found = new List<int>(2);
+        foreach (var (dRow, dCol) in WalkDirections)
+        {
+            var index = Array.IndexOf(DeluxeRingGrid, (row + dRow, col + dCol));
+            if (index >= 0)
+                found.Add(index + 1);
+        }
+        return found;
+    }
 }
 
 /// <summary>
@@ -54,7 +99,6 @@ public sealed record Bed(uint EntityId, Vector3 Position);
 public sealed record Patch(
     string Key,
     PatchKind Kind,
-    int Cols,
     Vector3 Center,
     float Rotation,
     short FurnitureIndex,
@@ -225,7 +269,7 @@ public static class PatchDiscovery
 
             var key = $"{houseKey.KeyString()}:{patchObj.Position.X:F1}:{patchObj.Position.Z:F1}";
             builtPatches.Add(new Patch(
-                key, kind, kind.Cols(), patchObj.Position, patchObj.Rotation,
+                key, kind, patchObj.Position, patchObj.Rotation,
                 patchObj.FurnitureIndex, patchObj.EntityId, patchObj.HousingObjectId, beds));
         }
 

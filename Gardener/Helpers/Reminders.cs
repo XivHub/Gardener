@@ -9,8 +9,11 @@ namespace Gardener.Helpers;
 
 /// <summary>One journal record's worth of reminder: which house and patch it belongs to, its bed
 /// number and seed, the time value that put it on the list, and which of the account's characters
-/// have been seen able to reach the house it is in — so the list reads "switch to &lt;name&gt;"
-/// rather than naming a garden the logged-in character cannot act on.</summary>
+/// have been seen able to reach the house it is in — so a reminder for an action that needs house
+/// permission (harvesting, planting, fertilizing, removing) can read "switch to &lt;name&gt;" rather
+/// than naming a garden the logged-in character cannot act on. Tending needs no such permission — any
+/// character can tend or water any outdoor garden — so <see cref="Reminders.DueToTend"/> and
+/// <see cref="Reminders.AboutToWither"/> carry this field but its consumers never display it.</summary>
 public readonly record struct ReminderEntry(
     string HouseKey,
     string PatchKey,
@@ -119,7 +122,8 @@ public static class Reminders
     }
 
     /// <summary>The reachability text for one entry: who to switch to, or that no character has been
-    /// seen able to reach this house yet.</summary>
+    /// seen able to reach this house yet. For an action that needs house permission — harvesting,
+    /// planting, fertilizing, removing — never for tending, which needs none.</summary>
     public static string ReachText(IReadOnlyList<string> reachableBy) => reachableBy.Count switch
     {
         0 => "no character seen here yet",

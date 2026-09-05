@@ -54,8 +54,10 @@ public static class DtrEntry
 
     private static string BuildTooltip()
     {
-        var lines = Reminders.DueToTend.Select(e => $"{e.SeedName} bed {e.BedNumber}: due to tend, {Reminders.ReachText(e.ReachableBy)}")
-            .Concat(Reminders.AboutToWither.Select(e => $"{e.SeedName} bed {e.BedNumber}: about to wither, {Reminders.ReachText(e.ReachableBy)}"))
+        // Tending and wither risk need no house permission at all, so unlike the harvest and
+        // unknown-timing lines below, these two never append a "switch to" note.
+        var lines = Reminders.DueToTend.Select(e => $"{e.SeedName} bed {e.BedNumber}: due to tend")
+            .Concat(Reminders.AboutToWither.Select(e => $"{e.SeedName} bed {e.BedNumber}: about to wither"))
             .Concat(Reminders.ReadyToHarvest.Select(e => $"{e.Entry.SeedName} bed {e.Entry.BedNumber}: {(e.FromWindow ? "ready to harvest" : "mature")}, {Reminders.ReachText(e.Entry.ReachableBy)}"))
             .Concat(Reminders.TimingUnknown.Select(e => $"{e.SeedName} bed {e.BedNumber}: planting time unknown, {Reminders.ReachText(e.ReachableBy)}"))
             .Take(MaxTooltipEntries)

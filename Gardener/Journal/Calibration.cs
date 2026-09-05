@@ -16,8 +16,11 @@ public enum CalibrationSeriesKind
 }
 
 /// <summary>The estimate <see cref="Calibration.Estimate"/> derives from one seed row's samples.
-/// <see cref="LowerBound"/> is the tightest honest bound observation alone can give: the minimum
-/// interval actually seen, never an upper bound the plugin has no way to know.</summary>
+/// Housing wards recheck harvest readiness only every 63 minutes or so, staggered per ward, so every
+/// recorded interval overshoots the seed's true grow duration by up to that much and never undershoots
+/// it: a sample bounds the truth from above, it is never an exact reading of it. <see cref="LowerBound"/>
+/// is the tightest such bound observation alone can give — the minimum interval actually seen — and is
+/// still expected to sit somewhat above the true duration, not on it.</summary>
 public readonly record struct CalibrationEstimate(TimeSpan? LowerBound, TimeSpan? Median, int Count);
 
 /// <summary>One <c>GardeningSeed</c> row's two sample ring buffers, in hours (a double survives the
