@@ -13,3 +13,5 @@ CLAUDE.md
 AGENTS.md
 HANDOFF.md
 docs/PLAN.md
+__pycache__/
+*.pyc

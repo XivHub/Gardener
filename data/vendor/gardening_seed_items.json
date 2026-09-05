@@ -1,0 +1,870 @@
+{
+  "schema": "exdschema@2:rev:83e965d091116f895d5b17573cc5d12909a5f407",
+  "version": "284bb7f44b9c0976",
+  "rows": [
+    {
+      "row": 1,
+      "seedItemId": 7715,
+      "seedItemName": "Paprika Seeds",
+      "produceItemId": 4785,
+      "produceItemName": "Paprika",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 2,
+      "seedItemId": 7716,
+      "seedItemName": "Wild Onion Set",
+      "produceItemId": 4777,
+      "produceItemName": "Wild Onion",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 3,
+      "seedItemId": 7717,
+      "seedItemName": "Coerthan Carrot Seeds",
+      "produceItemId": 4778,
+      "produceItemName": "Coerthan Carrot",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 4,
+      "seedItemId": 7718,
+      "seedItemName": "La Noscean Lettuce Seeds",
+      "produceItemId": 4782,
+      "produceItemName": "La Noscean Lettuce",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 5,
+      "seedItemId": 7719,
+      "seedItemName": "Olive Seeds",
+      "produceItemId": 4804,
+      "produceItemName": "Cinderfoot Olive",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 6,
+      "seedItemId": 7720,
+      "seedItemName": "Popoto Set",
+      "produceItemId": 4787,
+      "produceItemName": "Popoto",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 7,
+      "seedItemId": 7721,
+      "seedItemName": "Millioncorn Seeds",
+      "produceItemId": 4821,
+      "produceItemName": "Millioncorn",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 8,
+      "seedItemId": 7722,
+      "seedItemName": "Wizard Eggplant Seeds",
+      "produceItemId": 4788,
+      "produceItemName": "Wizard Eggplant",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 9,
+      "seedItemId": 7723,
+      "seedItemName": "Midland Cabbage Seeds",
+      "produceItemId": 4789,
+      "produceItemName": "Midland Cabbage",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 10,
+      "seedItemId": 7724,
+      "seedItemName": "Dzemael Tomato Seeds",
+      "produceItemId": 6148,
+      "produceItemName": "Dzemael Tomato",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 11,
+      "seedItemId": 7725,
+      "seedItemName": "La Noscean Orange Seeds",
+      "produceItemId": 4809,
+      "produceItemName": "La Noscean Orange",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 12,
+      "seedItemId": 7726,
+      "seedItemName": "Lowland Grape Seeds",
+      "produceItemId": 4808,
+      "produceItemName": "Lowland Grapes",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 13,
+      "seedItemId": 7727,
+      "seedItemName": "Faerie Apple Seeds",
+      "produceItemId": 4810,
+      "produceItemName": "Faerie Apple",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 14,
+      "seedItemId": 7728,
+      "seedItemName": "Sun Lemon Seeds",
+      "produceItemId": 4811,
+      "produceItemName": "Sun Lemon",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 15,
+      "seedItemId": 7729,
+      "seedItemName": "Pixie Plum Seeds",
+      "produceItemId": 4812,
+      "produceItemName": "Pixie Plums",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 16,
+      "seedItemId": 7730,
+      "seedItemName": "Blood Currant Seeds",
+      "produceItemId": 4814,
+      "produceItemName": "Blood Currants",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 17,
+      "seedItemId": 7731,
+      "seedItemName": "Mirror Apple Seeds",
+      "produceItemId": 6146,
+      "produceItemName": "Mirror Apple",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 18,
+      "seedItemId": 7732,
+      "seedItemName": "Rolanberry Seeds",
+      "produceItemId": 4815,
+      "produceItemName": "Rolanberry",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 19,
+      "seedItemId": 7733,
+      "seedItemName": "Honey Lemon Seeds",
+      "produceItemId": 6147,
+      "produceItemName": "Honey Lemon",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 20,
+      "seedItemId": 7734,
+      "seedItemName": "Prickly Pineapple Seeds",
+      "produceItemId": 4816,
+      "produceItemName": "Prickly Pineapple",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 21,
+      "seedItemId": 7735,
+      "seedItemName": "Garlic Cloves",
+      "produceItemId": 4829,
+      "produceItemName": "Garlean Garlic",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 22,
+      "seedItemId": 7736,
+      "seedItemName": "Lavender Seeds",
+      "produceItemId": 5539,
+      "produceItemName": "Lavender",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 23,
+      "seedItemId": 7737,
+      "seedItemName": "Black Pepper Seeds",
+      "produceItemId": 4830,
+      "produceItemName": "Black Pepper",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 24,
+      "seedItemId": 7738,
+      "seedItemName": "Ala Mhigan Mustard Seeds",
+      "produceItemId": 4835,
+      "produceItemName": "Ala Mhigan Mustard",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 25,
+      "seedItemId": 7739,
+      "seedItemName": "Pearl Ginger Root",
+      "produceItemId": 4836,
+      "produceItemName": "Pearl Ginger",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 26,
+      "seedItemId": 7740,
+      "seedItemName": "Chamomile Seeds",
+      "produceItemId": 5542,
+      "produceItemName": "Chamomile",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 27,
+      "seedItemId": 7741,
+      "seedItemName": "Linseed",
+      "produceItemId": 5346,
+      "produceItemName": "Flax",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 28,
+      "seedItemId": 7742,
+      "seedItemName": "Midland Basil Seeds",
+      "produceItemId": 4837,
+      "produceItemName": "Midland Basil",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 29,
+      "seedItemId": 7743,
+      "seedItemName": "Mandrake Seeds",
+      "produceItemId": 5543,
+      "produceItemName": "Mandrake",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 30,
+      "seedItemId": 7744,
+      "seedItemName": "Almond Seeds",
+      "produceItemId": 4842,
+      "produceItemName": "Almonds",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 31,
+      "seedItemId": 7745,
+      "seedItemName": "Halone Gerbera Seeds",
+      "produceItemId": 7768,
+      "produceItemName": "Halone Gerbera",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 32,
+      "seedItemId": 7746,
+      "seedItemName": "Azeyma Rose Seeds",
+      "produceItemId": 7769,
+      "produceItemName": "Azeyma Rose",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 33,
+      "seedItemId": 7747,
+      "seedItemName": "Nymeia Lily Seeds",
+      "produceItemId": 7770,
+      "produceItemName": "Nymeia Lily",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 34,
+      "seedItemId": 7748,
+      "seedItemName": "Star Anise Seeds",
+      "produceItemId": 7602,
+      "produceItemName": "Star Anise",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 35,
+      "seedItemId": 7749,
+      "seedItemName": "Dalamud Popoto Set",
+      "produceItemId": 7603,
+      "produceItemName": "Dalamud Popoto",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 36,
+      "seedItemId": 7750,
+      "seedItemName": "Royal Kukuru Seeds",
+      "produceItemId": 7604,
+      "produceItemName": "Royal Kukuru Bean",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 37,
+      "seedItemId": 7751,
+      "seedItemName": "Apricot Kernels",
+      "produceItemId": 7592,
+      "produceItemName": "Apricot",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 38,
+      "seedItemId": 7752,
+      "seedItemName": "La Noscean Leek Seeds",
+      "produceItemId": 7593,
+      "produceItemName": "La Noscean Leek",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 39,
+      "seedItemId": 7753,
+      "seedItemName": "Shroud Tea Seeds",
+      "produceItemId": 7591,
+      "produceItemName": "Shroud Tea Leaves",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 40,
+      "seedItemId": 7754,
+      "seedItemName": "Umbrella Fig Seeds",
+      "produceItemId": 7773,
+      "produceItemName": "Umbrella Fig",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 41,
+      "seedItemId": 7755,
+      "seedItemName": "Jute Seeds",
+      "produceItemId": 7774,
+      "produceItemName": "Jute",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 42,
+      "seedItemId": 7756,
+      "seedItemName": "Glazenut Seeds",
+      "produceItemId": 7775,
+      "produceItemName": "Glazenut",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 43,
+      "seedItemId": 7757,
+      "seedItemName": "Broombush Seeds",
+      "produceItemId": 7776,
+      "produceItemName": "Broombush",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 44,
+      "seedItemId": 8169,
+      "seedItemName": "Curiel Root Seeds",
+      "produceItemId": 7894,
+      "produceItemName": "Curiel Root",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 45,
+      "seedItemId": 8170,
+      "seedItemName": "Sylkis Bud Seeds",
+      "produceItemId": 7895,
+      "produceItemName": "Sylkis Bud",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 46,
+      "seedItemId": 8171,
+      "seedItemName": "Mimett Gourd Seeds",
+      "produceItemId": 7897,
+      "produceItemName": "Mimett Gourd",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 47,
+      "seedItemId": 8172,
+      "seedItemName": "Tantalplant Seeds",
+      "produceItemId": 7898,
+      "produceItemName": "Tantalplant",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 48,
+      "seedItemId": 8173,
+      "seedItemName": "Pahsana Fruit Seeds",
+      "produceItemId": 7900,
+      "produceItemName": "Pahsana Fruit",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 49,
+      "seedItemId": 8182,
+      "seedItemName": "Krakka Root Seeds",
+      "produceItemId": 8165,
+      "produceItemName": "Krakka Root",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 50,
+      "seedItemId": 8183,
+      "seedItemName": "Thavnairian Onion Seeds",
+      "produceItemId": 8166,
+      "produceItemName": "Thavnairian Onion",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 51,
+      "seedItemId": 8184,
+      "seedItemName": "Onion Prince Seeds",
+      "produceItemId": 8192,
+      "produceItemName": "Onion Prince",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 52,
+      "seedItemId": 8185,
+      "seedItemName": "Eggplant Knight Seeds",
+      "produceItemId": 8193,
+      "produceItemName": "Eggplant Knight",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 53,
+      "seedItemId": 8186,
+      "seedItemName": "Garlic Jester Seeds",
+      "produceItemId": 8194,
+      "produceItemName": "Garlic Jester",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 54,
+      "seedItemId": 8187,
+      "seedItemName": "Tomato King Seeds",
+      "produceItemId": 8195,
+      "produceItemName": "Tomato King",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 55,
+      "seedItemId": 8188,
+      "seedItemName": "Mandragora Queen Seeds",
+      "produceItemId": 8196,
+      "produceItemName": "Mandragora Queen",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 56,
+      "seedItemId": 8167,
+      "seedItemName": "Pearl Roselle Seeds",
+      "produceItemId": 8023,
+      "produceItemName": "Pearl Roselle",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 57,
+      "seedItemId": 8572,
+      "seedItemName": "Gysahl Greens Seeds",
+      "produceItemId": 4868,
+      "produceItemName": "Gysahl Greens",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 58,
+      "seedItemId": 8174,
+      "seedItemName": "Xelphatol Apple Seeds",
+      "produceItemId": 8157,
+      "produceItemName": "Xelphatol Apple",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 59,
+      "seedItemId": 8175,
+      "seedItemName": "Doman Plum Pits",
+      "produceItemId": 8158,
+      "produceItemName": "Doman Plum",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 60,
+      "seedItemId": 8176,
+      "seedItemName": "Mamook Pear Seeds",
+      "produceItemId": 8159,
+      "produceItemName": "Mamook Pear",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 61,
+      "seedItemId": 8177,
+      "seedItemName": "Valfruit Seeds",
+      "produceItemId": 8160,
+      "produceItemName": "Valfruit",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 62,
+      "seedItemId": 8178,
+      "seedItemName": "O'Ghomoro Berry Seeds",
+      "produceItemId": 8161,
+      "produceItemName": "O'Ghomoro Berries",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 63,
+      "seedItemId": 8179,
+      "seedItemName": "Cieldalaes Pineapple Seeds",
+      "produceItemId": 8162,
+      "produceItemName": "Cieldalaes Pineapple",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 64,
+      "seedItemId": 8180,
+      "seedItemName": "Han Lemon Seeds",
+      "produceItemId": 8163,
+      "produceItemName": "Han Lemon",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 65,
+      "seedItemId": 13765,
+      "seedItemName": "Old World Fig Seeds",
+      "produceItemId": 12896,
+      "produceItemName": "Old World Fig",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 66,
+      "seedItemId": 13766,
+      "seedItemName": "Chive Seeds",
+      "produceItemId": 12884,
+      "produceItemName": "Chives",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 67,
+      "seedItemId": 13767,
+      "seedItemName": "Pearl Sprout Seeds",
+      "produceItemId": 12877,
+      "produceItemName": "Pearl Sprouts",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 68,
+      "seedItemId": 13768,
+      "seedItemName": "Coerthan Tea Seeds",
+      "produceItemId": 12882,
+      "produceItemName": "Coerthan Tea Leaves",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 69,
+      "seedItemId": 13755,
+      "seedItemName": "Blood Pepper Seeds",
+      "produceItemId": 13754,
+      "produceItemName": "Blood Pepper",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 70,
+      "seedItemId": 14007,
+      "seedItemName": "Oldrose Seeds",
+      "produceItemId": 14071,
+      "produceItemName": "Red Oldroses",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 71,
+      "seedItemId": 15865,
+      "seedItemName": "Firelight Seeds",
+      "produceItemId": 2,
+      "produceItemName": "Fire Shard",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 72,
+      "seedItemId": 15866,
+      "seedItemName": "Icelight Seeds",
+      "produceItemId": 3,
+      "produceItemName": "Ice Shard",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 73,
+      "seedItemId": 15867,
+      "seedItemName": "Windlight Seeds",
+      "produceItemId": 4,
+      "produceItemName": "Wind Shard",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 74,
+      "seedItemId": 15868,
+      "seedItemName": "Earthlight Seeds",
+      "produceItemId": 5,
+      "produceItemName": "Earth Shard",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 75,
+      "seedItemId": 15869,
+      "seedItemName": "Levinlight Seeds",
+      "produceItemId": 6,
+      "produceItemName": "Lightning Shard",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 76,
+      "seedItemId": 15870,
+      "seedItemName": "Waterlight Seeds",
+      "produceItemId": 7,
+      "produceItemName": "Water Shard",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 77,
+      "seedItemId": 15855,
+      "seedItemName": "Althyk Lavender Seeds",
+      "produceItemId": 15857,
+      "produceItemName": "Althyk Lavender",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 78,
+      "seedItemId": 15856,
+      "seedItemName": "Voidrake Seeds",
+      "produceItemId": 15858,
+      "produceItemName": "Voidrake",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 79,
+      "seedItemId": 16016,
+      "seedItemName": "Viola Seeds",
+      "produceItemId": 16022,
+      "produceItemName": "Purple Violas",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 80,
+      "seedItemId": 17546,
+      "seedItemName": "Shroud Cherry Sapling",
+      "produceItemId": 17048,
+      "produceItemName": "Red Cherry Blossoms",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 81,
+      "seedItemId": 17547,
+      "seedItemName": "Cloud Acorn Sapling",
+      "produceItemId": 17548,
+      "produceItemName": "Cloud Acorn",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 82,
+      "seedItemId": 17996,
+      "seedItemName": "Daisy Seeds",
+      "produceItemId": 17999,
+      "produceItemName": "Yellow Daisies",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 83,
+      "seedItemId": 20795,
+      "seedItemName": "Brightlily Seeds",
+      "produceItemId": 20796,
+      "produceItemName": "Red Brightlilies",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 84,
+      "seedItemId": 20792,
+      "seedItemName": "Cloudsbreath Seeds",
+      "produceItemId": 20791,
+      "produceItemName": "Cloudsbreath",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 85,
+      "seedItemId": 20794,
+      "seedItemName": "Royal Fern Sori",
+      "produceItemId": 20793,
+      "produceItemName": "Royal Fern",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 86,
+      "seedItemId": 21875,
+      "seedItemName": "Tulip Bulbs",
+      "produceItemId": 21876,
+      "produceItemName": "Red Tulips",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 87,
+      "seedItemId": 22589,
+      "seedItemName": "Dahlia Bulbs",
+      "produceItemId": 22590,
+      "produceItemName": "Red Dahlias",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 88,
+      "seedItemId": 24165,
+      "seedItemName": "Arum Bulbs",
+      "produceItemId": 24166,
+      "produceItemName": "Red Arums",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 89,
+      "seedItemId": 24541,
+      "seedItemName": "Lily of the Valley Pips",
+      "produceItemId": 24542,
+      "produceItemName": "Red Lilies of the Valley",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 90,
+      "seedItemId": 27320,
+      "seedItemName": "Hydrangea Seeds",
+      "produceItemId": 27321,
+      "produceItemName": "Red Hydrangeas",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 91,
+      "seedItemId": 28175,
+      "seedItemName": "Campanula Seeds",
+      "produceItemId": 28176,
+      "produceItemName": "Red Campanulas",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 92,
+      "seedItemId": 28947,
+      "seedItemName": "Hyacinth Bulbs",
+      "produceItemId": 28953,
+      "produceItemName": "Purple Hyacinths",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 93,
+      "seedItemId": 30365,
+      "seedItemName": "Cosmos Seeds",
+      "produceItemId": 30371,
+      "produceItemName": "Purple Cosmos",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 94,
+      "seedItemId": 30364,
+      "seedItemName": "Allagan Melon Seeds",
+      "produceItemId": 30873,
+      "produceItemName": "Allagan Melon",
+      "isPlantPotFlowerSeed": false
+    },
+    {
+      "row": 95,
+      "seedItemId": 32812,
+      "seedItemName": "Carnation Seeds",
+      "produceItemId": 32813,
+      "produceItemName": "Red Carnations",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 96,
+      "seedItemId": 33306,
+      "seedItemName": "Moth Orchid Seeds",
+      "produceItemId": 33307,
+      "produceItemName": "Red Moth Orchids",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 97,
+      "seedItemId": 35744,
+      "seedItemName": "Triteleia Seeds",
+      "produceItemId": 35745,
+      "produceItemName": "Red Triteleia",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 98,
+      "seedItemId": 37302,
+      "seedItemName": "Byregotia Seeds",
+      "produceItemId": 37303,
+      "produceItemName": "Red Byregotia",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 99,
+      "seedItemId": 38659,
+      "seedItemName": "Sweet Pea Seeds",
+      "produceItemId": 38660,
+      "produceItemName": "Red Sweet Peas",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 100,
+      "seedItemId": 39460,
+      "seedItemName": "Morning Glory Seeds",
+      "produceItemId": 39461,
+      "produceItemName": "Red Morning Glories",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 101,
+      "seedItemId": 40686,
+      "seedItemName": "Chrysanthemum Seeds",
+      "produceItemId": 40687,
+      "produceItemName": "Red Chrysanthemums",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 102,
+      "seedItemId": 41160,
+      "seedItemName": "Lupin Seeds",
+      "produceItemId": 41161,
+      "produceItemName": "Red Lupins",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 103,
+      "seedItemId": 43962,
+      "seedItemName": "Garden Sunflower Seeds",
+      "produceItemId": 43963,
+      "produceItemName": "Red Sunflowers",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 104,
+      "seedItemId": 44832,
+      "seedItemName": "Cattleya Seeds",
+      "produceItemId": 44833,
+      "produceItemName": "Red Cattleyas",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 105,
+      "seedItemId": 47950,
+      "seedItemName": "Paperflower Seeds",
+      "produceItemId": 47951,
+      "produceItemName": "Red Paperflowers",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 106,
+      "seedItemId": 46803,
+      "seedItemName": "Champa Seeds",
+      "produceItemId": 46804,
+      "produceItemName": "Red Champa",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 107,
+      "seedItemId": 49773,
+      "seedItemName": "Tea Flower Seeds",
+      "produceItemId": 49774,
+      "produceItemName": "Red Tea Flowers",
+      "isPlantPotFlowerSeed": true
+    },
+    {
+      "row": 108,
+      "seedItemId": 51189,
+      "seedItemName": "Cornflower Seeds",
+      "produceItemId": 51190,
+      "produceItemName": "Red Cornflowers",
+      "isPlantPotFlowerSeed": true
+    }
+  ]
+}

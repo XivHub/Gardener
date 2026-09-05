@@ -1,0 +1,47 @@
+{
+  "seedAliases": {
+    "Gysahl Green Seeds": {
+      "row": 57,
+      "why": "nick75g crossbreeding.json/seeds.json typo for 'Gysahl Greens Seeds'"
+    },
+    "Coerthas Carrot": {
+      "row": 3,
+      "why": "yields-and-wilt-times.csv uses the region name instead of the demonym 'Coerthan Carrot'"
+    },
+    "PixiePlum": {
+      "row": 15,
+      "why": "yields-and-wilt-times.csv is missing the space in 'Pixie Plum'"
+    }
+  },
+  "matrixTokens": {
+    "AlaM Mustard": { "row": 24, "why": "trends-and-families.csv abbreviation of Ala Mhigan Mustard" },
+    "AlaM. Mustard": { "row": 24, "why": "trends-and-families.csv abbreviation of Ala Mhigan Mustard" },
+    "Az Rose": { "row": 32, "why": "trends-and-families.csv abbreviation of Azeyma Rose" },
+    "Az. Rose": { "row": 32, "why": "trends-and-families.csv abbreviation of Azeyma Rose" },
+    "Coerth. Carrot": { "row": 3, "why": "trends-and-families.csv abbreviation of Coerthan Carrot" },
+    "Dal. Popoto": { "row": 35, "why": "trends-and-families.csv abbreviation of Dalamud Popoto; distinct from row 6 Popoto, confirmed by the Dalamud Popoto Set x Millioncorn self-family cell" },
+    "Dal. Popototo": { "row": 35, "why": "trends-and-families.csv doubled-suffix typo of Dal. Popoto / Dalamud Popoto" },
+    "Dal/ Popoto": { "row": 35, "why": "trends-and-families.csv abbreviation of Dalamud Popoto" },
+    "Dz. Tomato": { "row": 10, "why": "trends-and-families.csv abbreviation of Dzemael Tomato" },
+    "Halone Gerb.": { "row": 31, "why": "trends-and-families.csv abbreviation of Halone Gerbera" },
+    "Honey lemon": { "row": 19, "why": "trends-and-families.csv casing typo of Honey Lemon" },
+    "LaNo Leek": { "row": 38, "why": "trends-and-families.csv abbreviation of La Noscean Leek" },
+    "Mandrakeke": { "row": 29, "why": "trends-and-families.csv doubled-suffix typo of Mandrake" },
+    "Mid. Basil": { "row": 28, "why": "trends-and-families.csv abbreviation of Midland Basil" },
+    "Mid. Basilil": { "row": 28, "why": "trends-and-families.csv doubled-suffix typo of Mid. Basil / Midland Basil" },
+    "Mid. Cabbage": { "row": 9, "why": "trends-and-families.csv abbreviation of Midland Cabbage" },
+    "Mid. Cabbagege": { "row": 9, "why": "trends-and-families.csv doubled-suffix typo of Mid. Cabbage / Midland Cabbage" },
+    "Ny Lily": { "row": 33, "why": "trends-and-families.csv abbreviation of Nymeia Lily" },
+    "Ny. Lilly": { "row": 33, "why": "trends-and-families.csv abbreviation/typo of Nymeia Lily" },
+    "Ny. Lily": { "row": 33, "why": "trends-and-families.csv abbreviation of Nymeia Lily" },
+    "P. Pineapple": { "row": 20, "why": "trends-and-families.csv abbreviation of Prickly Pineapple" },
+    "P. Pineapple.": { "row": 20, "why": "trends-and-families.csv abbreviation of Prickly Pineapple" },
+    "Pearl Rose": { "row": 56, "why": "trends-and-families.csv abbreviation of Pearl Roselle; confirmed against mirrored cells that also read 'Pearl Roselle' for the same pair" },
+    "Pearl Rose.": { "row": 56, "why": "trends-and-families.csv abbreviation of Pearl Roselle" },
+    "Srar Anise": { "row": 34, "why": "trends-and-families.csv transposed-letter typo of Star Anise" },
+    "Sylkis bud": { "row": 45, "why": "trends-and-families.csv casing typo of Sylkis Bud" },
+    "Thav. Onion": { "row": 50, "why": "trends-and-families.csv abbreviation of Thavnairian Onion" },
+    "Wiz. Eggplant": { "row": 8, "why": "trends-and-families.csv abbreviation of Wizard Eggplant" },
+    "Wiz. Eggplantnt": { "row": 8, "why": "trends-and-families.csv doubled-suffix typo of Wiz. Eggplant / Wizard Eggplant" }
+  }
+}

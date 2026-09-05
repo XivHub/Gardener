@@ -1,0 +1,1626 @@
+{
+  "provenance": {
+    "generated": "2026-09-05T10:15:07.616040+00:00",
+    "lotlabCommit": "c143456f1bb8f34d9c5876ed1296de837b20bef7",
+    "nick75gCommit": "7323c5b6a54dc9b6ffece18e4f117fe214634c5c",
+    "xivapiSchema": "exdschema@2:rev:83e965d091116f895d5b17573cc5d12909a5f407",
+    "xivapiVersion": "284bb7f44b9c0976"
+  },
+  "seeds": [
+    {
+      "row": 1,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 2,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 3,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 4,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 5,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 6,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 7,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 8,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 9,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 10,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 11,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 12,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 13,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 14,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 15,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 16,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 17,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 18,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 19,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 20,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 21,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 22,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 23,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 24,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 25,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 26,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 27,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 28,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 29,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 30,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 31,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 32,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 33,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 34,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": true,
+      "cropYield": [
+        5,
+        6,
+        7,
+        10
+      ],
+      "seedYield": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 35,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": false,
+      "cropYield": [
+        5,
+        6,
+        7,
+        10
+      ],
+      "seedYield": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 36,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": false,
+      "cropYield": [
+        5,
+        6,
+        7,
+        10
+      ],
+      "seedYield": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 37,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": false,
+      "cropYield": [
+        5,
+        6,
+        7,
+        10
+      ],
+      "seedYield": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 38,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": true,
+      "cropYield": [
+        5,
+        6,
+        7,
+        10
+      ],
+      "seedYield": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 39,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": false,
+      "cropYield": [
+        5,
+        6,
+        7,
+        10
+      ],
+      "seedYield": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 40,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 41,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 42,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 43,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 44,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        9,
+        11,
+        13,
+        18
+      ],
+      "seedYield": [
+        1,
+        3,
+        5,
+        9
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 45,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        9,
+        11,
+        13,
+        18
+      ],
+      "seedYield": [
+        1,
+        3,
+        5,
+        9
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 46,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        9,
+        11,
+        13,
+        18
+      ],
+      "seedYield": [
+        1,
+        3,
+        5,
+        9
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 47,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        9,
+        11,
+        13,
+        18
+      ],
+      "seedYield": [
+        1,
+        3,
+        5,
+        9
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 48,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        9,
+        11,
+        13,
+        18
+      ],
+      "seedYield": [
+        1,
+        3,
+        5,
+        9
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 49,
+      "growHours": 72,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        9,
+        11,
+        13,
+        18
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 50,
+      "growHours": 240,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 51,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 52,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 53,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 54,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 55,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 56,
+      "growHours": 144,
+      "wiltHours": 36,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 57,
+      "growHours": 72,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        12,
+        15,
+        18,
+        24
+      ],
+      "seedYield": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 58,
+      "growHours": 48,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        18,
+        23,
+        27,
+        36
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 59,
+      "growHours": 48,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        18,
+        23,
+        27,
+        36
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 60,
+      "growHours": 48,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        18,
+        23,
+        27,
+        36
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 61,
+      "growHours": 48,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        18,
+        23,
+        27,
+        36
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 62,
+      "growHours": 48,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        18,
+        23,
+        27,
+        36
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 63,
+      "growHours": 48,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        18,
+        23,
+        27,
+        36
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 64,
+      "growHours": 48,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 65,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        3,
+        3,
+        4,
+        6
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 66,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        2,
+        2,
+        3,
+        4
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 67,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        3,
+        3,
+        4,
+        6
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 68,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        3,
+        3,
+        4,
+        6
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 69,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 71,
+      "growHours": 18,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 72,
+      "growHours": 18,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 73,
+      "growHours": 18,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 74,
+      "growHours": 18,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 75,
+      "growHours": 18,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 76,
+      "growHours": 18,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 77,
+      "growHours": 22,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        2,
+        3,
+        3,
+        3
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 78,
+      "growHours": 12,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        2,
+        3,
+        3,
+        3
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 81,
+      "growHours": 24,
+      "wiltHours": 0,
+      "wiltDisputed": false,
+      "cropYield": [
+        5,
+        6,
+        7,
+        10
+      ],
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    },
+    {
+      "row": 84,
+      "growHours": 120,
+      "wiltHours": 48,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 85,
+      "growHours": 120,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "seedYield": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "gatherable": true,
+      "crossOnly": false
+    },
+    {
+      "row": 94,
+      "growHours": 168,
+      "wiltHours": 24,
+      "wiltDisputed": false,
+      "cropYield": null,
+      "seedYield": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gatherable": false,
+      "crossOnly": true
+    }
+  ]
+}
