@@ -70,6 +70,17 @@ public static class GardenMenuText
     private static readonly Dictionary<string, MenuKey> keyByText = new();
     private static readonly bool bedNumberIsFirst;
 
+    /// <summary>The five sentences a bed interaction speaks, as opposed to the entries it offers.
+    /// The sheet stores each with a leading newline and the game prints it after the crop's own name
+    /// in one message — "Almonds\nThis crop is doing well." — so these are matched as the tail of a
+    /// line rather than the whole of it.</summary>
+    private static readonly MenuKey[] SpokenKeys =
+    {
+        MenuKey.TalkNone, MenuKey.TalkVigorous, MenuKey.TalkDepressed, MenuKey.TalkRipe, MenuKey.TalkDead,
+    };
+
+    private static readonly List<(string Text, MenuKey Key)> spokenTexts = new();
+
     /// <summary>False if the sheet or its key/text columns could not be identified; every lookup
     /// then returns <see cref="MenuKey.Unknown"/> instead of guessing a column index.</summary>
     public static bool Available { get; }
@@ -129,6 +140,10 @@ public static class GardenMenuText
             keyByText[text] = match.Key;
         }
 
+        foreach (var key in SpokenKeys)
+            if (textByKey.TryGetValue(key, out var spoken) && Normalize(spoken).Length > 0)
+                spokenTexts.Add((Normalize(spoken), key));
+
         var missing = Enum.GetValues<MenuKey>().Where(k => k != MenuKey.Unknown && !textByKey.ContainsKey(k)).ToList();
         if (missing.Count > 0)
             Plugin.Logger.Warning($"[GardenMenuText] sheet '{SheetName}' is missing key(s): {string.Join(", ", missing)}");
@@ -162,8 +177,31 @@ public static class GardenMenuText
         return false;
     }
 
-    public static MenuKey Classify(string text) =>
-        Available && keyByText.TryGetValue(text, out var key) ? key : MenuKey.Unknown;
+    /// <summary>
+    /// The key for one observed line of menu or dialogue text. A menu entry and the bed prompt match
+    /// the sheet exactly; a spoken line arrives with the crop's name in front of it, so it is matched
+    /// on its tail instead — see <see cref="SpokenKeys"/>. Exact first, so a menu entry can never be
+    /// resolved by the looser rule.
+    /// </summary>
+    public static MenuKey Classify(string text)
+    {
+        if (!Available)
+            return MenuKey.Unknown;
+
+        if (keyByText.TryGetValue(text, out var key))
+            return key;
+
+        var normalized = Normalize(text);
+        foreach (var (spoken, spokenKey) in spokenTexts)
+            if (normalized.EndsWith(spoken, StringComparison.Ordinal))
+                return spokenKey;
+
+        return MenuKey.Unknown;
+    }
+
+    /// <summary>Line endings and the sheet's own leading newline out, so a spoken line compares the
+    /// same whether the newline survives <c>ExtractText</c> or the client sends CRLF.</summary>
+    private static string Normalize(string text) => text.Replace("\r\n", "\n").Trim();
 
     /// <summary>The localised text for a key, if the sheet loaded and carries that key.</summary>
     public static string? TextFor(MenuKey key) => textByKey.TryGetValue(key, out var text) ? text : null;
