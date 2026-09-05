@@ -15,7 +15,9 @@ namespace Gardener
     [Serializable]
     public class Configuration : IPluginConfiguration
     {
-        public int Version { get; set; } = 1;
+        public int Version { get; set; } = CurrentVersion;
+
+        internal const int CurrentVersion = 2;
 
         // Automation
         // Fixed settle time where no addon-ready signal exists to poll for instead; jittered at the
@@ -68,9 +70,32 @@ namespace Gardener
         [NonSerialized]
         private IDalamudPluginInterface? pluginInterface;
 
+        /// <summary>
+        /// Raises pacing values that a saved config still holds at a superseded default. A stored
+        /// value always wins over a changed default, so a config written before the pacing was
+        /// retuned keeps the plugin acting faster than the game answers. Only a value still equal to
+        /// the old default is moved, leaving anything the player chose alone.
+        /// </summary>
+        private void Migrate()
+        {
+            if (Version >= CurrentVersion)
+                return;
+
+            if (StepDelayMs == 250)
+                StepDelayMs = 800;
+            if (BedDelayMs is 0 or 1200)
+                BedDelayMs = 2200;
+            if (Math.Abs(BedReachDistance - 5.0f) < 0.01f)
+                BedReachDistance = 10.0f;
+
+            Version = CurrentVersion;
+        }
+
         public void Initialize(IDalamudPluginInterface pluginInterface)
         {
             this.pluginInterface = pluginInterface;
+            Migrate();
+            Save();
         }
 
         public void Save()
