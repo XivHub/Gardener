@@ -553,6 +553,12 @@ public static class DebugDump
 
         sb.AppendLine("SelectedItems2 (offset 0x68, role unknown):");
         AppendSelectedItems(sb, agent->SelectedItems2);
+
+        // The plant capture recorded SelectableItemCount == 0 throughout; dumped here too so a
+        // fertilizer-dialog capture (never taken) can show whether that flow populates this list
+        // instead of, or alongside, SelectedItems.
+        sb.AppendLine($"SelectableItems (first {agent->SelectableItemCount}):");
+        AppendSelectableItems(sb, agent->SelectableItems, agent->SelectableItemCount);
     }
 
     private static unsafe void AppendSelectedItems(StringBuilder sb, Span<AgentHousingPlant.SelectedItem> items)
@@ -564,6 +570,20 @@ public static class DebugDump
             sb.AppendLine(
                 $"  [{i}] InventoryType={item.InventoryType} InventorySlot={item.InventorySlot} " +
                 $"ItemId={item.ItemId}{(name.Length > 0 ? $" ({name})" : "")}");
+        }
+    }
+
+    private static unsafe void AppendSelectableItems(StringBuilder sb, Span<AgentHousingPlant.SelectableItem> items, byte count)
+    {
+        var shown = Math.Min((int)count, items.Length);
+        for (var i = 0; i < shown; i++)
+        {
+            var item = items[i];
+            // SAFETY: item is a copy of a live SelectableItem from the agent's own fixed array;
+            // ItemCache is a raw pointer into client memory, guarded below before any field is read.
+            var cache = item.ItemCache;
+            var cacheText = cache == null ? "(no ItemCache)" : $"id={cache->Id} name=\"{cache->Name.ToString()}\"";
+            sb.AppendLine($"  [{i}] InventoryType={item.InventoryType} InventorySlot={item.InventorySlot} {cacheText}");
         }
     }
 

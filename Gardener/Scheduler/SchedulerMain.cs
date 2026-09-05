@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using Gardener.Game;
 using Gardener.Helpers;
 using Gardener.Journal;
@@ -9,10 +10,9 @@ using XivHubPluginKit.Inventory;
 
 namespace Gardener.Scheduler;
 
-/// <summary>Which automation a run is carrying out. <see cref="Fertilize"/> and <see cref="Plan"/>
-/// exist so the shape is settled now; their callers land in later phases, and
-/// <see cref="SchedulerMain.EnablePlugin"/> refuses to start either of them until then rather than
-/// silently running a sweep with nothing behind it.</summary>
+/// <summary>Which automation a run is carrying out. <see cref="Plan"/> exists so the shape is settled
+/// now; its caller lands in a later phase, and <see cref="SchedulerMain.EnablePlugin"/> refuses to
+/// start it until then rather than silently running a sweep with nothing behind it.</summary>
 public enum SweepKind
 {
     Tend,
@@ -42,6 +42,7 @@ public static class SchedulerMain
 
     public static int TendedCount;
     public static int HarvestedCount;
+    public static int FertilizedCount;
     public static int SkippedCount;
 
     /// <summary>How many stage-4 beds the current run found with no <c>Harvest</c> entry — the direct
@@ -65,7 +66,7 @@ public static class SchedulerMain
             return false;
         }
 
-        if (kind is SweepKind.Fertilize or SweepKind.Plan)
+        if (kind == SweepKind.Plan)
         {
             Plugin.ChatGui.PrintError($"[Gardener] {kind} sweeps are not implemented yet.");
             return false;
@@ -92,12 +93,21 @@ public static class SchedulerMain
             return false;
         }
 
+        // Same shape as the harvest guard above: refuse the whole sweep up front rather than
+        // opening every bed only to fail identically on each one.
+        if (kind == SweepKind.Fertilize && !HasAnyFertilizer())
+        {
+            Plugin.ChatGui.PrintError("[Gardener] No fertilizer in the bag.");
+            return false;
+        }
+
         CurrentKind = kind;
         CurrentPatch = patch;
         RunOrigin = pos;
         CurrentBedNumber = null;
         TendedCount = 0;
         HarvestedCount = 0;
+        FertilizedCount = 0;
         SkippedCount = 0;
         NoHarvestOfferedCount = 0;
         Worklist.Clear();
@@ -202,6 +212,9 @@ public static class SchedulerMain
         {
             SweepKind.Tend => states.Where(s => !s.IsEmpty).Select(s => s.BedNumber),
             SweepKind.Harvest => states.Where(s => s.Maturity == Maturity.MatureCandidate).Select(s => s.BedNumber),
+            // Every occupied bed is visited; Task_Fertilize itself applies the cooldown and
+            // FertilizeOnlyGrowing skips per bed, the same split Tend uses.
+            SweepKind.Fertilize => states.Where(s => !s.IsEmpty).Select(s => s.BedNumber),
             _ => Enumerable.Empty<int>(),
         };
 
@@ -240,9 +253,12 @@ public static class SchedulerMain
             case SweepKind.Harvest:
                 Task_Harvest.Enqueue();
                 break;
+            case SweepKind.Fertilize:
+                Task_Fertilize.Enqueue();
+                break;
             default:
-                // EnablePlugin already refuses Fertilize/Plan, so reaching here means that guard was
-                // bypassed. Fail loud rather than silently doing nothing to the bed that is open.
+                // EnablePlugin already refuses Plan, so reaching here means that guard was bypassed.
+                // Fail loud rather than silently doing nothing to the bed that is open.
                 Plugin.Logger.Warning($"[Gardener] Acting reached with unsupported sweep kind {CurrentKind}");
                 State = GardenerState.Error;
                 break;
@@ -267,6 +283,7 @@ public static class SchedulerMain
             SweepKind.Tend => $"Tend complete: {TendedCount} tended, {SkippedCount} skipped.",
             SweepKind.Harvest => $"Harvest complete: {HarvestedCount} harvested, {NoHarvestOfferedCount} " +
                                   $"stage-4 with no Harvest entry, {SkippedCount} skipped.",
+            SweepKind.Fertilize => $"Fertilize complete: {FertilizedCount} fertilized, {SkippedCount} skipped.",
             _ => "Sweep complete.",
         };
         ActivityLog.Good_(summary);
@@ -277,6 +294,18 @@ public static class SchedulerMain
     {
         Plugin.Logger.Warning("[Gardener] scheduler entered Error state; stopping.");
         DisablePlugin();
+    }
+
+    /// <summary>Whether the bag holds any item <see cref="GardeningItems.Fertilizers"/> names —
+    /// scanned fresh rather than cached, since this only ever runs once, right before a fertilize
+    /// sweep starts.</summary>
+    private static bool HasAnyFertilizer()
+    {
+        var ids = GardeningItems.Fertilizers;
+        return InventoryScan.ScanContainer(InventoryType.Inventory1).Any(s => ids.Contains(s.ItemId))
+            || InventoryScan.ScanContainer(InventoryType.Inventory2).Any(s => ids.Contains(s.ItemId))
+            || InventoryScan.ScanContainer(InventoryType.Inventory3).Any(s => ids.Contains(s.ItemId))
+            || InventoryScan.ScanContainer(InventoryType.Inventory4).Any(s => ids.Contains(s.ItemId));
     }
 
     /// <summary>
@@ -334,7 +363,8 @@ public static class SchedulerMain
         var pos = Plugin.ObjectTable.LocalPlayer?.Position ?? default;
         return $"state={State} kind={CurrentKind?.ToString() ?? "-"} patch={CurrentPatch?.Key ?? "-"} " +
                $"bed={CurrentBedNumber?.ToString() ?? "-"} worklist={Worklist.Count} tended={TendedCount} " +
-               $"harvested={HarvestedCount} skipped={SkippedCount} noHarvestOffered={NoHarvestOfferedCount} " +
+               $"harvested={HarvestedCount} fertilized={FertilizedCount} skipped={SkippedCount} " +
+               $"noHarvestOffered={NoHarvestOfferedCount} " +
                $"pos=({pos.X:0},{pos.Y:0},{pos.Z:0}) queued={Plugin.TaskManager.NumQueuedTasks}";
     }
 }

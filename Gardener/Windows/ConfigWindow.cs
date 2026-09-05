@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -64,17 +65,26 @@ namespace Gardener.Windows
 
             ImGui.Spacing();
             var gaps = SeedTable.DataGaps;
-            DrawGapList("Bundled rows missing from the live sheet", gaps.BundledRowsMissingFromSheet);
-            DrawGapList("Live outdoor rows missing from the bundle", gaps.LiveRowsMissingFromBundle);
-            DrawGapList("Rows with no grow time", gaps.RowsWithNoGrowTime);
-            DrawGapList("Rows absent from the cross data", gaps.RowsAbsentFromCrossData);
+            DrawGapList("Bundled rows missing from the live sheet", gaps.BundledRowsMissingFromSheet.Count,
+                gaps.BundledRowsMissingFromSheet.Select(g => (g.Row, g.Name)));
+            DrawGapList("Live outdoor rows missing from the bundle", gaps.LiveRowsMissingFromBundle.Count,
+                gaps.LiveRowsMissingFromBundle.Select(g => (g.Row, g.Name)));
+            DrawGapList("Rows with no grow time", gaps.RowsWithNoGrowTime.Count,
+                gaps.RowsWithNoGrowTime.Select(g => (g.Row, g.Name)));
+            DrawGapList("Rows absent from the cross data", gaps.RowsAbsentFromCrossData.Count,
+                gaps.RowsAbsentFromCrossData.Select(g => (g.Row, g.Name)));
+
+            ImGui.Spacing();
+            var soilGaps = GardeningItems.LiveSoilsMissingFromTable;
+            DrawGapList("Live soils missing from the soil table", soilGaps.Count,
+                soilGaps.Select(g => (g.ItemId, g.Name)));
         }
 
-        private static void DrawGapList(string label, IReadOnlyList<SeedGap> gaps)
+        private static void DrawGapList(string label, int count, IEnumerable<(uint Id, string Name)> gaps)
         {
-            var header = $"{label} ({gaps.Count})###gap-{label}";
+            var header = $"{label} ({count})###gap-{label}";
             bool open;
-            if (gaps.Count > 0)
+            if (count > 0)
             {
                 using (ImRaii.PushColor(ImGuiCol.Text, HubStyle.Warn))
                     open = ImGui.CollapsingHeader(header);
@@ -88,7 +98,7 @@ namespace Gardener.Windows
                 return;
 
             foreach (var gap in gaps)
-                ImGui.BulletText($"{gap.Row}: {gap.Name}");
+                ImGui.BulletText($"{gap.Id}: {gap.Name}");
         }
 
         /// <summary>

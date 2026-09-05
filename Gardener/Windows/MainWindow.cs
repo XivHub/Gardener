@@ -175,7 +175,7 @@ namespace Gardener.Windows
                 SchedulerMain.DisablePlugin();
         }
 
-        /// <summary>"Tend all" / "Harvest all" for one patch, each behind
+        /// <summary>"Tend all" / "Harvest all" / "Fertilize all" for one patch, each behind
         /// <see cref="Configuration.ConfirmBeforeRun"/>, replaced by <see cref="GardenerGuard.BlockingReason"/>
         /// when a sweep cannot start at all. <see cref="GardenerGuard.PermissionsWarning"/> renders
         /// above them regardless, since it is independent of whether a run can start.</summary>
@@ -211,6 +211,16 @@ namespace Gardener.Windows
                     SchedulerMain.EnablePlugin(SweepKind.Harvest, patch);
             }
             DrawConfirmPopup(patch, $"Confirm harvest##{patch.Key}", "Harvest every mature bed on this patch?", SweepKind.Harvest);
+
+            ImGui.SameLine();
+            if (ImGui.Button($"Fertilize all##fertilize-{patch.Key}"))
+            {
+                if (Plugin.C.ConfirmBeforeRun)
+                    ImGui.OpenPopup($"Confirm fertilize##{patch.Key}");
+                else
+                    SchedulerMain.EnablePlugin(SweepKind.Fertilize, patch);
+            }
+            DrawConfirmPopup(patch, $"Confirm fertilize##{patch.Key}", "Fertilize every eligible bed on this patch?", SweepKind.Fertilize);
 
             ImGui.TextColored(HubStyle.Faint,
                 $"Bed order verified: {BedTargeting.VerifiedBedCount(patch)}/{patch.Kind.BedCount()}");

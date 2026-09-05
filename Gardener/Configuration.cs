@@ -32,7 +32,6 @@ namespace Gardener
 
         // Fertilizer
         public bool FertilizeOnlyGrowing { get; set; } = true;    // never on a ripe bed; it does nothing
-        public int FertilizePerBedPerPass { get; set; } = 1;
         public int FertilizeCooldownMin { get; set; } = 60;       // per bed, game rule
 
         // Reminders
