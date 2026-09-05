@@ -28,14 +28,14 @@ in the world, and sweeps the plot for you while you are standing at it.
 
 ## Install
 
-Gardener ships in the combined Zhyra plugin repository. Add it to Dalamud:
+Gardener ships in the XIV Hub plugin repository. Add it to Dalamud:
 
 ```
 /xlsettings → Experimental → Custom Plugin Repositories
-https://edgl.dev/share/zhyra/pluginmaster.json
+https://plugins.xivhub.net/pluginmaster.json
 ```
 
-Then install **Gardener** from the plugin installer (it appears alongside the other Zhyra plugins).
+Then install **Gardener** from the plugin installer (it appears alongside the other XIV Hub plugins).
 
 ## Usage
 
@@ -69,14 +69,7 @@ publish.sh          # runs tools/build_data.py --check, then publish-plugin
 It regenerates and drift-checks the bundled seed and crossbreed tables, builds Release, stages
 `latest.zip` + `Gardener.dll` under `~/share/zhyra/gardener/`, and **merges** Gardener's entry into
 the combined Zhyra `pluginmaster.json` (replacing only its own entry, keeping the other plugins).
-The plugin has no separate repo. **Bump `<Version>` in the csproj before publishing** so Dalamud
-detects the update.
-
-## Documentation
-
-- `docs/RESEARCH.md` — the mechanics and data behind the plugin.
-- `docs/PLAN.md` — the full design/implementation plan.
-- `AGENTS.md` — architecture map and gotchas for anyone (human or AI) changing this code.
+**Bump `<Version>` in the csproj before publishing** so Dalamud detects the update.
 
 ## Credits
 
