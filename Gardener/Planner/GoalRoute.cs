@@ -26,10 +26,12 @@ public static class GoalRoute
     // render time still resolve the soil actually held.
     private const int AssumedSoilGrade = 3;
 
-    // A crossing bed wants the intercross family; a bed planted only to bulk up a seed's own count
-    // wants the yield family instead. This is a fact about what each family does, not a user
-    // preference, so it is never threaded through as a parameter.
-    private const SoilPreference MultiplySoil = SoilPreference.HighestShroud;
+    // Deluxe is the only patch shape with a confirmed bed layout (see FACTS.md), so every crossing
+    // step in a route is sized against its capacity: PlanFillStep already refuses to lay a fill out on
+    // an Oblong or Round patch, and the handoff bounds this down to whatever the real patch and the
+    // player's real seed count allow.
+    private static readonly int AssumedPatchBeds = PatchKind.Deluxe.BedCount();
+    private static readonly int AssumedPatchPairs = AssumedPatchBeds / 2;
 
     public static GoalPlan? Solve(uint goalRow, IReadOnlyDictionary<uint, int> held, SoilPreference crossSoil)
     {
@@ -65,21 +67,23 @@ public static class GoalRoute
         }
         Visit(goalRow);
 
-        // Attempts and FirstSeedRow/SecondSeedRow per cross-only node, and how many of each parent the
-        // whole route needs, before any text is generated — the obtain and multiply copy both depend
-        // on totals that are only known once every cross step in the route has been sized.
-        var attemptsByTarget = new Dictionary<uint, int>();
+        // Which of each winning pair is the anchor (stays itself) and which is the cross (consumed into
+        // the target), and who draws on each row as a parent — both fixed before any demand math, since
+        // neither depends on how many beds anything ends up wanting.
         var firstByTarget = new Dictionary<uint, uint>();
         var secondByTarget = new Dictionary<uint, uint>();
-        var needed = new Dictionary<uint, int>();
+        var consumersOf = new Dictionary<uint, List<uint>>();
+
+        void AddConsumer(uint parent, uint consumer)
+        {
+            if (!consumersOf.TryGetValue(parent, out var list))
+                consumersOf[parent] = list = new List<uint>();
+            list.Add(consumer);
+        }
 
         foreach (var target in order)
         {
             var (a, b) = winner[target];
-            var outcomeCount = SeedTable.TargetsFor(a, b).Count;
-            var attempts = CrossOdds.BedsForNineInTen(ResolveChance(outcomeCount, family, AssumedSoilGrade));
-            attemptsByTarget[target] = attempts;
-
             var heldA = held.GetValueOrDefault(a);
             var heldB = held.GetValueOrDefault(b);
             uint first, second;
@@ -89,22 +93,57 @@ public static class GoalRoute
                 (first, second) = cost[a] >= cost[b] ? (a, b) : (b, a); // tie: protect the costlier parent as the anchor
             firstByTarget[target] = first;
             secondByTarget[target] = second;
-
-            needed[first] = needed.GetValueOrDefault(first) + attempts;
-            needed[second] = needed.GetValueOrDefault(second) + attempts;
+            AddConsumer(first, target);
+            AddConsumer(second, target);
         }
 
-        // A multiply step is needed wherever a cross-only node the route itself produced is then
-        // consumed by a later step in more copies than a single harvest of it returns at the lowest
-        // soil tier — the BedsForNineInTen sizing above only promises one successful harvest, never more.
-        var multiplyRows = new HashSet<uint>();
-        foreach (var target in order)
+        // Sized back from the goal: the final step needs enough attempts for its own gamble, and every
+        // attempt of it consumes one of each parent, so a target that is itself a cross-only node must
+        // produce that many — the larger of its own gamble and what every later step draws from it.
+        // Reversed because a target's demand depends on the attempts of the children the forward walk
+        // already put after it in `order`.
+        var demand = new Dictionary<uint, int>();
+        var attemptsNeeded = new Dictionary<uint, int>();
+        var roundsNeeded = new Dictionary<uint, int>();
+        var obtainNeed = new Dictionary<uint, int>();
+
+        for (var i = order.Count - 1; i >= 0; i--)
         {
-            if (!needed.TryGetValue(target, out var neededCount))
-                continue;
-            var lowestTierYield = SeedTable.Yields(target)?.Seed is { Length: > 0 } y ? y[0] : 0;
-            if (neededCount > lowestTierYield)
-                multiplyRows.Add(target);
+            var target = order[i];
+            var first = firstByTarget[target];
+            var second = secondByTarget[target];
+            var isFinal = target == goalRow;
+
+            var outcomeCount = SeedTable.TargetsFor(first, second).Count;
+            var oddsAttempts = CrossOdds.BedsForNineInTen(ResolveChance(outcomeCount, family, AssumedSoilGrade));
+
+            // The goal itself is wanted once, so its own gamble already covers it; a cross-only node
+            // upstream of it is wanted however many times its consumers draw on it, converted to
+            // attempts through its own seed yield — a seed whose yield isn't bundled cannot be sized
+            // this way, so its step falls back to the gamble alone and says so.
+            var ownDemand = isFinal ? 1 : demand.GetValueOrDefault(target);
+            var totalAttempts = oddsAttempts;
+            if (!isFinal && SeedYieldAtAssumedGrade(target) is { } targetYield)
+            {
+                var demandAttempts = (int)Math.Ceiling(ownDemand / (double)Math.Max(targetYield, 1));
+                totalAttempts = Math.Max(oddsAttempts, demandAttempts);
+            }
+
+            attemptsNeeded[target] = totalAttempts;
+            roundsNeeded[target] = Math.Max(1, (int)Math.Ceiling(totalAttempts / (double)AssumedPatchPairs));
+
+            foreach (var parent in new[] { first, second })
+            {
+                demand[parent] = demand.GetValueOrDefault(parent) + totalAttempts;
+
+                // A full patch is planted every round regardless of how many attempts this step
+                // strictly needs — beds cost nothing extra and a later cross always has use for the
+                // surplus. A parent whose own harvest gives seed back only needs enough to start the
+                // first round; one that gives nothing back is a fresh purchase every round.
+                var parentYield = SeedYieldAtAssumedGrade(parent);
+                var contribution = parentYield is > 0 ? AssumedPatchPairs : AssumedPatchPairs * roundsNeeded[target];
+                obtainNeed[parent] = obtainNeed.GetValueOrDefault(parent) + contribution;
+            }
         }
 
         var warnings = new List<string>();
@@ -113,34 +152,30 @@ public static class GoalRoute
         var steps = new List<GoalStep>();
         var explainedFamilies = new HashSet<SoilFamily>();
 
-        AddObtainSteps(steps, leafOrder, needed, held);
+        AddObtainSteps(steps, leafOrder, obtainNeed, held);
 
         var stepNumber = 2;
         foreach (var target in order)
         {
             var first = firstByTarget[target];
             var second = secondByTarget[target];
-            var attempts = attemptsByTarget[target];
-            var beds = attempts * 2;
             var outcomes = SeedTable.TargetsFor(first, second).ToArray();
             var isFinal = target == goalRow;
+            var ownDemand = isFinal ? 1 : demand.GetValueOrDefault(target);
+            var consumerPhrase = ConsumerPhrase(target, goalRow, consumersOf);
 
             steps.Add(BuildCrossStep(
-                stepNumber++, first, second, target, outcomes, beds, crossSoil, family, isFinal, explainedFamilies));
-
-            if (multiplyRows.Contains(target))
-                steps.Add(BuildMultiplyStep(stepNumber++, target, MultiplySoil, explainedFamilies));
+                stepNumber++, first, second, target, outcomes, crossSoil, family, isFinal,
+                attemptsNeeded[target], roundsNeeded[target], ownDemand, SeedYieldAtAssumedGrade(target),
+                consumerPhrase, explainedFamilies));
         }
 
+        // A step that needs more than one round waits through the extra grow cycles sequentially, on
+        // top of the critical path's own first round.
         var bestCaseHours = CriticalPathHours(goalRow, winner) +
-            steps.OfType<MultiplyStep>().Sum(m => SeedTable.Grow(m.SeedRow) ?? 0);
+            order.Sum(t => (roundsNeeded[t] - 1) * (SeedTable.Grow(t) ?? 0));
 
-        var peakBeds = steps.Select(s => s switch
-        {
-            CrossStep c => c.Beds,
-            MultiplyStep m => m.Beds,
-            _ => 0,
-        }).DefaultIfEmpty(0).Max();
+        var peakBeds = steps.OfType<CrossStep>().Select(c => c.Beds).DefaultIfEmpty(0).Max();
 
         return new GoalPlan(goalRow, steps.ToArray(), TimeSpan.FromHours(bestCaseHours), peakBeds, warnings.ToArray());
     }
@@ -233,14 +268,14 @@ public static class GoalRoute
     }
 
     private static void AddObtainSteps(
-        List<GoalStep> steps, IReadOnlyList<uint> leaves, IReadOnlyDictionary<uint, int> needed,
+        List<GoalStep> steps, IReadOnlyList<uint> leaves, IReadOnlyDictionary<uint, int> obtainNeed,
         IReadOnlyDictionary<uint, int> held)
     {
         const string title = "Get the starting seeds";
 
         foreach (var row in leaves)
         {
-            var needCount = Math.Max(1, needed.GetValueOrDefault(row));
+            var needCount = Math.Max(1, obtainNeed.GetValueOrDefault(row));
             var heldCount = held.GetValueOrDefault(row);
             var seedItemName = SeedItemName(row);
             var produceName = SeedItems.ProduceName(row);
@@ -256,52 +291,80 @@ public static class GoalRoute
             if (sources.Count > 0)
                 body.Add($"Where: {string.Join("; ", sources)}");
 
-            var notes = new List<string>();
-            if (SeedTable.Yields(row)?.Seed is { Length: > 0 } seedYield && seedYield.All(y => y == 0))
-                notes.Add($"{produceName} gives no seeds back when you harvest it, so buy one for every attempt.");
+            var notes = new List<string>
+            {
+                SeedYieldAtAssumedGrade(row) switch
+                {
+                    null => $"{produceName}'s seed yield isn't recorded, so Gardener assumes it gives nothing back; every one you plant is a fresh purchase.",
+                    0 => $"{produceName} gives no seeds back when you harvest it, so every one you plant is a fresh purchase.",
+                    _ => $"{produceName} gives seeds back when you harvest it, so this is enough to start; the first harvest funds the rest.",
+                },
+            };
 
             steps.Add(new ObtainStep(1, title, body.ToArray(), notes.ToArray(), row, needCount));
         }
     }
 
     private static CrossStep BuildCrossStep(
-        int number, uint first, uint second, uint target, uint[] outcomes, int beds, SoilPreference soilPreference,
-        SoilFamily family, bool isFinal, HashSet<SoilFamily> explainedFamilies)
+        int number, uint first, uint second, uint target, uint[] outcomes, SoilPreference soilPreference,
+        SoilFamily family, bool isFinal, int attempts, int rounds, int ownDemand, int? yieldAtGrade,
+        string consumerPhrase, HashSet<SoilFamily> explainedFamilies)
     {
         var targetName = SeedItems.ProduceName(target);
         var body = new List<string>
         {
-            $"Plant {SeedItemName(first)} in one bed. Then plant {SeedItemName(second)} in the bed next to it.",
+            $"Plant {SeedItemName(first)} in half the beds around the ring, then plant {SeedItemName(second)} in " +
+            $"the beds between them, so every {SeedItemName(second)} has a {SeedItemName(first)} neighbour on both sides.",
         };
 
         var singleOutcome = outcomes.Length <= 1;
-        var attempts = beds / 2;
         var targetGrowHours = SeedTable.Grow(target) ?? 0;
+        var roundDays = DurationDays(targetGrowHours);
 
         if (singleOutcome)
         {
-            body.Add($"The second bed becomes {targetName}. This pair makes nothing else.");
+            body.Add($"Every one of these beds becomes {targetName}. This pair makes nothing else.");
         }
         else
         {
             var others = outcomes.Where(o => o != target).Select(SeedItems.ProduceName);
             var chance = ResolveChance(outcomes.Length, family, AssumedSoilGrade);
             body.Add(
-                $"The second bed becomes {targetName} or {string.Join(" or ", others)}, and you cannot pick which. " +
-                $"{Capitalize(CrossOdds.OddsPhrase(chance))} of these beds give {targetName}.");
-            var roundDays = DurationDays(targetGrowHours);
-            body.Add(
-                $"Plant {attempts} pairs if you have the beds. About 9 rounds in 10 then give you at least one {targetName}.");
-            body.Add($"Fewer pairs is fine, it just means more rounds of {roundDays} days each.");
+                $"Each of these beds becomes {targetName} or {string.Join(" or ", others)}, and you cannot pick which. " +
+                $"{Capitalize(CrossOdds.OddsPhrase(chance))} of them give {targetName}.");
             body.Add("Nobody has published the split between the two, so Gardener treats it as a coin toss.");
         }
 
-        var explain = explainedFamilies.Add(family) ? $" {family} soil {SoilSources.Does(family)}." : "";
-        body.Add(singleOutcome
-            ? $"Soil: Grade {AssumedSoilGrade} {family} Topsoil in both beds.{explain}"
-            : $"Soil: Grade {AssumedSoilGrade} {family} Topsoil in every bed.{explain}");
+        // The arithmetic behind the bed count: a full patch plants AssumedPatchPairs pairs a round, and
+        // either that covers what the rest of the route draws from this seed or it has to repeat.
+        if (isFinal)
+        {
+            if (rounds > 1)
+            {
+                body.Add(
+                    $"One round plants {AssumedPatchPairs} pairs, but this cross wants about {attempts} attempts, " +
+                    $"so plan on {rounds} rounds, about {roundDays * rounds} days total.");
+            }
+        }
+        else if (yieldAtGrade is { } y)
+        {
+            var bedNoun = y == 1 ? "returns 1 seed" : $"returns {y} seeds";
+            body.Add(rounds <= 1
+                ? $"{consumerPhrase} wants {ownDemand} {targetName}, and a {targetName} bed {bedNoun}, so one round of {AssumedPatchBeds} beds covers it."
+                : $"{consumerPhrase} wants {ownDemand} {targetName}, and a {targetName} bed {bedNoun}, so this needs " +
+                  $"{rounds} rounds of {AssumedPatchBeds} beds, about {roundDays * rounds} days total.");
+        }
+        else
+        {
+            body.Add(
+                $"{consumerPhrase} wants {ownDemand} {targetName}, but {targetName}'s seed yield isn't recorded, so " +
+                "Gardener could not work out how many rounds that takes; watch your seed count and plant another round if you come up short.");
+        }
 
-        body.Add($"Beds: {(singleOutcome ? beds.ToString() : $"up to {beds}")}. Ready {DurationPhrase(targetGrowHours)} after you plant.");
+        var explain = explainedFamilies.Add(family) ? $" {family} soil {SoilSources.Does(family)}." : "";
+        body.Add($"Soil: Grade {AssumedSoilGrade} {family} Topsoil in every bed.{explain}");
+
+        body.Add($"Beds: {AssumedPatchBeds} ({AssumedPatchPairs} pairs). Ready {DurationPhrase(targetGrowHours)} after you plant.");
 
         if (singleOutcome)
         {
@@ -313,8 +376,7 @@ public static class GoalRoute
             {
                 var wiltHours = MinWiltHours(first, target);
                 if (wiltHours is { } w)
-                    body.Add($"Tend both beds {EveryDayPhrase(w)} or they wilt.");
-                AppendYieldNote(body, target, targetName);
+                    body.Add($"Tend these beds {EveryDayPhrase(w)} or they wilt.");
             }
         }
         else if (isFinal)
@@ -334,7 +396,7 @@ public static class GoalRoute
             notes.Add($"{targetName}'s wilt time is disputed between sources; the cadence above is the shorter, safer figure.");
 
         return new CrossStep(number, $"Grow {targetName}", body.ToArray(), notes.ToArray(),
-            first, second, target, outcomes, beds, soilPreference);
+            first, second, target, outcomes, AssumedPatchBeds, soilPreference, ownDemand);
     }
 
     private static void AppendFinalWiltAndHarvest(List<string> body, uint target)
@@ -359,37 +421,24 @@ public static class GoalRoute
             : $"Harvest gives {cropText} {targetName} and {seedText} seed back, depending on your soil.");
     }
 
-    private static void AppendYieldNote(List<string> body, uint target, string targetName)
+    /// <summary>The number of <paramref name="row"/>'s own seeds one harvest returns at
+    /// <see cref="AssumedSoilGrade"/>, the same grade every step in this route plants at. Null when the
+    /// bundled yield table has nothing for this row at that grade, which every caller treats as unknown,
+    /// never as zero.</summary>
+    private static int? SeedYieldAtAssumedGrade(uint row)
     {
-        var seedYield = SeedTable.Yields(target)?.Seed;
-        if (seedYield is not { Length: > 0 })
-            return;
-
-        if (seedYield.All(y => y == 0))
-        {
-            body.Add($"{targetName} gives no seeds back when you harvest it, so buy or grow another for every attempt.");
-            return;
-        }
-
-        var text = OneNumberOrRange(seedYield);
-        body.Add($"{targetName} gives back {text} seeds depending on your soil, so one harvest funds the rest.");
+        var seedYield = SeedTable.Yields(row)?.Seed;
+        return seedYield is { } y && AssumedSoilGrade < y.Length ? y[AssumedSoilGrade] : null;
     }
 
-    private static MultiplyStep BuildMultiplyStep(int number, uint row, SoilPreference soil, HashSet<SoilFamily> explainedFamilies)
+    /// <summary>Names who draws on <paramref name="target"/>'s output, for the arithmetic sentence: the
+    /// final cross when the goal is its only consumer, the step that grows a named later seed, or the
+    /// generic plural when more than one step reaches back to the same row.</summary>
+    private static string ConsumerPhrase(uint target, uint goalRow, IReadOnlyDictionary<uint, List<uint>> consumersOf)
     {
-        var produceName = SeedItems.ProduceName(row);
-        var family = SoilFamily.Shroud;
-        var explain = explainedFamilies.Add(family) ? $" {family} soil {SoilSources.Does(family)}." : "";
-        var yieldText = OneNumberOrRange(SeedTable.Yields(row)?.Seed);
-        var growHours = SeedTable.Grow(row) ?? 0;
-
-        var body = new[]
-        {
-            $"Plant 1 {SeedItemName(row)} in a bed with nothing beside it, in Grade {AssumedSoilGrade} {family} Topsoil.{explain}",
-            $"Beds: 1. Ready in {DurationPhrase(growHours)} for {yieldText} seeds.",
-        };
-
-        return new MultiplyStep(number, $"Grow more {produceName}", body, Array.Empty<string>(), row, 1, soil);
+        if (!consumersOf.TryGetValue(target, out var consumers) || consumers.Count != 1)
+            return "Later steps";
+        return consumers[0] == goalRow ? "The final cross" : $"Growing {SeedItems.ProduceName(consumers[0])}";
     }
 
     private static int? MinWiltHours(uint anchorRow, uint targetRow)

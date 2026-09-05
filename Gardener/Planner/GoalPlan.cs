@@ -20,18 +20,17 @@ public sealed record ObtainStep(int Number, string Title, string[] Body, string[
 /// <summary><see cref="FirstSeedRow"/> is the anchor: planted first, and the bed it occupies stays
 /// what it is (G1). <see cref="SecondSeedRow"/> is planted beside it and its bed becomes the cross,
 /// landing on one of <see cref="AllOutcomes"/> with <see cref="TargetRow"/> the one this route wants.
-/// <see cref="Beds"/> is sized by <see cref="CrossOdds.BedsForNineInTen"/> and is always an even number
-/// of physical beds (one anchor, one cross, per attempt).</summary>
+/// <see cref="Beds"/> always requests a full patch's worth of the alternating fill — beds cost nothing
+/// extra and a later cross always has use for the surplus — bounded down at handoff time by
+/// <see cref="Planner.CrossPlanner.PlanFillStep"/> against whatever beds and seeds are actually
+/// available; how many rounds of it the route actually needs is spoken in the step's own text.
+/// <see cref="Needed"/> is <see cref="GoalRoute"/>'s own demand for <see cref="TargetRow"/> — 1 for the
+/// goal itself, more for a cross-only node later steps draw on — carried through rather than
+/// recomputed, since <see cref="GoalRoute"/> already sized it while sizing this step.</summary>
 public sealed record CrossStep(
     int Number, string Title, string[] Body, string[] Notes,
-    uint FirstSeedRow, uint SecondSeedRow, uint TargetRow, uint[] AllOutcomes, int Beds, SoilPreference Soil)
-    : GoalStep(Number, Title, Body, Notes);
-
-/// <summary>Grows more copies of a seed the route already reached by crossing, planted alone so
-/// nothing else can cross with it, in the yield-boosting soil rather than the intercross one. Emitted
-/// only when a later step needs more of <see cref="SeedRow"/> than one harvest of it returns at the
-/// lowest soil tier.</summary>
-public sealed record MultiplyStep(int Number, string Title, string[] Body, string[] Notes, uint SeedRow, int Beds, SoilPreference Soil)
+    uint FirstSeedRow, uint SecondSeedRow, uint TargetRow, uint[] AllOutcomes, int Beds, SoilPreference Soil,
+    int Needed)
     : GoalStep(Number, Title, Body, Notes);
 
 /// <summary>

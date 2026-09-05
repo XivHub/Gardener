@@ -71,7 +71,6 @@ public static class GoalProgress
         {
             ObtainStep o => EvaluateObtain(o, held),
             CrossStep c => EvaluateCross(c, held, beds),
-            MultiplyStep m => EvaluateMultiply(m, held, beds),
             _ => throw new ArgumentOutOfRangeException(nameof(step), step, "unhandled GoalStep"),
         };
 
@@ -88,7 +87,8 @@ public static class GoalProgress
 
     private static GoalStepProgress EvaluateCross(CrossStep step, IReadOnlyDictionary<uint, int> held, IReadOnlyList<BedState> beds)
     {
-        if (held.GetValueOrDefault(step.TargetRow) >= 1)
+        var heldCount = held.GetValueOrDefault(step.TargetRow);
+        if (heldCount >= step.Needed)
             return new GoalStepProgress(GoalStepStatus.Done, null, null, null, null);
 
         if (FirstOccupied(beds, b => b.SeedRow == step.TargetRow) is { } crossedBed)
@@ -111,25 +111,13 @@ public static class GoalProgress
         if (held.GetValueOrDefault(step.SecondSeedRow) < 1)
             missing.Add(SeedItemName(step.SecondSeedRow));
 
-        var blocker = missing.Count > 0 ? $"You need {string.Join(" and ", missing)} to plant this step." : "Not started.";
-        return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null, blocker);
-    }
+        if (missing.Count > 0)
+            return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null,
+                $"You need {string.Join(" and ", missing)} to plant this step.");
 
-    private static GoalStepProgress EvaluateMultiply(MultiplyStep step, IReadOnlyDictionary<uint, int> held, IReadOnlyList<BedState> beds)
-    {
-        // More than the single copy a cross step's own attempt produced counts as this step's job
-        // done — one copy just proves the cross landed, which is already what the preceding CrossStep's
-        // own Done check looks for on the same seed row.
-        if (held.GetValueOrDefault(step.SeedRow) >= 2)
-            return new GoalStepProgress(GoalStepStatus.Done, null, null, null, null);
-
-        if (FirstOccupied(beds, b => b.SeedRow == step.SeedRow) is { } growingBed)
-            return new GoalStepProgress(GoalStepStatus.CrossedAndGrowing, growingBed.PatchKey, growingBed.BedNumber, HarvestWindowFor(growingBed), null);
-
-        var blocker = held.GetValueOrDefault(step.SeedRow) < 1
-            ? $"You need 1 more {SeedItemName(step.SeedRow)}."
-            : "Not started.";
-        return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null, blocker);
+        var shortBy = step.Needed - heldCount;
+        return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null,
+            $"You need {shortBy} more {SeedItemName(step.TargetRow)}.");
     }
 
     private static BedState? FirstOccupied(IReadOnlyList<BedState> beds, Func<BedState, bool> predicate)

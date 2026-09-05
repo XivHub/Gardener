@@ -671,7 +671,6 @@ namespace Gardener.Windows
                     {
                         ObtainStep o => $"Done. You hold {held.GetValueOrDefault(o.SeedRow)} {SeedItemName(o.SeedRow)}.",
                         CrossStep c => $"Done. You hold {held.GetValueOrDefault(c.TargetRow)} {SeedItemName(c.TargetRow)}.",
-                        MultiplyStep m => $"Done. You hold {held.GetValueOrDefault(m.SeedRow)} {SeedItemName(m.SeedRow)}.",
                         _ => "Done.",
                     };
                     return (doneText, HubStyle.Good);
@@ -730,8 +729,8 @@ namespace Gardener.Windows
             GoalPlan plan, List<(GoalStep Step, int Index)> members, GoalStatus status, bool atGarden,
             IReadOnlyDictionary<uint, int> held)
         {
-            var crossOrMultiply = members.Select(m => m.Step).FirstOrDefault(s => s is CrossStep or MultiplyStep);
-            if (crossOrMultiply is null)
+            var crossStep = members.Select(m => m.Step).OfType<CrossStep>().FirstOrDefault();
+            if (crossStep is null)
                 return;
 
             if (!atGarden)
@@ -743,13 +742,13 @@ namespace Gardener.Windows
 
             var patch = PatchDiscovery.Patches.First();
 
-            if (MissingSeedForHandoff(crossOrMultiply, held) is { } missing)
+            if (MissingSeedForHandoff(crossStep, held) is { } missing)
             {
                 DrawGoalHandoffDisabled($"You need {missing} to plant this step.");
                 return;
             }
 
-            var stepSoilPreference = crossOrMultiply is MultiplyStep ? SoilPreference.HighestShroud : Plugin.C.SoilForCross;
+            var stepSoilPreference = Plugin.C.SoilForCross;
             var bag = Bags.Scan();
             if (GardeningItems.BestSoil(stepSoilPreference, bag) is null)
             {
@@ -759,19 +758,12 @@ namespace Gardener.Windows
                 return;
             }
 
-            var targetSeed = crossOrMultiply switch
-            {
-                // The seed the cross is meant to produce, not either parent: the planner is being
-                // asked what to lay out to obtain it.
-                CrossStep c => (ushort)c.TargetRow,
-                MultiplyStep m => (ushort)m.SeedRow,
-                _ => (ushort)0,
-            };
+            // The seed the cross is meant to produce, not either parent: the planner is being asked
+            // what to lay out to obtain it.
+            var targetSeed = (ushort)crossStep.TargetRow;
 
             var memory = GardenMemory.Read(patch);
-            var singleStepPlan = crossOrMultiply is CrossStep crossStep
-                ? CrossPlanner.PlanFillStep(targetSeed, crossStep.Beds, patch, memory, bag)
-                : CrossPlanner.PlanSingleStep(targetSeed, patch, memory, bag);
+            var singleStepPlan = CrossPlanner.PlanFillStep(targetSeed, crossStep.Beds, patch, memory, bag);
 
             if (singleStepPlan.Steps.Count > 0)
             {
@@ -800,15 +792,16 @@ namespace Gardener.Windows
         /// the handoff's disabled reason — null when both are covered. A route can want several
         /// attempts of a pair over its lifetime, but a single "Plant this step" press only ever plants
         /// one, so this checks against 1, not the route's total.</summary>
-        private static string? MissingSeedForHandoff(GoalStep step, IReadOnlyDictionary<uint, int> held) => step switch
+        private static string? MissingSeedForHandoff(CrossStep step, IReadOnlyDictionary<uint, int> held)
         {
-            CrossStep c when held.GetValueOrDefault(c.FirstSeedRow) < 1 && held.GetValueOrDefault(c.SecondSeedRow) < 1 =>
-                $"{SeedItemName(c.FirstSeedRow)} and {SeedItemName(c.SecondSeedRow)}",
-            CrossStep c when held.GetValueOrDefault(c.FirstSeedRow) < 1 => $"1 more {SeedItemName(c.FirstSeedRow)}",
-            CrossStep c when held.GetValueOrDefault(c.SecondSeedRow) < 1 => $"1 more {SeedItemName(c.SecondSeedRow)}",
-            MultiplyStep m when held.GetValueOrDefault(m.SeedRow) < 1 => $"1 more {SeedItemName(m.SeedRow)}",
-            _ => null,
-        };
+            if (held.GetValueOrDefault(step.FirstSeedRow) < 1 && held.GetValueOrDefault(step.SecondSeedRow) < 1)
+                return $"{SeedItemName(step.FirstSeedRow)} and {SeedItemName(step.SecondSeedRow)}";
+            if (held.GetValueOrDefault(step.FirstSeedRow) < 1)
+                return $"1 more {SeedItemName(step.FirstSeedRow)}";
+            if (held.GetValueOrDefault(step.SecondSeedRow) < 1)
+                return $"1 more {SeedItemName(step.SecondSeedRow)}";
+            return null;
+        }
 
         private static void DrawGoalHandoffDisabled(string reason) => ImGui.TextColored(HubStyle.Faint, reason);
 
