@@ -26,7 +26,9 @@ public static class Task_Tend
             var select = AddonFinder.SelectString.FirstOrDefault();
             if (select is not { IsAddonReady: true })
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: menu closed before it could be tended.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: menu closed before it could be tended.",
+                    "the menu closed before it could be tended");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -39,7 +41,9 @@ public static class Task_Tend
                 // No Care entry means this is not the menu expected for a growing bed; log what it
                 // actually offered rather than guess.
                 var seen = string.Join(", ", entries.Select(e => GardenMenuText.Classify(e.Text)));
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: no Care entry (offered: {seen}); skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: no Care entry (offered: {seen}); skipping.",
+                    "tending wasn't offered for this bed");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -49,7 +53,7 @@ public static class Task_Tend
             return true;
         }, $"Tend: select Care (bed {bedNumber})");
 
-        tm.EnqueueDelay(Plugin.C.StepDelayMs);
+        tm.EnqueueDelay(SchedulerPacing.StepDelay());
 
         tm.Enqueue(() =>
         {
@@ -75,6 +79,9 @@ public static class Task_Tend
             GardenJournal.Upsert(record);
 
             SchedulerMain.TendedCount++;
+            var produce = SeedItems.ProduceName(record.SeedRow);
+            ActivityLog.Good_($"{patch.Key} bed {bedNumber}: tended ({produce}).",
+                chatMessage: $"Tended bed {bedNumber} ({produce}).");
             SchedulerMain.State = GardenerState.ClosingMenu;
             return true;
         }, $"Tend: record (bed {bedNumber})");

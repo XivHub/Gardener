@@ -46,7 +46,9 @@ public static class Task_Plant
             var select = AddonFinder.SelectString.FirstOrDefault();
             if (select is not { IsAddonReady: true })
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: menu closed before it could be planted.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: menu closed before it could be planted.",
+                    "the menu closed before it could be planted");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -57,7 +59,9 @@ public static class Task_Plant
             if (index < 0)
             {
                 var seen = string.Join(", ", entries.Select(e => GardenMenuText.Classify(e.Text)));
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: no Plant Seeds entry (offered: {seen}); skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: no Plant Seeds entry (offered: {seen}); skipping.",
+                    "planting wasn't offered for this bed");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -78,7 +82,9 @@ public static class Task_Plant
 
             if (!addonSeen)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: {AddonName} never opened; skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: {AddonName} never opened; skipping.",
+                    "the planting dialog never opened");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -89,7 +95,10 @@ public static class Task_Plant
             var soil = GardeningItems.BestSoil(soilPreference, bag);
             if (soil is null)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: {GardeningItems.SoilUnavailable(soilPreference)}");
+                var soilReason = GardeningItems.SoilUnavailable(soilPreference) ?? "No soil available.";
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: {soilReason}",
+                    soilReason.TrimEnd('.'));
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -99,7 +108,9 @@ public static class Task_Plant
             var seedSlot = seedItemId is { } id ? bag.FirstOrDefault(s => s.ItemId == id) : null;
             if (seedSlot is null)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: seed for row {seedRow} is no longer in the bag; skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: seed for row {seedRow} is no longer in the bag; skipping.",
+                    "that seed is no longer in your bags");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -111,7 +122,10 @@ public static class Task_Plant
                 // BestSoil already confirmed it was held moments ago; re-checked here because the two
                 // scans above ran against the same snapshot, but a slot recorded earlier can still be
                 // stale by the time this writes the agent.
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: {soil.ItemId} is no longer in the bag; skipping.");
+                var soilName = ItemSheet.Name(soil.ItemId);
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: {soilName} is no longer in the bag; skipping.",
+                    $"your {soilName} is gone");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -126,7 +140,9 @@ public static class Task_Plant
                 var agent = agentModule == null ? null : (AgentHousingPlant*)agentModule->GetAgentByInternalId(AgentId.HousingPlant);
                 if (agent == null)
                 {
-                    ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: AgentHousingPlant unavailable; skipping.");
+                    ActivityLog.SkippedBed(bedNumber,
+                        $"{patch.Key} bed {bedNumber}: AgentHousingPlant unavailable; skipping.",
+                        "a game error while planting");
                     SchedulerMain.SkippedCount++;
                     SchedulerMain.State = GardenerState.ClosingMenu;
                     return true;
@@ -164,7 +180,7 @@ public static class Task_Plant
             $"Plant: wait for menu to close (bed {bedNumber})",
             new TaskManagerConfiguration { TimeLimitMS = Plugin.C.MenuTimeoutMs, AbortOnTimeout = false });
 
-        tm.EnqueueDelay(Plugin.C.StepDelayMs);
+        tm.EnqueueDelay(SchedulerPacing.StepDelay());
 
         tm.Enqueue(() =>
         {
@@ -195,11 +211,16 @@ public static class Task_Plant
             if (!confirmed)
             {
                 ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: planting could not be confirmed by the next " +
-                                   "passive read; stopping the sweep.");
+                                   "passive read; stopping the sweep.",
+                    chatMessage: $"Stopped: bed {bedNumber}'s planting couldn't be confirmed.");
                 SchedulerMain.State = GardenerState.Error;
                 return true;
             }
 
+            var produce = SeedItems.ProduceName(seedRow);
+            var soilName = ItemSheet.Name(plantedSoilItemId);
+            ActivityLog.Good_($"{patch.Key} bed {bedNumber}: planted {produce} in {soilName}.",
+                chatMessage: $"Planted {produce} in bed {bedNumber}, {soilName}.");
             SchedulerMain.State = GardenerState.ClosingMenu;
             return true;
         }, $"Plant: record and confirm (bed {bedNumber})");

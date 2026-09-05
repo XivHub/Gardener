@@ -225,7 +225,7 @@ namespace Gardener.Windows
             }
 
             if (ImGui.Button("Stop"))
-                SchedulerMain.DisablePlugin();
+                SchedulerMain.DisablePlugin("you clicked Stop.");
         }
 
         /// <summary>"Tend all" / "Harvest all" / "Fertilize all" for one patch, each behind

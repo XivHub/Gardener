@@ -18,7 +18,15 @@ namespace Gardener
         public int Version { get; set; } = 1;
 
         // Automation
-        public int StepDelayMs { get; set; } = 250;          // between menu actions, one server round-trip of headroom
+        // Fixed settle time where no addon-ready signal exists to poll for instead; jittered at the
+        // call site (see SchedulerPacing) so a run's pacing never reads as perfectly metronomic.
+        // 800ms clears a server round trip with margin — most of the stalls this plugin has hit came
+        // from acting before the game was ready, not from waiting too long.
+        public int StepDelayMs { get; set; } = 800;
+        // Between finishing one bed and interacting with the next: a bigger boundary than one step to
+        // the next within a bed, and where a stale addon from the previous bed is most likely to
+        // still be closing.
+        public int BedDelayMs { get; set; } = 1200;
         public int MenuTimeoutMs { get; set; } = 5000;        // per-step TimeLimitMS for "wait for addon"
         public bool StopIfPlayerMoves { get; set; } = true;
         public float MoveAbortDistance { get; set; } = 3.0f;  // yalms from the position where the run started
@@ -44,6 +52,10 @@ namespace Gardener
         public int WiltWarningHours { get; set; } = 6;            // lead time before predicted wilt
         public bool ChatReminders { get; set; } = false;
         public int ReminderIntervalMin { get; set; } = 30;
+
+        // On by default: someone running automation over their own garden wants to see each action
+        // as it happens, unlike ChatReminders above, which is an opt-in periodic summary.
+        public bool NarrateSweepActions { get; set; } = true;
 
         // Data
         public bool ShowDataGapWarnings { get; set; } = true;

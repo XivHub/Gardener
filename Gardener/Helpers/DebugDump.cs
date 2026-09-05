@@ -334,7 +334,7 @@ public static class DebugDump
 
         sb.AppendLine();
         sb.AppendLine(
-            "Per-patch correlation (DataMap[patch.FurnitureIndex]; slot index N is bed \"(N+1)th Bed\" — " +
+            "Per-patch correlation (DataMap[patch.FurnitureIndex]; slot index N is bed \"(N+1)th Bed\"; " +
             "proven live. The DataMap has no link to the patch's EventObj beds; " +
             "which EventObj is which bed is a separate, still-unverified question, see the menu dump):");
         foreach (var patch in patches)

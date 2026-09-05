@@ -30,7 +30,9 @@ public static class Task_OpenBed
             var predicted = BedTargeting.Predict(patch, bedNumber);
             if (predicted is not { } entityId)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: no predicted bed entity; skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: no predicted bed entity; skipping.",
+                    "the game hasn't located this bed yet");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.OpeningBed;
                 return null;
@@ -39,7 +41,9 @@ public static class Task_OpenBed
             var obj = Plugin.ObjectTable.SearchByEntityId(entityId);
             if (obj is null)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: bed entity 0x{entityId:X8} is no longer in the object table; skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: bed entity 0x{entityId:X8} is no longer in the object table; skipping.",
+                    "the bed can't be found right now");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.OpeningBed;
                 return null;
@@ -55,7 +59,9 @@ public static class Task_OpenBed
                 var targetSystem = TargetSystem.Instance();
                 if (targetSystem == null)
                 {
-                    ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: TargetSystem unavailable; skipping.");
+                    ActivityLog.SkippedBed(bedNumber,
+                        $"{patch.Key} bed {bedNumber}: TargetSystem unavailable; skipping.",
+                        "a game error while targeting");
                     SchedulerMain.SkippedCount++;
                     SchedulerMain.State = GardenerState.OpeningBed;
                     return null;
@@ -79,7 +85,9 @@ public static class Task_OpenBed
                 // The wait step above already timed out silently (AbortOnTimeout: false); nothing
                 // ever opened. Terminal for this bed: complete the step rather than requesting a
                 // retry, matching every other terminal branch below.
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: bed menu never opened; skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: bed menu never opened; skipping.",
+                    "its menu never opened");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.OpeningBed;
                 return true;
@@ -88,8 +96,10 @@ public static class Task_OpenBed
             var bedPatch = GardenMenuText.ParseBedPatch(select.Text);
             if (bedPatch is not { } bp)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: prompt \"{select.Text}\" did not parse " +
-                                   "into bed/patch numbers; closing without acting.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: prompt \"{select.Text}\" did not parse " +
+                    "into bed/patch numbers; closing without acting.",
+                    "its menu wasn't recognized");
                 SchedulerMain.SkippedCount++;
                 Task_CloseMenu.Enqueue();
                 Plugin.TaskManager.Enqueue(() =>
@@ -112,8 +122,10 @@ public static class Task_OpenBed
 
             if (attempt >= MaxAttemptsPerBed)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: gave up after {attempt} attempts " +
-                                   "(the menu kept disagreeing with the map); skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: gave up after {attempt} attempts " +
+                    "(the menu kept disagreeing with the map); skipping.",
+                    "its position kept disagreeing with the map");
                 SchedulerMain.SkippedCount++;
                 Task_CloseMenu.Enqueue();
                 Plugin.TaskManager.Enqueue(() =>

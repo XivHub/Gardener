@@ -28,7 +28,9 @@ public static class Task_Harvest
             var select = AddonFinder.SelectString.FirstOrDefault();
             if (select is not { IsAddonReady: true })
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: menu closed before it could be harvested.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: menu closed before it could be harvested.",
+                    "the menu closed before it could be harvested");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -38,7 +40,9 @@ public static class Task_Harvest
             var index = Array.FindIndex(entries, e => GardenMenuText.Classify(e.Text) == MenuKey.Harvest);
             if (index < 0)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: stage 4 but no Harvest entry offered.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: stage 4 but no Harvest entry offered.",
+                    "it wasn't actually ready to harvest yet");
                 SchedulerMain.NoHarvestOfferedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -71,11 +75,18 @@ public static class Task_Harvest
 
         tm.Enqueue(() =>
         {
-            if (GardenJournal.Get(patch.Key, bedNumber) is { } record)
+            var record = GardenJournal.Get(patch.Key, bedNumber);
+            if (record is not null)
                 GardenJournal.RecordHarvestOfferedSample(record);
+
+            var seedRow = record?.SeedRow ??
+                GardenMemory.Read(patch).FirstOrDefault(s => s.BedNumber == bedNumber).SeedRow;
             GardenJournal.Remove(patch.Key, bedNumber);
 
             SchedulerMain.HarvestedCount++;
+            var produce = SeedItems.ProduceName(seedRow);
+            ActivityLog.Good_($"{patch.Key} bed {bedNumber}: harvested ({produce}).",
+                chatMessage: $"Harvested bed {bedNumber} ({produce}).");
             SchedulerMain.State = GardenerState.ClosingMenu;
             return true;
         }, $"Harvest: record (bed {bedNumber})");

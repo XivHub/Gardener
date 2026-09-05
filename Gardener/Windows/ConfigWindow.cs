@@ -60,7 +60,10 @@ namespace Gardener.Windows
         private void DrawAutomationSection()
         {
             ImGui.TextDisabled("Automation");
-            IntSlider("Delay between actions (ms)", () => cfg.StepDelayMs, v => cfg.StepDelayMs = v, 100, 1000);
+            IntSlider("Delay between actions (ms)", () => cfg.StepDelayMs, v => cfg.StepDelayMs = v, 100, 2000);
+            ImGui.TextColored(HubStyle.Faint, "Raising this makes runs slower but more reliable.");
+            IntSlider("Delay between beds (ms)", () => cfg.BedDelayMs, v => cfg.BedDelayMs = v, 200, 3000);
+            ImGui.TextColored(HubStyle.Faint, "Raising this makes runs slower but more reliable.");
             IntSlider("Menu wait timeout (ms)", () => cfg.MenuTimeoutMs, v => cfg.MenuTimeoutMs = v, 1000, 15000);
             BoolInput("Stop a run if I move", () => cfg.StopIfPlayerMoves, v => cfg.StopIfPlayerMoves = v);
             if (cfg.StopIfPlayerMoves)
@@ -192,6 +195,11 @@ namespace Gardener.Windows
             IntSlider("Chat reminder interval (minutes)", () => cfg.ReminderIntervalMin, v => cfg.ReminderIntervalMin = v, 5, 120);
             if (!cfg.ChatReminders)
                 ImGui.EndDisabled();
+
+            ImGui.Spacing();
+            BoolInput("Narrate sweeps in chat", () => cfg.NarrateSweepActions, v => cfg.NarrateSweepActions = v);
+            ImGui.TextColored(HubStyle.Faint,
+                "Prints a line in chat as a sweep tends, fertilizes, harvests, plants or skips each bed.");
         }
 
         private void SoilCombo(string label, Func<SoilPreference> get, Action<SoilPreference> set)

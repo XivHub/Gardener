@@ -113,11 +113,16 @@ public static class SchedulerMain
         Worklist.Clear();
 
         State = GardenerState.Scanning;
-        ActivityLog.Good_($"Started {kind} on {patch.Kind} patch.");
+        ActivityLog.Good_($"Started {kind} on {patch.Kind} patch.",
+            chatMessage: $"{kind} started on your {patch.Kind} patch.");
         return true;
     }
 
-    public static bool DisablePlugin()
+    /// <summary>Stops whatever is running. <paramref name="reason"/> is the player-facing sentence
+    /// naming why, printed to chat as "Stopped: {reason}"; null (a plain Stop-button click with no
+    /// guard behind it, a logout, plugin unload) stays in the Log tab only, since nothing chose to
+    /// stop the run on the player's behalf that isn't already about to be said some other way.</summary>
+    public static bool DisablePlugin(string? reason = null)
     {
         Plugin.TaskManager.Abort();
         State = GardenerState.Idle;
@@ -128,7 +133,10 @@ public static class SchedulerMain
         // A guard trip or the Stop button can both land here mid-interaction, with a bed menu,
         // planting dialog or item context menu still open from whatever step Abort() just cut off.
         GardeningUiCleanup.CloseAll();
-        ActivityLog.Warn_("Stopped.", chat: false);
+        if (reason is not null)
+            ActivityLog.Warn_($"Stopped: {reason}");
+        else
+            ActivityLog.Warn_("Stopped.", chat: false);
         return true;
     }
 
@@ -149,15 +157,13 @@ public static class SchedulerMain
 
         if (!GardenerGuard.InHousingTerritory())
         {
-            ActivityLog.Warn_("Stopped: left the housing territory.");
-            DisablePlugin();
+            DisablePlugin("you left the housing area.");
             return;
         }
 
         if (Plugin.C.StopIfPlayerMoves && GardenerGuard.PlayerMovedFrom(RunOrigin, Plugin.C.MoveAbortDistance))
         {
-            ActivityLog.Warn_("Stopped: moved away from where the sweep started.");
-            DisablePlugin();
+            DisablePlugin("you moved away from the patch.");
             return;
         }
 
@@ -167,8 +173,7 @@ public static class SchedulerMain
         // state. See GardenerGuard.OccupiedBlockingReason.
         if (GardenerGuard.EnvironmentBlockingReason() is { } reason)
         {
-            ActivityLog.Warn_($"Stopped: {reason}");
-            DisablePlugin();
+            DisablePlugin(reason);
             return;
         }
 
@@ -226,7 +231,8 @@ public static class SchedulerMain
 
         if (Worklist.Count == 0)
         {
-            ActivityLog.Notify($"Nothing to {CurrentKind.ToString()!.ToLowerInvariant()} on {CurrentPatch!.Kind} patch.");
+            ActivityLog.Notify($"Nothing to {CurrentKind.ToString()!.ToLowerInvariant()} on {CurrentPatch!.Kind} patch.",
+                chatMessage: $"Nothing to {CurrentKind.ToString()!.ToLowerInvariant()} on your {CurrentPatch!.Kind} patch.");
             State = GardenerState.Done;
             return;
         }
@@ -271,6 +277,9 @@ public static class SchedulerMain
     private static void RunClosingMenu()
     {
         Task_CloseMenu.Enqueue();
+        // The pause between beds: a bigger boundary than one step to the next within a bed, and where
+        // a stale addon from the previous bed is most likely to still be closing.
+        Plugin.TaskManager.EnqueueDelay(SchedulerPacing.BedDelay());
         Plugin.TaskManager.Enqueue(() =>
         {
             State = GardenerState.OpeningBed;
@@ -281,7 +290,7 @@ public static class SchedulerMain
     private static void RunDone()
     {
         var kind = CurrentKind;
-        var summary = kind switch
+        var logSummary = kind switch
         {
             SweepKind.Tend => $"Tend complete: {TendedCount} tended, {SkippedCount} skipped.",
             SweepKind.Harvest => $"Harvest complete: {HarvestedCount} harvested, {NoHarvestOfferedCount} " +
@@ -289,7 +298,16 @@ public static class SchedulerMain
             SweepKind.Fertilize => $"Fertilize complete: {FertilizedCount} fertilized, {SkippedCount} skipped.",
             _ => "Sweep complete.",
         };
-        ActivityLog.Good_(summary);
+        // Chat drops the stage-4/no-harvest-entry detail above: that count is calibration evidence
+        // for GardenMemory, not something the player can act on.
+        var chatSummary = kind switch
+        {
+            SweepKind.Tend => $"Tend finished: {TendedCount} tended, {SkippedCount} skipped.",
+            SweepKind.Harvest => $"Harvest finished: {HarvestedCount} harvested, {SkippedCount} skipped.",
+            SweepKind.Fertilize => $"Fertilize finished: {FertilizedCount} fertilized, {SkippedCount} skipped.",
+            _ => "Sweep finished.",
+        };
+        ActivityLog.Good_(logSummary, chatMessage: chatSummary);
         DisablePlugin();
     }
 

@@ -7,8 +7,11 @@ namespace Gardener.Helpers;
 
 /// <summary>
 /// Rolling log of scheduler activity, surfaced in the Log tab. Chat echo is gated on
-/// <see cref="Configuration.ChatReminders"/> as well as the per-call <c>chat</c> flag, so a run stays
-/// quiet in chat by default and only narrates itself there when the user opts in.
+/// <see cref="Configuration.NarrateSweepActions"/> as well as the per-call <c>chat</c> flag — a
+/// separate switch from <see cref="Configuration.ChatReminders"/>, which only governs the periodic
+/// due-list summary in <see cref="Reminders"/>. <paramref name="chatMessage"/>-less calls print the
+/// same text to both surfaces; callers that need the Log tab's fuller diagnostic detail without
+/// carrying it into chat pass a separate, shorter <c>chatMessage</c>.
 /// </summary>
 public static class ActivityLog
 {
@@ -22,6 +25,14 @@ public static class ActivityLog
     private static int head;
     private static int count;
 
+    // A run of consecutive skips sharing one reason collapses into a single chat line instead of one
+    // per bed, so a sweep that skips every bed for the same cause reads as one line rather than a
+    // wall. Any other chat line — a success, a different skip reason, or the run's own finish or stop
+    // — flushes whatever is pending first, so lines still appear in the order the sweep produced them.
+    private static string? pendingSkipChatReason;
+    private static int pendingSkipCount;
+    private static int pendingSkipFirstBed;
+
     public static IReadOnlyList<Entry> Entries
     {
         get
@@ -34,25 +45,72 @@ public static class ActivityLog
         }
     }
 
-    public static void Notify(string message, bool chat = true)
+    public static void Notify(string message, bool chat = true, string? chatMessage = null)
     {
         Add(message, HubStyle.Text);
-        if (chat && Plugin.C.ChatReminders)
-            Plugin.ChatGui.Print($"[Gardener] {message}");
+        if (chat && Plugin.C.NarrateSweepActions)
+        {
+            FlushPendingSkip();
+            Plugin.ChatGui.Print($"[Gardener] {chatMessage ?? message}");
+        }
     }
 
-    public static void Good_(string message, bool chat = true)
+    public static void Good_(string message, bool chat = true, string? chatMessage = null)
     {
         Add(message, HubStyle.Good);
-        if (chat && Plugin.C.ChatReminders)
-            Plugin.ChatGui.Print($"[Gardener] {message}");
+        if (chat && Plugin.C.NarrateSweepActions)
+        {
+            FlushPendingSkip();
+            Plugin.ChatGui.Print($"[Gardener] {chatMessage ?? message}");
+        }
     }
 
-    public static void Warn_(string message, bool chat = true)
+    public static void Warn_(string message, bool chat = true, string? chatMessage = null)
     {
         Add(message, HubStyle.Warn);
-        if (chat && Plugin.C.ChatReminders)
-            Plugin.ChatGui.PrintError($"[Gardener] {message}");
+        if (chat && Plugin.C.NarrateSweepActions)
+        {
+            FlushPendingSkip();
+            Plugin.ChatGui.PrintError($"[Gardener] {chatMessage ?? message}");
+        }
+    }
+
+    /// <summary>One bed skipped during a sweep. Always recorded in full in the Log tab; in chat, a
+    /// skip sharing <paramref name="chatReason"/> with the one immediately before it just extends the
+    /// pending count instead of printing another line — see the class summary.</summary>
+    public static void SkippedBed(int bedNumber, string logMessage, string chatReason)
+    {
+        Add(logMessage, HubStyle.Warn);
+
+        if (!Plugin.C.NarrateSweepActions)
+            return;
+
+        if (chatReason == pendingSkipChatReason)
+        {
+            pendingSkipCount++;
+            return;
+        }
+
+        FlushPendingSkip();
+        pendingSkipChatReason = chatReason;
+        pendingSkipCount = 1;
+        pendingSkipFirstBed = bedNumber;
+    }
+
+    /// <summary>Prints whatever skip run is pending, then clears it. A no-op when nothing is pending,
+    /// so every other chat-emitting call can call this unconditionally before printing its own line.</summary>
+    public static void FlushPendingSkip()
+    {
+        if (pendingSkipChatReason is not { } reason)
+            return;
+
+        var line = pendingSkipCount == 1
+            ? $"Skipped bed {pendingSkipFirstBed}: {reason}."
+            : $"Skipped {pendingSkipCount} beds: {reason}.";
+        Plugin.ChatGui.PrintError($"[Gardener] {line}");
+
+        pendingSkipChatReason = null;
+        pendingSkipCount = 0;
     }
 
     public static void Clear()

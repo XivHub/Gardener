@@ -53,7 +53,9 @@ public static class Task_Fertilize
             var select = AddonFinder.SelectString.FirstOrDefault();
             if (select is not { IsAddonReady: true })
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: menu closed before it could be fertilized.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: menu closed before it could be fertilized.",
+                    "the menu closed before it could be fertilized");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -63,8 +65,10 @@ public static class Task_Fertilize
             if (record?.LastFertilizedAt is { } lastFertilizedAt &&
                 DateTimeOffset.UtcNow - lastFertilizedAt < TimeSpan.FromMinutes(Plugin.C.FertilizeCooldownMin))
             {
-                ActivityLog.Notify($"{patch.Key} bed {bedNumber}: fertilized within the last " +
-                                    $"{Plugin.C.FertilizeCooldownMin}min; skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: fertilized within the last " +
+                    $"{Plugin.C.FertilizeCooldownMin}min; skipping.",
+                    "already fertilized recently");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -73,7 +77,9 @@ public static class Task_Fertilize
             var state = GardenMemory.Read(patch).FirstOrDefault(s => s.BedNumber == bedNumber);
             if (Plugin.C.FertilizeOnlyGrowing && state.Maturity == Maturity.MatureCandidate)
             {
-                ActivityLog.Notify($"{patch.Key} bed {bedNumber}: already mature; fertilizer would do nothing.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: already mature; fertilizer would do nothing.",
+                    "it's already mature; fertilizer wouldn't help");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -84,7 +90,9 @@ public static class Task_Fertilize
             if (index < 0)
             {
                 var seen = string.Join(", ", entries.Select(e => GardenMenuText.Classify(e.Text)));
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: no Fertilize entry (offered: {seen}); skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: no Fertilize entry (offered: {seen}); skipping.",
+                    "fertilizing wasn't offered for this bed");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -103,7 +111,9 @@ public static class Task_Fertilize
         {
             if (!IsInFertilizeMode())
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: fertilize mode never engaged; skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: fertilize mode never engaged; skipping.",
+                    "fertilizing didn't start");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -114,7 +124,9 @@ public static class Task_Fertilize
             var fertilizerSlot = fertilizerId is { } id ? bag.FirstOrDefault(s => s.ItemId == id) : null;
             if (fertilizerSlot is null)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: fertilizer is no longer in the bag; skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: fertilizer is no longer in the bag; skipping.",
+                    "no fertilizer in your bags");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -131,7 +143,9 @@ public static class Task_Fertilize
                 var inventoryAgent = agentModule == null ? null : agentModule->GetAgentByInternalId(AgentId.Inventory);
                 if (inventoryContext == null || inventoryAgent == null)
                 {
-                    ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: inventory context agent unavailable; skipping.");
+                    ActivityLog.SkippedBed(bedNumber,
+                        $"{patch.Key} bed {bedNumber}: inventory context agent unavailable; skipping.",
+                        "a game error while opening the item menu");
                     SchedulerMain.SkippedCount++;
                     SchedulerMain.State = GardenerState.ClosingMenu;
                     return true;
@@ -159,7 +173,9 @@ public static class Task_Fertilize
             var contextMenu = FindReadyContextMenu();
             if (contextMenu is null)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: {ContextMenuAddonName} is not open; skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: {ContextMenuAddonName} is not open; skipping.",
+                    "the item menu didn't open");
                 LogContextAddonsForDiagnosis(patch.Key, bedNumber);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
@@ -176,8 +192,10 @@ public static class Task_Fertilize
             if (index < 0)
             {
                 var seen = string.Join(", ", entries.Select(e => GardenMenuText.Classify(e.Text)));
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: no Fertilize entry on the item's context menu " +
-                                   $"(offered: {seen}); closing and skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: no Fertilize entry on the item's context menu " +
+                    $"(offered: {seen}); closing and skipping.",
+                    "fertilizing wasn't offered on the item");
                 SchedulerMain.SkippedCount++;
                 unsafe { contextMenu.Base->Close(true); }
                 SchedulerMain.State = GardenerState.ClosingMenu;
@@ -186,8 +204,10 @@ public static class Task_Fertilize
 
             if (!entries[index].Select())
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: the Fertilize entry was disabled on the item's " +
-                                   "context menu; closing and skipping.");
+                ActivityLog.SkippedBed(bedNumber,
+                    $"{patch.Key} bed {bedNumber}: the Fertilize entry was disabled on the item's " +
+                    "context menu; closing and skipping.",
+                    "fertilizing was disabled on the item");
                 SchedulerMain.SkippedCount++;
                 unsafe { contextMenu.Base->Close(true); }
                 SchedulerMain.State = GardenerState.ClosingMenu;
@@ -231,6 +251,9 @@ public static class Task_Fertilize
             GardenJournal.Upsert(record);
 
             SchedulerMain.FertilizedCount++;
+            var produce = SeedItems.ProduceName(record.SeedRow);
+            ActivityLog.Good_($"{patch.Key} bed {bedNumber}: fertilized ({produce}).",
+                chatMessage: $"Fertilized bed {bedNumber} ({produce}).");
             SchedulerMain.State = GardenerState.ClosingMenu;
             return true;
         }, $"Fertilize: record (bed {bedNumber})");
@@ -276,7 +299,9 @@ public static class Task_Fertilize
         var manager = RaptureAtkUnitManager.Instance();
         if (manager == null)
         {
-            ActivityLog.Warn_($"{patchKey} bed {bedNumber}: RaptureAtkUnitManager unavailable; cannot list open addons.");
+            // Diagnostic only, for the devlog: the player-facing skip line already printed above.
+            ActivityLog.Warn_($"{patchKey} bed {bedNumber}: RaptureAtkUnitManager unavailable; cannot list open addons.",
+                chat: false);
             return;
         }
 
@@ -301,8 +326,10 @@ public static class Task_Fertilize
             found.Add(detail);
         }
 
+        // Diagnostic only, for the devlog: the player-facing skip line already printed above.
         ActivityLog.Warn_(found.Count == 0
             ? $"{patchKey} bed {bedNumber}: no addon with \"Context\" in its name is currently open."
-            : $"{patchKey} bed {bedNumber}: open Context-named addon(s): {string.Join("; ", found)}");
+            : $"{patchKey} bed {bedNumber}: open Context-named addon(s): {string.Join("; ", found)}",
+            chat: false);
     }
 }

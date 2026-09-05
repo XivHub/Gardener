@@ -49,4 +49,10 @@ public static class SeedItems
         var seed = Sheets.GardeningSeedSheet.GetRowOrDefault(row);
         return seed?.Item.RowId;
     }
+
+    /// <summary>The produce's display name for a <c>GardeningSeed</c> row, e.g. "Krakka Root" — never
+    /// the seed item's own name, which the player never sees on the bed menu or in the harvest
+    /// result.</summary>
+    public static string ProduceName(uint row) =>
+        ProduceItemForRow(row) is { } id ? XivHubPluginKit.Inventory.ItemSheet.Name(id) : $"row {row}";
 }
