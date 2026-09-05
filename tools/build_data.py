@@ -214,6 +214,23 @@ def build_crossbreeds(resolver: dict[str, int], unresolved: list[str]) -> tuple[
     return pair_targets, dead
 
 
+def load_ffxivgardening_efficiency() -> dict[tuple[int, int], dict[int, int]]:
+    """Per-pair, per-target efficiency percentage from ffxivgardening.com's confirmed-cross rows.
+
+    Every row already carries `GardeningSeed` row ids (tools/fetch_sources.py resolves and fails
+    loudly at fetch time), so no label resolution happens here. A pair with two possible outcomes
+    contributes one entry per outcome, since ffxivgardening.com reports efficiency per target
+    seed rather than per pair — the Gysahl Greens x Midland Cabbage pair carries a different
+    percentage for its Midland Cabbage outcome than for its Mimett Gourd one.
+    """
+    doc = load_vendor("ffxivgardening-crosses.json")
+    efficiency: dict[tuple[int, int], dict[int, int]] = {}
+    for row in doc["crosses"]:
+        key = tuple(sorted((row["parentA"], row["parentB"])))
+        efficiency.setdefault(key, {})[row["target"]] = row["efficiency"]
+    return efficiency
+
+
 def apply_overrides(pair_targets: dict[tuple[int, int], set[int]], dead: set[tuple[int, int]]) -> None:
     overrides = load_overrides()
     for entry in overrides.get("pairs", []):
@@ -226,6 +243,32 @@ def apply_overrides(pair_targets: dict[tuple[int, int], set[int]], dead: set[tup
         elif "targets" in chosen:
             pair_targets[key] = set(chosen["targets"])
             dead.discard(key)
+        elif chosen.get("excluded"):
+            # A source's extra reading for this pair (a returned parent, an uncorroborated
+            # third outcome, ...) is deliberately not carried into the shipped dataset; the
+            # pair stays out of both pair_targets and dead rather than being decorative.
+            pair_targets.pop(key, None)
+            dead.discard(key)
+        else:
+            raise ValueError(f"overrides.json pair {list(key)}: unrecognized chosen shape {chosen!r}")
+
+
+def apply_yield_overrides(seeds: list[dict]) -> None:
+    """Substitute a seed's cropYield/seedYield with the site's per-seed value where
+    data/overrides.json records a hand decision that ffxivgardening.com and
+    yields-and-wilt-times.csv disagree (docs/cross-diff.md carries the reviewable record)."""
+    overrides = load_overrides()
+    by_row = {s["row"]: s for s in seeds}
+    for entry in overrides.get("seedYields", []):
+        seed = by_row.get(entry["row"])
+        if seed is None:
+            raise ValueError(f"overrides.json seedYields row {entry['row']}: not an outdoor seed")
+        field = entry["field"]
+        chosen = entry["chosen"]
+        if "value" in chosen:
+            seed[field] = chosen["value"]
+        else:
+            raise ValueError(f"overrides.json seedYields row {entry['row']}: unrecognized chosen shape {chosen!r}")
 
 
 def provenance() -> dict:
@@ -237,6 +280,8 @@ def provenance() -> dict:
         "nick75gCommit": vendor_prov.get("nick75gCommit"),
         "xivapiSchema": vendor_prov.get("xivapiSchema"),
         "xivapiVersion": vendor_prov.get("xivapiVersion"),
+        "ffxivgardeningFetched": vendor_prov.get("ffxivgardeningFetched"),
+        "ffxivgardeningPageCount": vendor_prov.get("ffxivgardeningPageCount"),
     }
 
 
@@ -257,14 +302,26 @@ def generate(out_dir: Path) -> None:
         sys.exit(1)
 
     apply_overrides(pair_targets, dead)
+    apply_yield_overrides(seeds)
 
     prov = provenance()
+    ffxivgardening_efficiency = load_ffxivgardening_efficiency()
 
     seeds_doc = {"provenance": prov, "seeds": seeds}
     pairs_doc = {
         "provenance": prov,
         "pairs": [
-            {"a": a, "b": b, "targets": sorted(targets)}
+            {
+                "a": a,
+                "b": b,
+                "targets": sorted(targets),
+                # target row -> ffxivgardening.com's confirmed efficiency percentage for that
+                # outcome of this pair; empty where the pair has no confirmed row there yet.
+                "efficiency": {
+                    str(target): pct
+                    for target, pct in sorted(ffxivgardening_efficiency.get((a, b), {}).items())
+                },
+            }
             for (a, b), targets in sorted(pair_targets.items())
         ],
         "dead": [list(pair) for pair in sorted(dead)],

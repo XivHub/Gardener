@@ -1,10 +1,12 @@
 {
   "provenance": {
-    "generated": "2026-09-05T12:26:02.705929+00:00",
+    "generated": "2026-09-05T15:12:51.251136+00:00",
     "lotlabCommit": "c143456f1bb8f34d9c5876ed1296de837b20bef7",
     "nick75gCommit": "7323c5b6a54dc9b6ffece18e4f117fe214634c5c",
     "xivapiSchema": "exdschema@2:rev:83e965d091116f895d5b17573cc5d12909a5f407",
-    "xivapiVersion": "284bb7f44b9c0976"
+    "xivapiVersion": "284bb7f44b9c0976",
+    "ffxivgardeningFetched": "2026-09-05T14:52:55.684086+00:00",
+    "ffxivgardeningPageCount": 107
   },
   "seeds": [
     {
@@ -42,10 +44,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -88,10 +90,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -111,10 +113,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -157,10 +159,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -249,10 +251,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -272,10 +274,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -295,10 +297,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -479,10 +481,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -502,10 +504,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -525,10 +527,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -594,10 +596,10 @@
         24
       ],
       "seedYield": [
-        1,
-        4,
-        6,
-        12
+        0,
+        0,
+        0,
+        0
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -1413,7 +1415,7 @@
         1,
         1,
         1,
-        1
+        2
       ],
       "seedYield": [
         0,
@@ -1546,7 +1548,7 @@
       "cropYield": [
         50,
         65,
-        80,
+        75,
         100
       ],
       "seedYield": [
@@ -1569,7 +1571,7 @@
       "cropYield": [
         50,
         65,
-        80,
+        75,
         100
       ],
       "seedYield": [
@@ -1592,7 +1594,7 @@
       "cropYield": [
         50,
         65,
-        80,
+        75,
         100
       ],
       "seedYield": [
@@ -1615,7 +1617,7 @@
       "cropYield": [
         50,
         65,
-        80,
+        75,
         100
       ],
       "seedYield": [
@@ -1638,7 +1640,7 @@
       "cropYield": [
         50,
         65,
-        80,
+        75,
         100
       ],
       "seedYield": [
@@ -1661,7 +1663,7 @@
       "cropYield": [
         50,
         65,
-        80,
+        75,
         100
       ],
       "seedYield": [
@@ -1683,7 +1685,7 @@
       "wiltDisputed": false,
       "cropYield": [
         2,
-        3,
+        2,
         3,
         3
       ],
@@ -1706,7 +1708,7 @@
       "wiltDisputed": false,
       "cropYield": [
         2,
-        3,
+        2,
         3,
         3
       ],
@@ -1760,7 +1762,7 @@
         1,
         1,
         1,
-        2
+        1
       ],
       "gatherable": true,
       "crossOnly": false,
@@ -1783,7 +1785,7 @@
         1,
         1,
         1,
-        2
+        1
       ],
       "gatherable": false,
       "crossOnly": true,

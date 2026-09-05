@@ -17,6 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
 VENDOR_DIR = DATA_DIR / "vendor"
 SOURCES_DIR = DATA_DIR / "sources"
+FFXIVGARDENING_DIR = VENDOR_DIR / "ffxivgardening"
 
 # Suffixes a seed item name carries that its offspring / parent label in other sources may omit.
 SUFFIXES = [" Seeds", " Set", " Kernels", " Cloves", " Bud", " Bulbs"]
@@ -194,3 +195,96 @@ def iter_matrix_pairs(rows: list[list[str]], axis: list[tuple[int, str]]):
     for idx, (ri, _) in enumerate(axis):
         for ci, _ in axis[idx + 1 :]:
             yield ri, ci, parse_cell(rows[ri][ci])
+
+
+# ---------------------------------------------------------------------------
+# ffxivgardening.com seed-details.php pages: machine-generated HTML, parsed by regex rather than
+# a full HTML parser since every field lives in one fixed markup shape (checked against SeedID=32,
+# 11, 17, 46, 60, 71 and the 1-107 boundary). A page's own produce name comes from its <title>; an
+# out-of-range SeedID renders the same template with every field empty, so an empty name is the
+# signal that the id does not resolve to a seed.
+# ---------------------------------------------------------------------------
+
+_FFXIVGARDENING_TITLE_RE = re.compile(r"<title>FFXIV Gardening: (.*?)</title>")
+_FFXIVGARDENING_GROW_RE = re.compile(r"Grow Time:\s*</strong>\s*([^<]+?)\s*</h5>", re.S)
+_FFXIVGARDENING_WILT_RE = re.compile(r"Wilt Time:</strong>\s*([^<]+?)\s*<sup", re.S)
+_FFXIVGARDENING_CROP_YIELD_RE = re.compile(r"Crop Yield:\s*</strong>\s*([^<]+?)\s*<sup", re.S)
+_FFXIVGARDENING_SEED_YIELD_RE = re.compile(r"Seed Yield:\s*</strong>\s*([^<]+?)\s*<sup", re.S)
+_FFXIVGARDENING_ROW_RE = re.compile(r"<tr class='(?:non)?loop'>(.*?)</tr>", re.S)
+_FFXIVGARDENING_CELL_RE = re.compile(r"<td[^>]*>(.*?)</td>", re.S)
+_FFXIVGARDENING_NAME_RE = re.compile(r"<a href='seed-details\.php\?SeedID=\d+'>([^<]+)</a>")
+_FFXIVGARDENING_ALT_TITLE_RE = re.compile(r"title='([^']+)'")
+_FFXIVGARDENING_EFFICIENCY_RE = re.compile(r'<span style="display: none;">(\d+)</span>')
+
+
+def parse_ffxivgardening_name(html: str) -> str | None:
+    """The page's own produce name from its <title>; None for an out-of-range SeedID."""
+    match = _FFXIVGARDENING_TITLE_RE.search(html)
+    if match is None:
+        return None
+    name = match.group(1).strip()
+    return name or None
+
+
+def _parse_ffxivgardening_hours(text: str) -> int | None:
+    """'5 Days' -> 120, '48 Hours' -> 48, '--' (never wilts) -> 0."""
+    text = text.strip()
+    if text == "--":
+        return 0
+    match = re.match(r"(\d+)\s*(Day|Hour)", text)
+    amount, unit = int(match.group(1)), match.group(2)
+    return amount * 24 if unit == "Day" else amount
+
+
+def _parse_ffxivgardening_quad(text: str) -> list[int] | None:
+    text = text.strip()
+    if text == "--":
+        return None
+    return [int(part.strip()) for part in text.split("/")]
+
+
+def parse_ffxivgardening_header(html: str) -> dict:
+    """Grow hours, wilt hours (0 for a plant the page marks '--', never-wilting) and crop/seed
+    yield quads from a seed page's info block."""
+    grow_match = _FFXIVGARDENING_GROW_RE.search(html)
+    wilt_match = _FFXIVGARDENING_WILT_RE.search(html)
+    crop_match = _FFXIVGARDENING_CROP_YIELD_RE.search(html)
+    seed_match = _FFXIVGARDENING_SEED_YIELD_RE.search(html)
+    return {
+        "growHours": _parse_ffxivgardening_hours(grow_match.group(1)) if grow_match else None,
+        "wiltHours": _parse_ffxivgardening_hours(wilt_match.group(1)) if wilt_match else None,
+        "cropYield": _parse_ffxivgardening_quad(crop_match.group(1)) if crop_match else None,
+        "seedYield": _parse_ffxivgardening_quad(seed_match.group(1)) if seed_match else None,
+    }
+
+
+def parse_ffxivgardening_crosses_table(html: str) -> list[dict]:
+    """Every confirmed-crossbreed row on a seed page: the two parent names, the row's alternate
+    outcome (None where the site shows '--', a pair with no second possible outcome), and the
+    efficiency percentage.
+
+    The produced seed itself is not in the row: every row on a page is a pair that produces that
+    page's own seed, named once in its <title> rather than repeated per row.
+    """
+    rows = []
+    for row_html in _FFXIVGARDENING_ROW_RE.findall(html):
+        cells = _FFXIVGARDENING_CELL_RE.findall(row_html)
+        if len(cells) != 8:
+            raise ValueError(f"expected 8 cells in a ffxivgardening.com crossbreed row, got {len(cells)}: {row_html!r}")
+        parent_a_match = _FFXIVGARDENING_NAME_RE.search(cells[1])
+        parent_b_match = _FFXIVGARDENING_NAME_RE.search(cells[5])
+        if parent_a_match is None or parent_b_match is None:
+            raise ValueError(f"could not find a parent name in a ffxivgardening.com crossbreed row: {row_html!r}")
+        alt_title_match = _FFXIVGARDENING_ALT_TITLE_RE.search(cells[6])
+        efficiency_match = _FFXIVGARDENING_EFFICIENCY_RE.search(cells[7])
+        if efficiency_match is None:
+            raise ValueError(f"could not find an efficiency value in a ffxivgardening.com crossbreed row: {row_html!r}")
+        rows.append(
+            {
+                "parentA": parent_a_match.group(1).strip(),
+                "parentB": parent_b_match.group(1).strip(),
+                "alternate": alt_title_match.group(1).strip() if alt_title_match else None,
+                "efficiency": int(efficiency_match.group(1)),
+            }
+        )
+    return rows

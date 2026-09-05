@@ -5,17 +5,30 @@ Sources:
   nick75g/FFXIV-Crossbreed-Helper@main:_internal/importantfiles/  (MIT)      -> crossbreed working set
   Lotlab/FFXIV-Gardening-Tracker@master:GardeningTracker/data/seeds_time.json (GPL-3.0) -> grow/wilt hours
   XIVAPI v2 GardeningSeed sheet + Item(FilterGroup=20) search                -> seed/produce name -> row map
+  ffxivgardening.com seed-details.php, one page per seed                    -> crossbreed efficiency + alternates
 
 Every fetch is pinned to a resolved commit sha (GitHub) or schema+version string (XIVAPI), written to
 data/vendor/provenance.json, so a later build can tell whether the bundled tables are stale.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
+import time
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _dataset import (  # noqa: E402
+    FFXIVGARDENING_DIR,
+    build_resolver,
+    load_aliases,
+    parse_ffxivgardening_crosses_table,
+    parse_ffxivgardening_name,
+    resolve_label,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 VENDOR_DIR = REPO_ROOT / "data" / "vendor"
@@ -31,6 +44,17 @@ LOTLAB_PATH = "GardeningTracker/data"
 LOTLAB_FILES = ["seeds_time.json"]
 
 XIVAPI_BASE = "https://v2.xivapi.com/api"
+
+FFXIVGARDENING_URL = "https://www.ffxivgardening.com/seed-details.php?SeedID={id}"
+# Identifies the crawler and its purpose without carrying anyone's personal contact details.
+FFXIVGARDENING_USER_AGENT = (
+    "Gardener-Dalamud-Plugin-DataPipeline/1.0 (+https://plugins.xivhub.net; "
+    "one-time data refresh for a FFXIV gardening plugin, polite crawl at 1 req/s)"
+)
+FFXIVGARDENING_FETCH_DELAY_SECONDS = 1.0
+# How many consecutive non-resolving ids end the walk; tolerates one gap in an otherwise live range
+# without letting an outage or a renumbering turn into an unbounded crawl.
+FFXIVGARDENING_MAX_CONSECUTIVE_MISSES = 5
 
 
 def http_get(url: str, headers: dict | None = None) -> bytes:
@@ -122,7 +146,99 @@ def fetch_gardening_seed_items() -> dict:
     }
 
 
+def fetch_ffxivgardening_pages(refresh: bool) -> list[int]:
+    """Walk SeedID=1.. and cache every page that resolves to a seed name.
+
+    A resolving page is written to data/vendor/ffxivgardening/seed-<id>.html and, absent
+    --refresh, loaded from there on a later run instead of hitting the network. An id that does
+    not resolve is never cached, so the tail past the last known id is re-probed (bounded by
+    FFXIVGARDENING_MAX_CONSECUTIVE_MISSES) every run, which is how a seed the site adds later gets
+    picked up without a full --refresh.
+    """
+    FFXIVGARDENING_DIR.mkdir(parents=True, exist_ok=True)
+    found: list[int] = []
+    consecutive_misses = 0
+    seed_id = 1
+    while consecutive_misses < FFXIVGARDENING_MAX_CONSECUTIVE_MISSES:
+        cache_path = FFXIVGARDENING_DIR / f"seed-{seed_id}.html"
+        if cache_path.exists() and not refresh:
+            html = cache_path.read_text(encoding="utf-8")
+        else:
+            content = http_get(
+                FFXIVGARDENING_URL.format(id=seed_id),
+                headers={"User-Agent": FFXIVGARDENING_USER_AGENT},
+            )
+            html = content.decode("utf-8")
+            time.sleep(FFXIVGARDENING_FETCH_DELAY_SECONDS)
+
+        if parse_ffxivgardening_name(html) is not None:
+            cache_path.write_text(html, encoding="utf-8")
+            found.append(seed_id)
+            consecutive_misses = 0
+        else:
+            consecutive_misses += 1
+        seed_id += 1
+
+    return found
+
+
+def build_ffxivgardening_crosses(page_ids: list[int], resolver: dict[str, int]) -> tuple[list[dict], list[str]]:
+    """Every confirmed-crossbreed row across every cached page, with every name resolved to a
+    `GardeningSeed` row id.
+
+    A page with zero rows (every flowerpot flower: flowerpots cannot crossbreed) is skipped before
+    its own name is even resolved, since the outdoor-only resolver would otherwise reject it for a
+    reason that has nothing to do with a data problem.
+    """
+    crosses: list[dict] = []
+    unresolved: list[str] = []
+    for seed_id in page_ids:
+        html = (FFXIVGARDENING_DIR / f"seed-{seed_id}.html").read_text(encoding="utf-8")
+        rows = parse_ffxivgardening_crosses_table(html)
+        if not rows:
+            continue
+
+        target_name = parse_ffxivgardening_name(html)
+        target_row = resolve_label(target_name, resolver)
+        if target_row is None:
+            unresolved.append(f"seed-{seed_id}.html target {target_name!r}")
+            continue
+
+        for row in rows:
+            parent_a_row = resolve_label(row["parentA"], resolver)
+            parent_b_row = resolve_label(row["parentB"], resolver)
+            alt_row = resolve_label(row["alternate"], resolver) if row["alternate"] else None
+            if parent_a_row is None:
+                unresolved.append(f"seed-{seed_id}.html parent {row['parentA']!r}")
+            if parent_b_row is None:
+                unresolved.append(f"seed-{seed_id}.html parent {row['parentB']!r}")
+            if row["alternate"] and alt_row is None:
+                unresolved.append(f"seed-{seed_id}.html alternate {row['alternate']!r}")
+            if parent_a_row is None or parent_b_row is None or (row["alternate"] and alt_row is None):
+                continue
+
+            crosses.append(
+                {
+                    "parentA": parent_a_row,
+                    "parentB": parent_b_row,
+                    "target": target_row,
+                    "alternate": alt_row,
+                    "efficiency": row["efficiency"],
+                }
+            )
+
+    return crosses, unresolved
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="ignore data/vendor/ffxivgardening/*.html cache and refetch every seed page",
+    )
+    args = parser.parse_args()
+
     VENDOR_DIR.mkdir(parents=True, exist_ok=True)
 
     provenance_path = VENDOR_DIR / "provenance.json"
@@ -143,12 +259,37 @@ def main() -> int:
     (VENDOR_DIR / "gardening_seed_items.json").write_text(json.dumps(seed_items, indent=2) + "\n")
     print(f"  schema {seed_items['schema']} version {seed_items['version']}, {len(seed_items['rows'])} rows")
 
+    print("Fetching www.ffxivgardening.com seed-details.php pages ...")
+    page_ids = fetch_ffxivgardening_pages(refresh=args.refresh)
+    print(f"  found {len(page_ids)} pages, ids {min(page_ids)}-{max(page_ids)}")
+    if len(page_ids) != max(page_ids) - min(page_ids) + 1:
+        print("  WARNING: the id range is not contiguous; at least one SeedID in range did not resolve.")
+
+    print("Parsing www.ffxivgardening.com crossbreed tables ...")
+    resolver = build_resolver(seed_items, load_aliases())
+    crosses, unresolved_ffxivgardening = build_ffxivgardening_crosses(page_ids, resolver)
+    if unresolved_ffxivgardening:
+        print("ERROR: unresolved ffxivgardening.com seed names (add to data/aliases.json):", file=sys.stderr)
+        for name in sorted(set(unresolved_ffxivgardening)):
+            print(f"  {name}", file=sys.stderr)
+        sys.exit(1)
+    ffxivgardening_fetched = datetime.now(timezone.utc).isoformat()
+    crosses_doc = {
+        "generated": ffxivgardening_fetched,
+        "pageCount": len(page_ids),
+        "crosses": crosses,
+    }
+    (VENDOR_DIR / "ffxivgardening-crosses.json").write_text(json.dumps(crosses_doc, indent=2) + "\n")
+    print(f"  wrote {len(crosses)} confirmed-cross rows across {len(page_ids)} pages")
+
     record = {
         "generated": datetime.now(timezone.utc).isoformat(),
         "nick75gCommit": nick75g_sha,
         "lotlabCommit": lotlab_sha,
         "xivapiSchema": seed_items["schema"],
         "xivapiVersion": seed_items["version"],
+        "ffxivgardeningFetched": ffxivgardening_fetched,
+        "ffxivgardeningPageCount": len(page_ids),
     }
 
     print("\nResolved provenance:")

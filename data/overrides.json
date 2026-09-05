@@ -5674,6 +5674,577 @@
         ]
       },
       "why": "The matrix's extra entries for this pair are the parent seeds themselves, which a cross can return but which are not a result worth planning for; nick75g records only novel offspring. Verified across the whole diff: no pair anywhere adds an offspring outside its own parents."
+    },
+    {
+      "pair": [
+        6,
+        35
+      ],
+      "chosen": {
+        "targets": [
+          38
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Popoto x Dalamud Popoto produces only La Noscean Leek (row 38); ffxivgardening.com has no cached page recording this pair at all, which is silence rather than a contradiction, so the two agreeing sources are kept."
+    },
+    {
+      "pair": [
+        9,
+        73
+      ],
+      "chosen": {
+        "targets": [
+          8
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Midland Cabbage x Windlight produces only Wizard Eggplant (row 8); ffxivgardening.com has no cached page recording this pair, which is silence rather than a contradiction, so the two agreeing sources are kept."
+    },
+    {
+      "pair": [
+        10,
+        58
+      ],
+      "chosen": {
+        "targets": [
+          9,
+          45
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Dzemael Tomato x Xelphatol Apple produces Midland Cabbage (row 9) and Sylkis Bud (row 45); ffxivgardening.com's own Sylkis Bud page adds Midland Basil (row 28) as a further alternate, but neither of the other two independent sources corroborates it, so it is not added."
+    },
+    {
+      "pair": [
+        14,
+        16
+      ],
+      "chosen": {
+        "targets": [
+          17
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Sun Lemon x Blood Currant produces only Mirror Apple (row 17); ffxivgardening.com's Mirror Apple page lists Sun Lemon (row 14) itself, one of the pair's own two parents, as the alternate. A cross returning a parent seed is not a novel result worth planning for, matching the convention used elsewhere in this file."
+    },
+    {
+      "pair": [
+        15,
+        26
+      ],
+      "chosen": {
+        "targets": [
+          14,
+          27
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Pixie Plum x Chamomile produces Sun Lemon (row 14) and Flax (row 27); ffxivgardening.com's Flax page lists Pixie Plum (row 15) itself, one of the pair's own two parents, as the alternate. A cross returning a parent seed is not a novel result worth planning for, matching the convention used elsewhere in this file."
+    },
+    {
+      "pair": [
+        17,
+        53
+      ],
+      "chosen": {
+        "targets": [
+          19,
+          54
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Mirror Apple x Garlic Jester produces Honey Lemon (row 19) and Tomato King (row 54); ffxivgardening.com's Honey Lemon page has only one confirmed row for this pair, with no alternate listed, which is an absent second observation rather than a contradiction of the two agreeing sources, so Tomato King is kept."
+    },
+    {
+      "pair": [
+        18,
+        20
+      ],
+      "chosen": {
+        "targets": [
+          37
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Rolanberry x Prickly Pineapple produces only Apricot (row 37); ffxivgardening.com's Apricot page adds Umbrella Fig (row 40) as a further alternate, but neither of the other two independent sources corroborates it, so it is not added."
+    },
+    {
+      "pair": [
+        20,
+        22
+      ],
+      "chosen": {
+        "targets": [
+          18,
+          27
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Prickly Pineapple x Lavender produces Rolanberry (row 18) and Flax (row 27); ffxivgardening.com adds Lightning Shard (row 75), but its own two pages disagree on what the pair's second outcome even is (the Flax page's row for this pair records the alternate as Rolanberry, matching nick75g, while the Rolanberry page's row for the same pair records the alternate as Lightning Shard instead of Flax) \u2014 an internal contradiction on the one site raising the claim, against two sources that agree with each other, so Lightning Shard is not added."
+    },
+    {
+      "pair": [
+        20,
+        78
+      ],
+      "chosen": {
+        "targets": [
+          18,
+          27
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Prickly Pineapple x Voidrake produces Rolanberry (row 18) and Flax (row 27); ffxivgardening.com adds Lightning Shard (row 75) the same way it does for Prickly Pineapple x Lavender (row pair 20+22), and is internally inconsistent there too \u2014 the Flax page's row for this pair records the alternate as Rolanberry, matching nick75g, while the Rolanberry page's row for the same pair records the alternate as Lightning Shard instead of Flax \u2014 so Lightning Shard is not added."
+    },
+    {
+      "pair": [
+        27,
+        29
+      ],
+      "chosen": {
+        "targets": [
+          32
+        ]
+      },
+      "why": "nick75g and trends-and-families.csv agree exactly that Flax x Mandrake produces only Azeyma Rose (row 32); ffxivgardening.com's Azeyma Rose page adds Star Anise (row 34) as a further alternate, but neither of the other two independent sources corroborates it, so it is not added."
+    },
+    {
+      "pair": [
+        29,
+        66
+      ],
+      "chosen": {
+        "targets": [
+          10,
+          38
+        ]
+      },
+      "why": "nick75g and ffxivgardening.com agree exactly that Mandrake x Chive produces Dzemael Tomato (row 10) and La Noscean Leek (row 38); trends-and-families.csv's cell instead reads 'LaNo Leek' and 'Tomato King' (row 54, a different crop from Dzemael Tomato despite the similar name). With two independent sources agreeing exactly on Dzemael Tomato, the spreadsheet cell is treated as a Tomato King/Dzemael Tomato mislabeling and nick75g's set is kept."
+    },
+    {
+      "pair": [
+        31,
+        46
+      ],
+      "chosen": {
+        "targets": [
+          39,
+          50
+        ]
+      },
+      "why": "Halone Gerbera x Mimett Gourd, one of the routes to Thavnairian Onion. nick75g records two outcomes, Shroud Tea (row 39) and Thavnairian Onion (row 50), both at 88% efficiency. trends-and-families.csv's cell for this pair reads exactly 'Shroud Tea' and 'Thav. Onion' \u2014 the same two rows, with no third token. ffxivgardening.com adds a third outcome, Tantalplant (row 47), as the alternate on its Shroud Tea page, but its own Thavnairian Onion page's row for the same pair lists the alternate as Shroud Tea, not Tantalplant, so the site does not corroborate Tantalplant against itself either. With the community matrix agreeing with nick75g exactly and ffxivgardening.com internally inconsistent about the third outcome, Tantalplant is not added; the planner keeps only the two cross-source-confirmed targets for the seed players care most about."
+    }
+  ],
+  "seedYields": [
+    {
+      "row": 23,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; Black Pepper's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 26,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; Chamomile's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 13,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; Faerie Apple's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 21,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; Garlic Cloves's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 4,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; La Noscean Lettuce's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 11,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; La Noscean Orange's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 22,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; Lavender's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 12,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; Lowland Grape's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 7,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; Millioncorn's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 5,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; Olive's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 2,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        4,
+        6,
+        12
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv carries an identical `1 / 4 / 6 / 12` seedYield across a large block of outdoor seeds, reading as a spreadsheet fill-down rather than a per-seed value; Wild Onion Set's own ffxivgardening.com page (keyed by its <title>) reports `0 / 0 / 0 / 0` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 84,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `1 / 1 / 1 / 2` for Cloudsbreath's seedYield; its own ffxivgardening.com page reports `1 / 1 / 1 / 1` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 85,
+      "field": "seedYield",
+      "chosen": {
+        "value": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        1,
+        1,
+        2
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `1 / 1 / 1 / 2` for Royal Fern's seedYield, the same disagreement shape as Cloudsbreath; its own ffxivgardening.com page reports `1 / 1 / 1 / 1` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 71,
+      "field": "cropYield",
+      "chosen": {
+        "value": [
+          50,
+          65,
+          75,
+          100
+        ]
+      },
+      "spreadsheetValue": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `50 / 65 / 80 / 100` for Fire Shard's cropYield; its own ffxivgardening.com page reports `50 / 65 / 75 / 100` instead (the G2 tier differs, 75 vs 80), and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 72,
+      "field": "cropYield",
+      "chosen": {
+        "value": [
+          50,
+          65,
+          75,
+          100
+        ]
+      },
+      "spreadsheetValue": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `50 / 65 / 80 / 100` for Ice Shard's cropYield; its own ffxivgardening.com page reports `50 / 65 / 75 / 100` instead (the G2 tier differs, 75 vs 80), and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 73,
+      "field": "cropYield",
+      "chosen": {
+        "value": [
+          50,
+          65,
+          75,
+          100
+        ]
+      },
+      "spreadsheetValue": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `50 / 65 / 80 / 100` for Wind Shard's cropYield; its own ffxivgardening.com page reports `50 / 65 / 75 / 100` instead (the G2 tier differs, 75 vs 80), and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 74,
+      "field": "cropYield",
+      "chosen": {
+        "value": [
+          50,
+          65,
+          75,
+          100
+        ]
+      },
+      "spreadsheetValue": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `50 / 65 / 80 / 100` for Earth Shard's cropYield; its own ffxivgardening.com page reports `50 / 65 / 75 / 100` instead (the G2 tier differs, 75 vs 80), and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 75,
+      "field": "cropYield",
+      "chosen": {
+        "value": [
+          50,
+          65,
+          75,
+          100
+        ]
+      },
+      "spreadsheetValue": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `50 / 65 / 80 / 100` for Lightning Shard's cropYield; its own ffxivgardening.com page reports `50 / 65 / 75 / 100` instead (the G2 tier differs, 75 vs 80), and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 76,
+      "field": "cropYield",
+      "chosen": {
+        "value": [
+          50,
+          65,
+          75,
+          100
+        ]
+      },
+      "spreadsheetValue": [
+        50,
+        65,
+        80,
+        100
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `50 / 65 / 80 / 100` for Water Shard's cropYield; its own ffxivgardening.com page reports `50 / 65 / 75 / 100` instead (the G2 tier differs, 75 vs 80), and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 64,
+      "field": "cropYield",
+      "chosen": {
+        "value": [
+          1,
+          1,
+          1,
+          2
+        ]
+      },
+      "spreadsheetValue": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `1 / 1 / 1 / 1` for Han Lemon's cropYield; its own ffxivgardening.com page reports `1 / 1 / 1 / 2` instead, and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 77,
+      "field": "cropYield",
+      "chosen": {
+        "value": [
+          2,
+          2,
+          3,
+          3
+        ]
+      },
+      "spreadsheetValue": [
+        2,
+        3,
+        3,
+        3
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `2 / 3 / 3 / 3` for Althyk Lavender's cropYield; its own ffxivgardening.com page reports `2 / 2 / 3 / 3` instead (the G1 tier differs, 2 vs 3), and the site's per-seed authored value is preferred."
+    },
+    {
+      "row": 78,
+      "field": "cropYield",
+      "chosen": {
+        "value": [
+          2,
+          2,
+          3,
+          3
+        ]
+      },
+      "spreadsheetValue": [
+        2,
+        3,
+        3,
+        3
+      ],
+      "why": "data/sources/yields-and-wilt-times.csv reports `2 / 3 / 3 / 3` for Voidrake's cropYield; its own ffxivgardening.com page reports `2 / 2 / 3 / 3` instead (the G1 tier differs, 2 vs 3), and the site's per-seed authored value is preferred."
     }
   ]
 }

@@ -15,3 +15,6 @@ HANDOFF.md
 docs/PLAN.md
 __pycache__/
 *.pyc
+
+# Scraped page cache; reproducible with tools/fetch_sources.py
+data/vendor/ffxivgardening/
