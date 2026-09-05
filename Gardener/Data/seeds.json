@@ -1,6 +1,6 @@
 {
   "provenance": {
-    "generated": "2026-09-05T10:15:07.616040+00:00",
+    "generated": "2026-09-05T12:26:02.705929+00:00",
     "lotlabCommit": "c143456f1bb8f34d9c5876ed1296de837b20bef7",
     "nick75gCommit": "7323c5b6a54dc9b6ffece18e4f117fe214634c5c",
     "xivapiSchema": "exdschema@2:rev:83e965d091116f895d5b17573cc5d12909a5f407",
@@ -25,7 +25,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 20 Node in Quarterstone, Western La Noscea"
+      ]
     },
     {
       "row": 2,
@@ -44,8 +47,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Nophica's Wells, Western Thanalan"
+      ]
     },
     {
       "row": 3,
@@ -65,7 +71,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Horizon's Edge, Western Thanalan"
+      ]
     },
     {
       "row": 4,
@@ -84,8 +93,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Summerford, Middle La Noscea"
+      ]
     },
     {
       "row": 5,
@@ -104,8 +116,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Moraby Bay, Lower La Noscea"
+      ]
     },
     {
       "row": 6,
@@ -125,7 +140,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 20 Node in Sandgate, Eastern Thanalan"
+      ]
     },
     {
       "row": 7,
@@ -144,8 +162,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 25 Node in Drybone, Eastern Thanalan"
+      ]
     },
     {
       "row": 8,
@@ -165,7 +186,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 30 Node in Alder Springs, North Shroud"
+      ]
     },
     {
       "row": 9,
@@ -185,7 +209,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 30 Node in Alder Springs, North Shroud"
+      ]
     },
     {
       "row": 10,
@@ -205,7 +232,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 50 One Star Unspoiled Node in Raincatcher Gully, Eastern La Noscea"
+      ]
     },
     {
       "row": 11,
@@ -224,8 +254,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 10 Node in Cedarwood, Lower La Noscea"
+      ]
     },
     {
       "row": 12,
@@ -244,8 +277,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Moraby Bay, Lower La Noscea"
+      ]
     },
     {
       "row": 13,
@@ -264,8 +300,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 20 Node in Nine Ivies, East Shroud"
+      ]
     },
     {
       "row": 14,
@@ -285,7 +324,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 20 Node in Cedarwood, Lower La Noscea"
+      ]
     },
     {
       "row": 15,
@@ -305,7 +347,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 25 Node in Oakwood, Upper La Noscea"
+      ]
     },
     {
       "row": 16,
@@ -325,7 +370,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 40 Node in Lower Paths, South Shroud"
+      ]
     },
     {
       "row": 17,
@@ -345,7 +393,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 45 Node in Whitebrim, Coerthas Central Highlands"
+      ]
     },
     {
       "row": 18,
@@ -365,7 +416,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 45 Node in Bronze Lake, Upper La Noscea"
+      ]
     },
     {
       "row": 19,
@@ -385,7 +439,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 50 One Star Unspoiled Node in Bloodshore, Eastern La Noscea"
+      ]
     },
     {
       "row": 20,
@@ -405,7 +462,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 50 One Star Unspoiled Node in Bloodshore, Eastern La Noscea"
+      ]
     },
     {
       "row": 21,
@@ -424,8 +484,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Nophica's Wells, Western Thanalan"
+      ]
     },
     {
       "row": 22,
@@ -444,8 +507,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Bentbranch, Central Shroud"
+      ]
     },
     {
       "row": 23,
@@ -464,8 +530,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in The Clutch, Central Thanalan"
+      ]
     },
     {
       "row": 24,
@@ -485,7 +554,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 25 Node in Drybone, Eastern Thanalan"
+      ]
     },
     {
       "row": 25,
@@ -505,7 +577,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 25 Node in Drybone, Eastern Thanalan"
+      ]
     },
     {
       "row": 26,
@@ -524,8 +599,11 @@
         6,
         12
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 25 Node in Oakwood, Upper La Noscea"
+      ]
     },
     {
       "row": 27,
@@ -545,7 +623,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 35 Node in Lower Paths, South Shroud"
+      ]
     },
     {
       "row": 28,
@@ -565,7 +646,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 35 Node in Bloodshore, Eastern La Noscea"
+      ]
     },
     {
       "row": 29,
@@ -585,7 +669,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 35 Node in Bloodshore, Eastern La Noscea"
+      ]
     },
     {
       "row": 30,
@@ -605,7 +692,10 @@
         12
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Level 40 Node in Raincatcher Gully, Eastern La Noscea"
+      ]
     },
     {
       "row": 31,
@@ -624,8 +714,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 32,
@@ -644,8 +735,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 33,
@@ -664,8 +756,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 34,
@@ -684,8 +777,9 @@
         3,
         5
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 35,
@@ -704,8 +798,9 @@
         3,
         5
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 36,
@@ -724,8 +819,9 @@
         3,
         5
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 37,
@@ -744,8 +840,9 @@
         3,
         5
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 38,
@@ -764,8 +861,9 @@
         3,
         5
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 39,
@@ -784,8 +882,9 @@
         3,
         5
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 40,
@@ -804,8 +903,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 41,
@@ -824,8 +924,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 42,
@@ -844,8 +945,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 43,
@@ -864,8 +966,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 44,
@@ -884,8 +987,9 @@
         5,
         9
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 45,
@@ -904,8 +1008,9 @@
         5,
         9
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 46,
@@ -924,8 +1029,9 @@
         5,
         9
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 47,
@@ -944,8 +1050,9 @@
         5,
         9
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 48,
@@ -964,8 +1071,9 @@
         5,
         9
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 49,
@@ -984,8 +1092,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Material Supplier in Residential Districts, Tanie in New Gridania (Can't be bought from Apartment Merchants!)"
+      ]
     },
     {
       "row": 50,
@@ -1004,8 +1115,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 51,
@@ -1024,8 +1136,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 52,
@@ -1044,8 +1157,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 53,
@@ -1064,8 +1178,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 54,
@@ -1084,8 +1199,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 55,
@@ -1104,8 +1220,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 56,
@@ -1124,8 +1241,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 57,
@@ -1144,8 +1262,9 @@
         6,
         12
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 58,
@@ -1164,8 +1283,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Hunt Billmaster (15 Allied Seals)"
+      ]
     },
     {
       "row": 59,
@@ -1184,8 +1306,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Hunt Billmaster (15 Allied Seals)"
+      ]
     },
     {
       "row": 60,
@@ -1204,8 +1329,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Hunt Billmaster (15 Allied Seals)"
+      ]
     },
     {
       "row": 61,
@@ -1224,8 +1352,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Hunt Billmaster (15 Allied Seals)"
+      ]
     },
     {
       "row": 62,
@@ -1244,8 +1375,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Hunt Billmaster (15 Allied Seals)"
+      ]
     },
     {
       "row": 63,
@@ -1264,8 +1398,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Hunt Billmaster (15 Allied Seals)"
+      ]
     },
     {
       "row": 64,
@@ -1284,8 +1421,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Hunt Billmaster (15 Allied Seals)"
+      ]
     },
     {
       "row": 65,
@@ -1304,8 +1444,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 50 Three Star Unspoiled Node in Chocobo Forest, The Dravanian Forelands"
+      ]
     },
     {
       "row": 66,
@@ -1324,8 +1467,9 @@
         1,
         2
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 67,
@@ -1344,8 +1488,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 55 Unspoiled Node in Riversmeet, Coerthas Western Highlands"
+      ]
     },
     {
       "row": 68,
@@ -1364,8 +1511,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 55 Unspoiled Node in Riversmeet, Coerthas Western Highlands"
+      ]
     },
     {
       "row": 69,
@@ -1384,8 +1534,9 @@
         1,
         1
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 71,
@@ -1404,8 +1555,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Summerford, Middle La Noscea"
+      ]
     },
     {
       "row": 72,
@@ -1424,8 +1578,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 20 Node in Quarterstone, Western La Noscea"
+      ]
     },
     {
       "row": 73,
@@ -1444,8 +1601,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Bentbranch, Central Shroud"
+      ]
     },
     {
       "row": 74,
@@ -1464,8 +1624,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Moraby Bay, Lower La Noscea"
+      ]
     },
     {
       "row": 75,
@@ -1484,8 +1647,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in The Clutch, Central Thanalan"
+      ]
     },
     {
       "row": 76,
@@ -1504,8 +1670,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Level 15 Node in Horizon's Edge, Western Thanalan"
+      ]
     },
     {
       "row": 77,
@@ -1524,8 +1693,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Grand Company (500 Seals, Rank Private Third Class) or Free Company (300 Credits, FC Rank 6)"
+      ]
     },
     {
       "row": 78,
@@ -1544,8 +1716,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Grand Company (500 Seals, Rank Private Third Class) or Free Company (300 Credits, FC Rank 6)"
+      ]
     },
     {
       "row": 81,
@@ -1564,8 +1739,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Material Supplier in Residential Districts"
+      ]
     },
     {
       "row": 84,
@@ -1585,7 +1763,10 @@
         2
       ],
       "gatherable": true,
-      "crossOnly": false
+      "crossOnly": false,
+      "otherSources": [
+        "Free Company Airships (Sea of Clouds - Sectors 17, 21 and 24)"
+      ]
     },
     {
       "row": 85,
@@ -1604,8 +1785,9 @@
         1,
         2
       ],
-      "gatherable": true,
-      "crossOnly": false
+      "gatherable": false,
+      "crossOnly": true,
+      "otherSources": []
     },
     {
       "row": 94,
@@ -1619,8 +1801,11 @@
         0,
         0
       ],
-      "gatherable": false,
-      "crossOnly": true
+      "gatherable": true,
+      "crossOnly": false,
+      "otherSources": [
+        "Material Supplier in Residential Districts, Tanie in New Gridania"
+      ]
     }
   ]
 }

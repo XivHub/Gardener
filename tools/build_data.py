@@ -3,7 +3,7 @@
 
 seeds.json: one entry per outdoor `GardeningSeed` row (row > 0, not a flowerpot flower), carrying
 grow hours (Lotlab), wilt hours (minimum of Lotlab and the community spreadsheet, disputed rows
-flagged), crop/seed yield per soil tier, and gatherable/cross-only flags (nick75g).
+flagged), crop/seed yield per soil tier, and how each seed can be obtained (nick75g).
 
 crossbreeds.json: unordered {a,b,targets[]} pairs collapsed from nick75g's target-keyed
 crossbreeding.json, plus a dead-pair list from the community spreadsheet's X / Dead cells.
@@ -91,18 +91,32 @@ def load_grow_and_wilt_lotlab() -> dict[int, dict]:
 
 
 def load_gather_flags(resolver: dict[str, int]) -> dict[int, dict]:
-    """nick75g's seeds.json also flags the 27 flowerpot-only seeds; those never resolve against the
-    outdoor-only resolver and that is expected, not an error — completeness is checked the other
-    way around, in build_seeds, which requires every outdoor row to have a flag."""
+    """How a seed can be obtained, taken from which vendor file lists it rather than from
+    seeds.json's y/n/yn flag.
+
+    The flag reads as the opposite of what it looks like: `y` marks the 29 seeds that exist ONLY as
+    a crossbreed result, and those are exactly the seeds listed in gatherlist.json (which maps a
+    seed to the parent pairs that produce it, not to a gathering node). othersources.json is the
+    file that names real acquisition — a gathering node, a vendor, Grand Company seals — and holds
+    the other 74. Membership in the two files is unambiguous and needs no flag at all, so it is the
+    source of truth here; a seed reachable both ways would appear in both.
+
+    nick75g's seeds.json also covers the 27 flowerpot-only seeds; those never resolve against the
+    outdoor-only resolver and that is expected, not an error — completeness is checked the other way
+    around, in build_seeds, which requires every outdoor row to have an entry."""
     flags = load_vendor("seeds.json")
+    cross_produced = load_vendor("gatherlist.json")
+    other_sources = load_vendor("othersources.json")
     by_row: dict[int, dict] = {}
-    for label, flag in flags.items():
+    for label in flags:
         seed_row = resolve_label(label, resolver)
         if seed_row is None:
             continue
+        sources = other_sources.get(label, [])
         by_row[seed_row] = {
-            "gatherable": flag in ("y", "yn"),
-            "crossOnly": flag == "n",
+            "gatherable": bool(sources),
+            "crossOnly": label in cross_produced and not sources,
+            "otherSources": sources,
         }
     return by_row
 
@@ -146,6 +160,7 @@ def build_seeds(resolver: dict[str, int], unresolved: list[str]) -> list[dict]:
                 "seedYield": yw["seedYield"] if yw else None,
                 "gatherable": gr["gatherable"] if gr else None,
                 "crossOnly": gr["crossOnly"] if gr else None,
+                "otherSources": gr["otherSources"] if gr else None,
             }
         )
     return seeds
