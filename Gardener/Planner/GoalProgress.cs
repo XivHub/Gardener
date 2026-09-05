@@ -82,7 +82,7 @@ public static class GoalProgress
 
         var shortBy = step.Needed - heldCount;
         return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null,
-            $"You need {shortBy} more {SeedItemName(step.SeedRow)}.");
+            $"You need {shortBy} more {SeedItems.SeedItemName(step.SeedRow)}.");
     }
 
     private static GoalStepProgress EvaluateCross(CrossStep step, IReadOnlyDictionary<uint, int> held, IReadOnlyList<BedState> beds)
@@ -107,9 +107,9 @@ public static class GoalProgress
 
         var missing = new List<string>();
         if (held.GetValueOrDefault(step.FirstSeedRow) < 1 && !beds.Any(b => !b.IsEmpty && b.SeedRow == step.FirstSeedRow))
-            missing.Add(SeedItemName(step.FirstSeedRow));
+            missing.Add(SeedItems.SeedItemName(step.FirstSeedRow));
         if (held.GetValueOrDefault(step.SecondSeedRow) < 1)
-            missing.Add(SeedItemName(step.SecondSeedRow));
+            missing.Add(SeedItems.SeedItemName(step.SecondSeedRow));
 
         if (missing.Count > 0)
             return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null,
@@ -117,7 +117,7 @@ public static class GoalProgress
 
         var shortBy = step.Needed - heldCount;
         return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null,
-            $"You need {shortBy} more {SeedItemName(step.TargetRow)}.");
+            $"You need {shortBy} more {SeedItems.SeedItemName(step.TargetRow)}.");
     }
 
     private static BedState? FirstOccupied(IReadOnlyList<BedState> beds, Func<BedState, bool> predicate)
@@ -130,7 +130,4 @@ public static class GoalProgress
 
     private static HarvestWindow? HarvestWindowFor(BedState bed) =>
         GardenJournal.Get(bed.PatchKey, bed.BedNumber) is { } record ? Growth.HarvestWindow(record) : null;
-
-    private static string SeedItemName(uint row) =>
-        SeedItems.SeedItemForRow(row) is { } itemId ? XivHubPluginKit.Inventory.ItemSheet.Name(itemId) : $"row {row}'s seed";
 }

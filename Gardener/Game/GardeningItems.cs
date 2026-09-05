@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Gardener.Localization;
 using XivHubPluginKit.Inventory;
 
 namespace Gardener.Game;
@@ -39,6 +40,11 @@ public static class GardeningItems
         (7761u, SoilFamily.Shroud, 1), (7762u, SoilFamily.Shroud, 2), (7763u, SoilFamily.Shroud, 3),
         (7764u, SoilFamily.Thanalan, 1), (7765u, SoilFamily.Thanalan, 2), (7766u, SoilFamily.Thanalan, 3),
     };
+
+    // The grade every hint in this file quotes when it names one soil for a whole family rather than
+    // a specific held stack — matches GoalRoute's own AssumedSoilGrade and the "Mine Grade 3 in ..."
+    // hint on the Goal tab.
+    private const int ReferenceGrade = 3;
 
     private static readonly List<SoilItem> soils = new();
     private static readonly List<uint> fertilizers = new();
@@ -120,6 +126,15 @@ public static class GardeningItems
             .FirstOrDefault();
     }
 
+    /// <summary>The real item name for a soil family and grade, e.g. "Grade 3 Thanalan Topsoil" in
+    /// whatever language the client itself runs, resolved through <see cref="soils"/> rather than
+    /// composed from the enum and a hardcoded English "Topsoil" suffix — the composed form is wrong on
+    /// a French or German client, since neither spells the item that way.</summary>
+    public static string SoilName(SoilFamily family, int grade) =>
+        soils.FirstOrDefault(s => s.Family == family && s.Grade == grade) is { } soil
+            ? ItemSheet.Name(soil.ItemId)
+            : Loc.Format(Strings.GardeningItems_SoilNameUnresolved, Formats.Number(grade), family.ToString());
+
     /// <summary>The sentence to show when <see cref="BestSoil"/> returned null for
     /// <paramref name="preference"/> — names the specific soil that is missing rather than saying
     /// "soil unavailable".</summary>
@@ -129,16 +144,19 @@ public static class GardeningItems
         {
             var fixedId = Plugin.C.FixedSoilItemId;
             if (fixedId == 0)
-                return "No soil is pinned (FixedSoilItemId is 0).";
+                return Strings.GardeningItems_NoSoilPinned;
 
             var fixedSoil = soils.FirstOrDefault(s => s.ItemId == fixedId);
             return fixedSoil is null
-                ? $"Pinned soil item {fixedId} is not a recognised topsoil."
-                : $"No {ItemSheet.Name(fixedSoil.ItemId)} in the bag.";
+                ? Loc.Format(Strings.GardeningItems_PinnedSoilNotRecognised, Formats.Number((int)fixedId))
+                : Loc.Format(Strings.GardeningItems_SoilNotInBag, ItemSheet.Name(fixedSoil.ItemId));
         }
 
+        // BestSoil takes the highest grade of the family that is held, so null means the bag holds
+        // none of that family at any grade. Naming one grade would read as though the others would
+        // do, which is why this does not reuse the pinned-soil sentence above.
         var family = FamilyFor(preference);
-        return $"No {family} Topsoil in the bag.";
+        return Loc.Format(Strings.GardeningItems_SoilFamilyNotInBag, SoilName(family, ReferenceGrade));
     }
 
     /// <summary>

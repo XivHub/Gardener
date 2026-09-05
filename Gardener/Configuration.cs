@@ -67,6 +67,14 @@ namespace Gardener
         public bool DevLog { get; set; } = false;
         public string DevLogUrl { get; set; } = "";
 
+        // Localization
+        // "" follows Dalamud's own UiLanguage; "en"/"es" pins Gardener's UI regardless of it. No
+        // CurrentVersion bump and no Migrate() branch: a new property with a C# default already
+        // applies to a config saved before this field existed, and the "a stored value beats a
+        // changed default" rule above only bites when an *existing* default moves out from under a
+        // saved value — there is no existing default here to move.
+        public string UiLanguageOverride { get; set; } = "";
+
         [NonSerialized]
         private IDalamudPluginInterface? pluginInterface;
 

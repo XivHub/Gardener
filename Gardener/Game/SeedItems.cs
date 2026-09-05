@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Gardener.Localization;
 
 namespace Gardener.Game;
 
@@ -54,5 +55,15 @@ public static class SeedItems
     /// the seed item's own name, which the player never sees on the bed menu or in the harvest
     /// result.</summary>
     public static string ProduceName(uint row) =>
-        ProduceItemForRow(row) is { } id ? XivHubPluginKit.Inventory.ItemSheet.Name(id) : $"row {row}";
+        ProduceItemForRow(row) is { } id
+            ? XivHubPluginKit.Inventory.ItemSheet.Name(id)
+            : Loc.Format(Strings.SeedItems_ProduceRowFallback, Formats.Number((int)row));
+
+    /// <summary>The seed item's own display name for a <c>GardeningSeed</c> row, e.g. "Krakka Root
+    /// Seeds" — what the player buys, gathers or plants, as opposed to <see cref="ProduceName"/>'s
+    /// harvest result.</summary>
+    public static string SeedItemName(uint row) =>
+        SeedItemForRow(row) is { } itemId
+            ? XivHubPluginKit.Inventory.ItemSheet.Name(itemId)
+            : Loc.Format(Strings.SeedItems_ItemRowFallback, Formats.Number((int)row));
 }

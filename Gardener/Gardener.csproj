@@ -34,11 +34,25 @@
 		<EmbeddedResource Include="Data\crossbreeds.json" />
 	</ItemGroup>
 
+	<!-- Neutral (English) UI strings; Strings.<lang>.resx satellite assemblies fall back per-key to
+	     this one. StronglyTypedLanguage generates Strings.Designer.cs so a misspelled key is a
+	     compile error rather than a silent "#Key" or blank string at runtime. -->
+	<ItemGroup>
+		<EmbeddedResource Update="Localization\Strings.resx">
+			<StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+			<StronglyTypedNamespace>Gardener.Localization</StronglyTypedNamespace>
+			<StronglyTypedClassName>Strings</StronglyTypedClassName>
+			<StronglyTypedFileName>$(IntermediateOutputPath)Strings.Designer.cs</StronglyTypedFileName>
+		</EmbeddedResource>
+	</ItemGroup>
+
 	<Target Name="CheckGardenerData" BeforeTargets="CoreCompile">
 		<Error Condition="!Exists('Data\seeds.json')"
 		       Text="Gardener/Data/seeds.json is missing. Run tools/build_data.py to generate it." />
 		<Error Condition="!Exists('Data\crossbreeds.json')"
 		       Text="Gardener/Data/crossbreeds.json is missing. Run tools/build_data.py to generate it." />
+		<Error Condition="!Exists('Localization\Strings.resx')"
+		       Text="Gardener/Localization/Strings.resx is missing." />
 	</Target>
 
 </Project>

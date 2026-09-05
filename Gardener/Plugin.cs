@@ -11,6 +11,7 @@ using XivHubPluginKit.UI;
 using Gardener.Game;
 using Gardener.Helpers;
 using Gardener.Journal;
+using Gardener.Localization;
 using Gardener.Scheduler;
 using Gardener.Windows;
 
@@ -62,6 +63,10 @@ namespace Gardener
             this.Configuration.Initialize(PluginInterface);
             C = this.Configuration;
 
+            // Before any window is constructed, so the first frame ever drawn already resolves
+            // Strings through the right culture instead of flashing English for one tick.
+            ApplyLanguage(PluginInterface.UiLanguage);
+
             ThemeConfig = new HubThemeConfigService(
                 PluginInterface.GetPluginConfigDirectory(),
                 (msg, ex) => Logger.Warning(ex, msg));
@@ -91,17 +96,28 @@ namespace Gardener
 
             CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Open the Gardener window. Subcommands: dump, dump menu."
+                // Resolved once at load. A mid-session language switch leaves this one string on the
+                // old language until the plugin reloads; the command manager never re-reads it, and
+                // chasing it would mean re-registering the handler from two separate call paths.
+                HelpMessage = Strings.Command_HelpMessage,
             });
 
             PluginInterface.UiBuilder.Draw += DrawUI;
             PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
             PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
+            PluginInterface.LanguageChanged += OnLanguageChanged;
             Framework.Update += OnFrameworkUpdate;
             ClientState.Logout += OnLogout;
             ClientState.TerritoryChanged += OnTerritoryChanged;
             ChatGui.ChatMessage += CropChatState.OnChatMessage;
         }
+
+        // An explicit UiLanguageOverride always wins over Dalamud's own language, whether it's
+        // being applied for the first time or Dalamud just changed under it.
+        private void ApplyLanguage(string dalamudLangCode) =>
+            Loc.SetLanguage(string.IsNullOrEmpty(C.UiLanguageOverride) ? dalamudLangCode : C.UiLanguageOverride);
+
+        private void OnLanguageChanged(string langCode) => ApplyLanguage(langCode);
 
         private void OnFrameworkUpdate(IFramework framework)
         {
@@ -161,6 +177,7 @@ namespace Gardener
             PluginInterface.UiBuilder.Draw -= DrawUI;
             PluginInterface.UiBuilder.OpenMainUi -= ToggleMainUi;
             PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi;
+            PluginInterface.LanguageChanged -= OnLanguageChanged;
 
             WindowSystem.RemoveAllWindows();
             mainWindow.Dispose();

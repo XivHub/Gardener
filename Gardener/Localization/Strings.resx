@@ -1,0 +1,943 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    English is the neutral culture and the fallback: a key present here but absent from
+    Strings.<lang>.resx returns this value under any UI language. Every entry must carry a
+    <comment> naming its call site, and, for an entry with a {n} slot, what each slot holds.
+
+    Do-not-translate register. None of the following is ever given a translation key; a
+    template names the substituted value with {n} and interpolates it verbatim instead:
+      - Item names of every kind: seeds, produce, soil, fertilizer.
+      - Place-name components inside item names (Thanalan, Shroud, La Noscean). Never composed
+        into a template on their own; the whole item name is resolved and passed in as one slot.
+      - SoilFamily and any other enum naming a game concept, unless resolved to a live item name.
+      - Patch kind names (Deluxe, Oblong, Round): there is no EObj-to-Item mapping to resolve
+        them through, so they stay literal, wrapped in a whole-sentence template.
+      - The plugin name "Gardener", the /gardener command and its subcommands.
+      - Anything sourced from GardenMenuText (the game's own bed-menu wording).
+      - ImGui popup identifiers ("Confirm tend##{key}", "Confirm plant goal step"). BeginPopup
+        never draws its name; these are identifiers, not copy.
+
+    Composition contract, binding on every entry added here:
+      1. A value is a whole sentence, or a whole standalone noun/adverbial phrase. Never a clause
+         fragment that another template embeds as a subject or a verb.
+      2. Only grammatically inert values may be substituted: integers, client-language item
+         names, game-sheet action verbs, patch-shape tokens, dates and times, durations already
+         rendered as complete noun phrases, and joined lists of those.
+      3. Anything that would inflect the host sentence is resolved by key selection, not
+         substitution — pick between several whole-sentence keys in C#, never build one sentence
+         whose subject or verb is itself a slot.
+      4. One idea per key. Prefer two short sentences over one long composed one.
+      5. Plural is n == 1 to a "_One" key, everything else to "_Other". Holds for 0, 1, 1.5 and 2
+         in both English and Spanish.
+      6. A Spanish template never places a gendered article or an agreeing adjective directly
+         before a substituted item name. Use "de {0}", a count-first construction ("{0} {1}"), or
+         a verb that takes no article.
+      7. Slots are numbered ({0}, {1}, ...) and a translator may reorder them freely.
+      8. Every format call goes through Loc.Format, never string.Format, never $"".
+  -->
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Generic cancel button label, shared by every confirmation popup.</comment>
+  </data>
+  <data name="Common_Confirm" xml:space="preserve">
+    <value>Confirm</value>
+    <comment>Generic confirm button label, shared by every confirmation popup.</comment>
+  </data>
+  <data name="Action_Tend" xml:space="preserve">
+    <value>Tend Crop</value>
+    <comment>GameWords.Action(MenuKey.Care) fallback, used only when GardenMenuText could not resolve the game's own bed-menu wording.</comment>
+  </data>
+  <data name="Action_Harvest" xml:space="preserve">
+    <value>Harvest</value>
+    <comment>GameWords.Action(MenuKey.Harvest) fallback, used only when GardenMenuText could not resolve the game's own bed-menu wording.</comment>
+  </data>
+  <data name="Action_PlantSeeds" xml:space="preserve">
+    <value>Plant Seeds</value>
+    <comment>GameWords.Action(MenuKey.SetSeed) fallback, used only when GardenMenuText could not resolve the game's own bed-menu wording.</comment>
+  </data>
+  <data name="Action_Fertilize" xml:space="preserve">
+    <value>Fertilize Crop</value>
+    <comment>GameWords.Action(MenuKey.SetFertilizer) fallback, used only when GardenMenuText could not resolve the game's own bed-menu wording.</comment>
+  </data>
+  <data name="Action_RemoveCrop" xml:space="preserve">
+    <value>Remove Crop</value>
+    <comment>GameWords.Action(MenuKey.Dispose) fallback, used only when GardenMenuText could not resolve the game's own bed-menu wording.</comment>
+  </data>
+  <data name="List_Separator" xml:space="preserve">
+    <value>, </value>
+    <comment>TextList.Join: the separator placed between every item of a joined list except the last two, which List_And/List_Or's own template joins instead.</comment>
+  </data>
+  <data name="List_And" xml:space="preserve">
+    <value>{0} and {1}</value>
+    <comment>TextList.And: {0} is every item but the last, already joined by List_Separator; {1} is the last item. Every item is a client-language name (item, produce or character), never itself translated.</comment>
+  </data>
+  <data name="List_Or" xml:space="preserve">
+    <value>{0} or {1}</value>
+    <comment>TextList.Or: {0} is every item but the last, already joined by List_Separator; {1} is the last item. Every item is a client-language name (item, produce or character), never itself translated.</comment>
+  </data>
+  <data name="Duration_About" xml:space="preserve">
+    <value>about {0}</value>
+    <comment>Phrases.AboutDays/AboutHours: {0} is the complete Duration_Days/Duration_Hours noun phrase this wraps.</comment>
+  </data>
+  <data name="Duration_Days_One" xml:space="preserve">
+    <value>{0} day</value>
+    <comment>Phrases.Days, singular branch (n == 1): {0} is the day count, already formatted through Formats.Number.</comment>
+  </data>
+  <data name="Duration_Days_Other" xml:space="preserve">
+    <value>{0} days</value>
+    <comment>Phrases.Days, plural branch (n != 1, including 0 and fractional values like 1.5): {0} is the day count, already formatted through Formats.Number.</comment>
+  </data>
+  <data name="Duration_Hours_One" xml:space="preserve">
+    <value>{0} hour</value>
+    <comment>Phrases.Hours, singular branch (n == 1): {0} is the hour count, already formatted through Formats.Number.</comment>
+  </data>
+  <data name="Duration_Hours_Other" xml:space="preserve">
+    <value>{0} hours</value>
+    <comment>Phrases.Hours, plural branch (n != 1, including 0 and fractional values): {0} is the hour count, already formatted through Formats.Number.</comment>
+  </data>
+  <data name="Duration_Every" xml:space="preserve">
+    <value>every {0}</value>
+    <comment>Phrases.EveryDay, non-1-day branch: {0} is the Duration_Days noun phrase for the cadence.</comment>
+  </data>
+  <data name="Duration_EveryDay" xml:space="preserve">
+    <value>every day</value>
+    <comment>Phrases.EveryDay, exact 24-hour branch: no slot, since "every 1 day" reads worse than the idiomatic form.</comment>
+  </data>
+  <data name="Phrase_UnknownCount" xml:space="preserve">
+    <value>an unknown number of</value>
+    <comment>Phrases.OneNumberOrRange, no-data branch: a quantity adjective substituted before a produce/seed name elsewhere; the yield-tier meaning itself is unrecorded so no number can be quoted.</comment>
+  </data>
+  <data name="Phrase_NumberRange" xml:space="preserve">
+    <value>{0} to {1}</value>
+    <comment>Phrases.OneNumberOrRange, disagreeing-tiers branch: {0} is the minimum tier, {1} the maximum, both already formatted through Formats.Number.</comment>
+  </data>
+  <data name="GardeningItems_SoilNameUnresolved" xml:space="preserve">
+    <value>no item id recorded for grade {0} {1} soil</value>
+    <comment>GardeningItems.SoilName fallback: only reachable when a soilIds entry fails to resolve against the live Item sheet at startup. {0} is the grade number; {1} is the SoilFamily enum name, left untranslated per the do-not-translate register since no real item name could be resolved for it.</comment>
+  </data>
+  <data name="GardeningItems_NoSoilPinned" xml:space="preserve">
+    <value>No soil is pinned (FixedSoilItemId is 0).</value>
+    <comment>GardeningItems.SoilUnavailable, SoilPreference.Fixed with no item pinned. "FixedSoilItemId" names Configuration's own field and stays literal.</comment>
+  </data>
+  <data name="GardeningItems_PinnedSoilNotRecognised" xml:space="preserve">
+    <value>Pinned soil item {0} is not a recognised topsoil.</value>
+    <comment>GardeningItems.SoilUnavailable, SoilPreference.Fixed pinned to an item id that resolves to no known soil. {0} is that raw item id, an integer, not a client-language name.</comment>
+  </data>
+  <data name="GardeningItems_SoilFamilyNotInBag" xml:space="preserve">
+    <value>You hold no soil of this kind. {0} is the one to get.</value>
+    <comment>GardeningItems.SoilUnavailable, family branch, shown when BestSoil found no grade at all of the requested family held. Two sentences on purpose: the first states what is missing (the whole family, not one grade), the second names the best grade as guidance. {0} is a client-language item name from GardeningItems.SoilName - see composition contract rule 6 for why no article precedes it.</comment>
+  </data>
+  <data name="GardeningItems_SoilNotInBag" xml:space="preserve">
+    <value>No {0} in the bag.</value>
+    <comment>GardeningItems.SoilUnavailable, shown when BestSoil found none of the requested soil held. {0} is the resolved soil item's real name (via GardeningItems.SoilName or ItemSheet.Name), a client-language item name — see composition contract rule 6 for why the article stays outside the slot.</comment>
+  </data>
+  <data name="Soil_WhereHiddenRare" xml:space="preserve">
+    <value>{0}, at a hidden, rare item node</value>
+    <comment>SoilSources.Where, NodeKind.HiddenRare branch. {0} is the bundled English mining-zone location text (Decision 3, out of scope for translation).</comment>
+  </data>
+  <data name="Soil_WhereUnspoiled" xml:space="preserve">
+    <value>{0}, at the unspoiled node at {1}</value>
+    <comment>SoilSources.Where, NodeKind.Unspoiled branch. {0} is the bundled English mining-zone location text (Decision 3, out of scope for translation); {1} is a compact Eorzean clock-hour label such as "7am", not a real-world time.</comment>
+  </data>
+  <data name="Soil_WhereUnrecorded" xml:space="preserve">
+    <value>{0}: mining location not recorded.</value>
+    <comment>SoilSources.Where fallback for a (family, grade) the table has no entry for. {0} is the resolved soil item's real name (GardeningItems.SoilName), a client-language item name.</comment>
+  </data>
+  <data name="Soil_DoesThanalan" xml:space="preserve">
+    <value>{0} makes crossing likely.</value>
+    <comment>SoilSources.Does(SoilFamily.Thanalan, ...). {0} is the resolved soil item's real name (a client-language item name), the sentence's own subject.</comment>
+  </data>
+  <data name="Soil_DoesShroud" xml:space="preserve">
+    <value>{0} makes a harvest bigger.</value>
+    <comment>SoilSources.Does(SoilFamily.Shroud, ...). {0} is the resolved soil item's real name (a client-language item name), the sentence's own subject.</comment>
+  </data>
+  <data name="Soil_DoesLaNoscean" xml:space="preserve">
+    <value>{0} improves quality.</value>
+    <comment>SoilSources.Does(SoilFamily.LaNoscean, ...). {0} is the resolved soil item's real name (a client-language item name), the sentence's own subject.</comment>
+  </data>
+  <data name="Config_WindowTitle" xml:space="preserve">
+    <value>Gardener Settings</value>
+    <comment>ConfigWindow's own constructor, the visible half of the "Gardener Settings###GardenerConfig" window title. "Gardener" is the plugin name (do-not-translate register) and stays literal inside the phrase; the "###GardenerConfig" id suffix is appended outside this key and never translated.</comment>
+  </data>
+  <data name="Config_Language_Label" xml:space="preserve">
+    <value>UI language</value>
+    <comment>ConfigWindow.DrawLanguageCombo: the combo's own label.</comment>
+  </data>
+  <data name="Config_Language_Automatic" xml:space="preserve">
+    <value>Automatic (follow Dalamud)</value>
+    <comment>ConfigWindow.DrawLanguageCombo, first combo entry: follows Dalamud's own UiLanguage rather than pinning one.</comment>
+  </data>
+  <data name="Config_Language_English" xml:space="preserve">
+    <value>English</value>
+    <comment>ConfigWindow.DrawLanguageCombo, second combo entry. An endonym, deliberately not translated: reads the same in Strings.es.resx as here.</comment>
+  </data>
+  <data name="Config_Language_Spanish" xml:space="preserve">
+    <value>Espa&#241;ol</value>
+    <comment>ConfigWindow.DrawLanguageCombo, third combo entry. An endonym, deliberately not translated: reads the same in Strings.es.resx as here.</comment>
+  </data>
+  <data name="Config_Automation_Header" xml:space="preserve">
+    <value>Automation</value>
+    <comment>ConfigWindow.DrawAutomationSection section header.</comment>
+  </data>
+  <data name="Config_Automation_StepDelayMs" xml:space="preserve">
+    <value>Delay between actions (ms)</value>
+    <comment>ConfigWindow.DrawAutomationSection, StepDelayMs slider label.</comment>
+  </data>
+  <data name="Config_Automation_SlowerReliable" xml:space="preserve">
+    <value>Raising this makes runs slower but more reliable.</value>
+    <comment>ConfigWindow.DrawAutomationSection, shared note under both the StepDelayMs and BedDelayMs sliders.</comment>
+  </data>
+  <data name="Config_Automation_BedDelayMs" xml:space="preserve">
+    <value>Delay between beds (ms)</value>
+    <comment>ConfigWindow.DrawAutomationSection, BedDelayMs slider label.</comment>
+  </data>
+  <data name="Config_Automation_MenuTimeoutMs" xml:space="preserve">
+    <value>Menu wait timeout (ms)</value>
+    <comment>ConfigWindow.DrawAutomationSection, MenuTimeoutMs slider label.</comment>
+  </data>
+  <data name="Config_Automation_StopIfPlayerMoves" xml:space="preserve">
+    <value>Stop a run if I move</value>
+    <comment>ConfigWindow.DrawAutomationSection, StopIfPlayerMoves checkbox label.</comment>
+  </data>
+  <data name="Config_Automation_MoveAbortDistance" xml:space="preserve">
+    <value>Distance that counts as moved away (yalms)</value>
+    <comment>ConfigWindow.DrawAutomationSection, MoveAbortDistance slider label, shown only while StopIfPlayerMoves is on.</comment>
+  </data>
+  <data name="Config_Automation_BedReachDistance" xml:space="preserve">
+    <value>Reach distance to start a run (yalms)</value>
+    <comment>ConfigWindow.DrawAutomationSection, BedReachDistance slider label.</comment>
+  </data>
+  <data name="Config_Automation_ConfirmBeforeRun" xml:space="preserve">
+    <value>Confirm before running a sweep</value>
+    <comment>ConfigWindow.DrawAutomationSection, ConfirmBeforeRun checkbox label.</comment>
+  </data>
+  <data name="Config_Planting_Header" xml:space="preserve">
+    <value>Planting defaults</value>
+    <comment>ConfigWindow.DrawPlantingSection section header.</comment>
+  </data>
+  <data name="Config_Planting_Intro" xml:space="preserve">
+    <value>Which topsoil to reach for when the plugin plants for you.</value>
+    <comment>ConfigWindow.DrawPlantingSection, intro note above the two soil combos.</comment>
+  </data>
+  <data name="Config_Planting_SoilForCross" xml:space="preserve">
+    <value>Soil for a crossbreed step</value>
+    <comment>ConfigWindow.DrawPlantingSection, SoilForCross combo label.</comment>
+  </data>
+  <data name="Config_Planting_SoilForYield" xml:space="preserve">
+    <value>Soil for a yield step</value>
+    <comment>ConfigWindow.DrawPlantingSection, SoilForYield combo label.</comment>
+  </data>
+  <data name="Config_Planting_PinnedSoilHeader" xml:space="preserve">
+    <value>Pinned soil</value>
+    <comment>ConfigWindow.DrawPlantingSection, sub-header shown above DrawFixedSoilPicker when either soil preference is Fixed.</comment>
+  </data>
+  <data name="Config_NotHeld" xml:space="preserve">
+    <value>(not held)</value>
+    <comment>ConfigWindow.DrawFixedSoilPicker and DrawFixedFertilizerPicker: shown beside a pinnable item's radio button when the player is not currently carrying it.</comment>
+  </data>
+  <data name="Config_SoilPreference_HighestThanalan" xml:space="preserve">
+    <value>Highest-grade Thanalan Topsoil (best intercross rate)</value>
+    <comment>ConfigWindow.SoilPreferenceLabels[0], indexed to SoilPreference.HighestThanalan by declaration order - keep the array index and this key in lockstep with the enum, never reorder one without the other.</comment>
+  </data>
+  <data name="Config_SoilPreference_HighestShroud" xml:space="preserve">
+    <value>Highest-grade Shroud Topsoil (best yield)</value>
+    <comment>ConfigWindow.SoilPreferenceLabels[1], indexed to SoilPreference.HighestShroud by declaration order - keep the array index and this key in lockstep with the enum, never reorder one without the other.</comment>
+  </data>
+  <data name="Config_SoilPreference_HighestLaNoscean" xml:space="preserve">
+    <value>Highest-grade La Noscean Topsoil (Potting Soil-equivalent)</value>
+    <comment>ConfigWindow.SoilPreferenceLabels[2], indexed to SoilPreference.HighestLaNoscean by declaration order - keep the array index and this key in lockstep with the enum, never reorder one without the other.</comment>
+  </data>
+  <data name="Config_SoilPreference_Fixed" xml:space="preserve">
+    <value>One specific soil, pinned below</value>
+    <comment>ConfigWindow.SoilPreferenceLabels[3], indexed to SoilPreference.Fixed by declaration order - keep the array index and this key in lockstep with the enum, never reorder one without the other.</comment>
+  </data>
+  <data name="Config_Fertilizer_Header" xml:space="preserve">
+    <value>Fertilizer</value>
+    <comment>ConfigWindow.DrawFertilizerSection section header.</comment>
+  </data>
+  <data name="Config_Fertilizer_OnlyGrowing" xml:space="preserve">
+    <value>Only fertilize a growing bed</value>
+    <comment>ConfigWindow.DrawFertilizerSection, FertilizeOnlyGrowing checkbox label.</comment>
+  </data>
+  <data name="Config_Fertilizer_CooldownMinutes" xml:space="preserve">
+    <value>Cooldown per bed (minutes)</value>
+    <comment>ConfigWindow.DrawFertilizerSection, FertilizeCooldownMin slider label.</comment>
+  </data>
+  <data name="Config_Fertilizer_CooldownNote" xml:space="preserve">
+    <value>The game accepts one application per bed per hour regardless of this setting; a shorter cooldown here just tries earlier and gets refused.</value>
+    <comment>ConfigWindow.DrawFertilizerSection, note under the cooldown slider.</comment>
+  </data>
+  <data name="Config_Fertilizer_WhichHeader" xml:space="preserve">
+    <value>Which fertilizer to use</value>
+    <comment>ConfigWindow.DrawFertilizerSection, sub-header above DrawFixedFertilizerPicker.</comment>
+  </data>
+  <data name="Config_Fertilizer_AutomaticFirstHeld" xml:space="preserve">
+    <value>Automatic (first one held)</value>
+    <comment>ConfigWindow.DrawFixedFertilizerPicker, the radio button for FixedFertilizerItemId 0 (no item pinned).</comment>
+  </data>
+  <data name="Config_Reminders_Header" xml:space="preserve">
+    <value>Reminders</value>
+    <comment>ConfigWindow.DrawRemindersSection section header.</comment>
+  </data>
+  <data name="Config_Reminders_ShowDtr" xml:space="preserve">
+    <value>Show reminder counts on the server info bar</value>
+    <comment>ConfigWindow.DrawRemindersSection, DtrEnabled checkbox label.</comment>
+  </data>
+  <data name="Config_Reminders_ChatEcho" xml:space="preserve">
+    <value>Echo reminders to chat</value>
+    <comment>ConfigWindow.DrawRemindersSection, ChatReminders checkbox label.</comment>
+  </data>
+  <data name="Config_Reminders_WiltWarningHours" xml:space="preserve">
+    <value>Warn this many hours before a bed wilts</value>
+    <comment>ConfigWindow.DrawRemindersSection, WiltWarningHours slider label.</comment>
+  </data>
+  <data name="Config_Reminders_ChatIntervalMinutes" xml:space="preserve">
+    <value>Chat reminder interval (minutes)</value>
+    <comment>ConfigWindow.DrawRemindersSection, ReminderIntervalMin slider label.</comment>
+  </data>
+  <data name="Config_Reminders_NarrateSweeps" xml:space="preserve">
+    <value>Narrate sweeps in chat</value>
+    <comment>ConfigWindow.DrawRemindersSection, NarrateSweepActions checkbox label.</comment>
+  </data>
+  <data name="Config_Reminders_NarrateSweepsNote" xml:space="preserve">
+    <value>Prints a line in chat as a sweep tends, fertilizes, harvests, plants or skips each bed.</value>
+    <comment>ConfigWindow.DrawRemindersSection, note under the NarrateSweepActions checkbox.</comment>
+  </data>
+  <data name="Config_Data_Header" xml:space="preserve">
+    <value>Data health</value>
+    <comment>ConfigWindow.DrawDataSection section header.</comment>
+  </data>
+  <data name="Config_Data_CollectGrowSamples" xml:space="preserve">
+    <value>Record how long your own crops take to mature and become harvestable</value>
+    <comment>ConfigWindow.DrawDataSection, CollectGrowSamples checkbox label.</comment>
+  </data>
+  <data name="Config_Data_CollectGrowSamplesNote" xml:space="preserve">
+    <value>Narrows the harvest window in the Reminders tab from your own garden's timing.</value>
+    <comment>ConfigWindow.DrawDataSection, note under the CollectGrowSamples checkbox.</comment>
+  </data>
+  <data name="Config_Data_ShowGapWarnings" xml:space="preserve">
+    <value>Show data gap warnings</value>
+    <comment>ConfigWindow.DrawDataSection, ShowDataGapWarnings checkbox label.</comment>
+  </data>
+  <data name="Config_Data_Generated" xml:space="preserve">
+    <value>Generated {0}</value>
+    <comment>ConfigWindow.DrawDataSection, provenance line. {0} is SeedTable.Provenance.Generated, a raw build-timestamp string, not a client-language name.</comment>
+  </data>
+  <data name="Config_Data_LotlabCommit" xml:space="preserve">
+    <value>Lotlab commit {0}</value>
+    <comment>ConfigWindow.DrawDataSection, provenance line. "Lotlab" names the upstream data source and stays literal; {0} is SeedTable.Provenance.LotlabCommit, a raw commit-hash string, not a client-language name.</comment>
+  </data>
+  <data name="Config_Data_Nick75gCommit" xml:space="preserve">
+    <value>nick75g commit {0}</value>
+    <comment>ConfigWindow.DrawDataSection, provenance line. "nick75g" names the upstream data source and stays literal; {0} is SeedTable.Provenance.Nick75gCommit, a raw commit-hash string, not a client-language name.</comment>
+  </data>
+  <data name="Config_Data_XivapiSchema" xml:space="preserve">
+    <value>XIVAPI schema {0}</value>
+    <comment>ConfigWindow.DrawDataSection, provenance line. "XIVAPI" names the upstream data source and stays literal; {0} is SeedTable.Provenance.XivapiSchema, a raw version string, not a client-language name.</comment>
+  </data>
+  <data name="Config_Data_XivapiVersion" xml:space="preserve">
+    <value>XIVAPI version {0}</value>
+    <comment>ConfigWindow.DrawDataSection, provenance line. "XIVAPI" names the upstream data source and stays literal; {0} is SeedTable.Provenance.XivapiVersion, a raw version string, not a client-language name.</comment>
+  </data>
+  <data name="Config_Data_GapBundledMissing" xml:space="preserve">
+    <value>Bundled rows missing from the live sheet</value>
+    <comment>ConfigWindow.DrawDataSection, DrawGapList label for gaps.BundledRowsMissingFromSheet.</comment>
+  </data>
+  <data name="Config_Data_GapLiveMissing" xml:space="preserve">
+    <value>Live outdoor rows missing from the bundle</value>
+    <comment>ConfigWindow.DrawDataSection, DrawGapList label for gaps.LiveRowsMissingFromBundle.</comment>
+  </data>
+  <data name="Config_Data_GapNoGrowTime" xml:space="preserve">
+    <value>Rows with no grow time</value>
+    <comment>ConfigWindow.DrawDataSection, DrawGapList label for gaps.RowsWithNoGrowTime.</comment>
+  </data>
+  <data name="Config_Data_GapNoCrossData" xml:space="preserve">
+    <value>Rows absent from the cross data</value>
+    <comment>ConfigWindow.DrawDataSection, DrawGapList label for gaps.RowsAbsentFromCrossData.</comment>
+  </data>
+  <data name="Config_Data_GapSoilMissing" xml:space="preserve">
+    <value>Live soils missing from the soil table</value>
+    <comment>ConfigWindow.DrawDataSection, DrawGapList label for GardeningItems.LiveSoilsMissingFromTable.</comment>
+  </data>
+  <data name="Config_GapCountHeader" xml:space="preserve">
+    <value>{0} ({1})</value>
+    <comment>ConfigWindow.DrawGapList: the CollapsingHeader text before its "###gap-{id}" identity suffix. {0} is the already-localized gap-list label (one of the Config_Data_Gap* keys above); {1} is the gap count, formatted through Formats.Number.</comment>
+  </data>
+  <data name="Config_Theme_Header" xml:space="preserve">
+    <value>Appearance</value>
+    <comment>ConfigWindow.DrawThemeSection section header.</comment>
+  </data>
+  <data name="Config_Theme_SharedNote" xml:space="preserve">
+    <value>Shared with every XIV Hub plugin.</value>
+    <comment>ConfigWindow.DrawThemeSection, note above the shared theme editor.</comment>
+  </data>
+  <data name="Config_Developer_Header" xml:space="preserve">
+    <value>Developer</value>
+    <comment>ConfigWindow.Draw, the "Developer###developerHeader" CollapsingHeader text.</comment>
+  </data>
+  <data name="Config_Developer_TelemetryDesc" xml:space="preserve">
+    <value>Streams live activity + state snapshots to a local log server.</value>
+    <comment>ConfigWindow.Draw, Developer block intro line.</comment>
+  </data>
+  <data name="Config_Developer_EnableTelemetry" xml:space="preserve">
+    <value>Enable dev telemetry</value>
+    <comment>ConfigWindow.Draw, Developer block, DevLog checkbox label.</comment>
+  </data>
+  <data name="Config_Developer_LogUrl" xml:space="preserve">
+    <value>Log server URL</value>
+    <comment>ConfigWindow.Draw, Developer block, DevLogUrl text input label.</comment>
+  </data>
+  <data name="Command_HelpMessage" xml:space="preserve">
+    <value>Open the Gardener window. Subcommands: dump, dump menu.</value>
+    <comment>Plugin.cs CommandManager.AddHandler("/gardener", ...).HelpMessage. "Gardener" (the plugin name), and the "dump" / "dump menu" subcommand names, are in the do-not-translate register and stay literal inside the sentence.</comment>
+  </data>
+  <data name="Common_Unknown" xml:space="preserve">
+    <value>unknown</value>
+    <comment>Generic standalone "unknown" fallback shared by MainWindow.DrawGardenTab (estate type / reachable-by), DrawWilt, and HarvestConfidenceText's default branch.</comment>
+  </data>
+  <data name="Common_Empty" xml:space="preserve">
+    <value>empty</value>
+    <comment>MainWindow.DrawBedTable (no BedState recorded, or state.IsEmpty) and DrawSeedAndStage's Maturity.Empty branch: the bed holds nothing. Kept separate from Garden_CropEmpty, DrawCropState's own crop-condition word, even though the English spelling coincides.</comment>
+  </data>
+  <data name="Garden_TabLabel" xml:space="preserve">
+    <value>Garden</value>
+    <comment>MainWindow.Draw, the visible half of "Garden###gardenTab" (kept with its "###gardenTab" id suffix - BeginTabItem's identity, and so which tab stays selected across a redraw, comes from GetID(label)). The Goal and Log tab labels are keyed in their own phases.</comment>
+  </data>
+  <data name="Reminders_TabLabel" xml:space="preserve">
+    <value>Reminders</value>
+    <comment>MainWindow.Draw, the visible half of "Reminders###remindersTab" (kept with its "###remindersTab" id suffix, see Garden_TabLabel).</comment>
+  </data>
+  <data name="Garden_NoPatches" xml:space="preserve">
+    <value>No patches discovered. Stand in an outdoor housing plot.</value>
+    <comment>MainWindow.DrawGardenTab, shown when PatchDiscovery finds no patches on the current plot.</comment>
+  </data>
+  <data name="Garden_HarvestLagNote" xml:space="preserve">
+    <value>Harvest readiness is checked roughly once an hour, so a bed can stay unlisted for a while after it matures.</value>
+    <comment>MainWindow.DrawGardenTab and DrawRemindersTab, shared note drawn above the bed table and above the Ready to harvest group.</comment>
+  </data>
+  <data name="Garden_PatchHeaderWithPlot" xml:space="preserve">
+    <value>{0} patch, plot {1}</value>
+    <comment>MainWindow.DrawGardenTab, patch header when the player's current plot is known. {0} is the PatchKind enum name (Deluxe/Oblong/Round; do-not-translate register - no EObj-to-Item mapping exists to resolve it to a furniture name). {1} is the 1-based plot number, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Garden_PatchHeaderPlotUnknown" xml:space="preserve">
+    <value>{0} patch, plot unknown</value>
+    <comment>MainWindow.DrawGardenTab, patch header when PatchDiscovery could not determine the current plot. {0} is the PatchKind enum name (do-not-translate register).</comment>
+  </data>
+  <data name="Garden_EstateAccess" xml:space="preserve">
+    <value>Estate: {0}. Reachable by: {1}.</value>
+    <comment>MainWindow.DrawGardenTab, shown when the estate type or an accessible character is known. {0} is the EstateType enum name (a game housing concept, do-not-translate register) or Common_Unknown; {1} is TextList.And over the characters seen able to reach the house, or Common_Unknown.</comment>
+  </data>
+  <data name="Garden_ColBed" xml:space="preserve">
+    <value>Bed</value>
+    <comment>MainWindow.DrawBedTable, the bed-number column header (kept with its "###col-bed" id suffix - a Resizable table's TableHeader widget keys off GetID(label), so a translated label must not read as a different column from the one the player already resized).</comment>
+  </data>
+  <data name="Garden_ColSeedStage" xml:space="preserve">
+    <value>Seed / stage</value>
+    <comment>MainWindow.DrawBedTable column header (kept with its "###col-seedstage" id suffix, see Garden_ColBed).</comment>
+  </data>
+  <data name="Garden_ColWilt" xml:space="preserve">
+    <value>Wilt</value>
+    <comment>MainWindow.DrawBedTable column header (kept with its "###col-wilt" id suffix, see Garden_ColBed).</comment>
+  </data>
+  <data name="Garden_ColHarvestWindow" xml:space="preserve">
+    <value>Harvest window</value>
+    <comment>MainWindow.DrawBedTable column header (kept with its "###col-harvestwindow" id suffix, see Garden_ColBed).</comment>
+  </data>
+  <data name="Garden_NoDataForPatch" xml:space="preserve">
+    <value>no data for this patch</value>
+    <comment>MainWindow.DrawGardenTab, shown when GardenMemory.Read returns no bed states for a discovered patch.</comment>
+  </data>
+  <data name="Garden_DebugDumpHeader" xml:space="preserve">
+    <value>Debug dump</value>
+    <comment>MainWindow.DrawGardenTab, disabled-style header above the Dump/Dump menu buttons.</comment>
+  </data>
+  <data name="Garden_DumpButton" xml:space="preserve">
+    <value>Dump</value>
+    <comment>MainWindow.DrawGardenTab, button that calls DebugDump.Run(menu: false).</comment>
+  </data>
+  <data name="Garden_DumpMenuButton" xml:space="preserve">
+    <value>Dump menu</value>
+    <comment>MainWindow.DrawGardenTab, button that calls DebugDump.Run(menu: true).</comment>
+  </data>
+  <data name="Garden_CopyButton" xml:space="preserve">
+    <value>Copy</value>
+    <comment>MainWindow.DrawGardenTab, button that queues a clipboard copy of the last dump path (kept with its "##copyLastDump" id suffix).</comment>
+  </data>
+  <data name="Garden_OrphansHeader" xml:space="preserve">
+    <value>Beds recorded here before, not found this visit ({0})</value>
+    <comment>MainWindow.DrawOrphans header. {0} is the orphan count, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Garden_OrphansNote" xml:space="preserve">
+    <value>This patch may be in storage, or it may have moved; either way the record stays and its timers are paused. Forget a record to stop tracking it.</value>
+    <comment>MainWindow.DrawOrphans, explanatory note under the header.</comment>
+  </data>
+  <data name="Garden_OrphanLine" xml:space="preserve">
+    <value>{0}, bed {1}: {2}</value>
+    <comment>MainWindow.DrawOrphans, one orphaned bed record. {0} is the raw patch-key identifier (unlocalized, not prose); {1} is the bed number, an integer via Formats.Number; {2} is the produce name for the recorded seed row (a client-language name, or the Garden_UnresolvedSeedRow fallback).</comment>
+  </data>
+  <data name="Garden_ForgetButton" xml:space="preserve">
+    <value>Forget</value>
+    <comment>MainWindow.DrawOrphans, button that calls GardenJournal.Remove for one orphaned record (kept with its "##orphan-{key}-{bed}" id suffix).</comment>
+  </data>
+  <data name="Garden_UnresolvedSeedRow" xml:space="preserve">
+    <value>row {0}</value>
+    <comment>MainWindow.SeedName and DrawSeedAndStage fallback, reachable only when a GardeningSeed row has no resolvable produce item. {0} is the raw row id, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Garden_StageMature" xml:space="preserve">
+    <value>mature (4)</value>
+    <comment>MainWindow.DrawSeedAndStage, Maturity.MatureCandidate branch.</comment>
+  </data>
+  <data name="Garden_StageGrowing" xml:space="preserve">
+    <value>growing ({0} of 4)</value>
+    <comment>MainWindow.DrawSeedAndStage, Maturity.Growing branch. {0} is the bed's current stage (1-3), an integer via Formats.Number.</comment>
+  </data>
+  <data name="Garden_SeenBy" xml:space="preserve">
+    <value>seen by {0}, {1}h ago</value>
+    <comment>MainWindow.DrawSeedAndStage, shown when a record carries LastSeenByCharacter. {0} is the observing character's name; {1} is hours elapsed, formatted "F0" via Formats.Number.</comment>
+  </data>
+  <data name="Garden_CropStateNeverObserved" xml:space="preserve">
+    <value>crop state never observed</value>
+    <comment>MainWindow.DrawCropState, shown when a bed record has no LastObservedCropState.</comment>
+  </data>
+  <data name="Garden_CropVigorous" xml:space="preserve">
+    <value>vigorous</value>
+    <comment>MainWindow.DrawCropState, MenuKey.TalkVigorous branch. Gardener's own one-word crop-condition summary, not GardenMenuText's TALK_* sentence.</comment>
+  </data>
+  <data name="Garden_CropWilted" xml:space="preserve">
+    <value>wilted</value>
+    <comment>MainWindow.DrawCropState, MenuKey.TalkDepressed branch. Gardener's own summary word.</comment>
+  </data>
+  <data name="Garden_CropRipe" xml:space="preserve">
+    <value>ripe</value>
+    <comment>MainWindow.DrawCropState, MenuKey.TalkRipe branch. Gardener's own summary word.</comment>
+  </data>
+  <data name="Garden_CropWithered" xml:space="preserve">
+    <value>withered</value>
+    <comment>MainWindow.DrawCropState, MenuKey.TalkDead branch. Gardener's own summary word.</comment>
+  </data>
+  <data name="Garden_CropEmpty" xml:space="preserve">
+    <value>empty</value>
+    <comment>MainWindow.DrawCropState, MenuKey.TalkNone branch. Gardener's own summary word for the crop-condition chat classification, kept separate from Common_Empty (bed occupancy) even though the English word coincides.</comment>
+  </data>
+  <data name="Garden_CropStateAge" xml:space="preserve">
+    <value>{0}, {1}h ago</value>
+    <comment>MainWindow.DrawCropState, appends how long ago the state was observed. {0} is one of the Garden_Crop* words above (or the raw MenuKey name for an unclassified state, do-not-translate); {1} is hours elapsed, formatted "F0" via Formats.Number.</comment>
+  </data>
+  <data name="Garden_PlantedAtUnknown" xml:space="preserve">
+    <value>planted-at unknown; set an estimate</value>
+    <comment>MainWindow.DrawHarvestWindow, shown when a bed record has no PlantedAt.</comment>
+  </data>
+  <data name="Garden_NoTimingData" xml:space="preserve">
+    <value>no timing data for this seed</value>
+    <comment>MainWindow.DrawHarvestWindow, shown when Growth.HarvestWindow's confidence is HarvestConfidence.Unknown.</comment>
+  </data>
+  <data name="Harvest_ConfidenceEstimated" xml:space="preserve">
+    <value>estimated</value>
+    <comment>MainWindow.HarvestConfidenceText, HarvestConfidence.Estimated branch, shared by DrawHarvestWindow and DrawHarvestGroup.</comment>
+  </data>
+  <data name="Harvest_ConfidenceBundled" xml:space="preserve">
+    <value>bundled</value>
+    <comment>MainWindow.HarvestConfidenceText, HarvestConfidence.Bundled branch, shared by DrawHarvestWindow and DrawHarvestGroup.</comment>
+  </data>
+  <data name="Harvest_ConfidenceObserved" xml:space="preserve">
+    <value>observed, {0} sample(s)</value>
+    <comment>MainWindow.HarvestConfidenceText, HarvestConfidence.Calibrated branch, shared by DrawHarvestWindow and DrawHarvestGroup. {0} is HarvestWindow.SampleCount, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Garden_HarvestWindowRange" xml:space="preserve">
+    <value>{0} to {1}</value>
+    <comment>MainWindow.DrawHarvestWindow, the earliest-to-latest half of the harvest window line. {0} is the earliest local date/time via Formats.LocalDateTime; {1} is the latest local time via Formats.LocalTime.</comment>
+  </data>
+  <data name="Garden_HarvestWindowUnknown" xml:space="preserve">
+    <value>?</value>
+    <comment>MainWindow.DrawHarvestWindow fallback when a resolved harvest window has neither an earliest nor a latest time.</comment>
+  </data>
+  <data name="Garden_HarvestWindowLine" xml:space="preserve">
+    <value>{0} ({1})</value>
+    <comment>MainWindow.DrawHarvestWindow, the full cell text when the record carries no PlantedAtUncertainty. {0} is Garden_HarvestWindowRange or Garden_HarvestWindowUnknown; {1} is the shared HarvestConfidenceText.</comment>
+  </data>
+  <data name="Garden_HarvestWindowLineWithUncertainty" xml:space="preserve">
+    <value>{0} ({1}, planted-at &#177;{2})</value>
+    <comment>MainWindow.DrawHarvestWindow, the full cell text when the record's PlantedAtUncertainty is set (a hand-observed transition, not a hand-set estimate). {0} is Garden_HarvestWindowRange or Garden_HarvestWindowUnknown; {1} is the shared HarvestConfidenceText; {2} is FormatUncertainty's own rendered duration ("3h" / "5m" / "10s").</comment>
+  </data>
+  <data name="Garden_UncertaintySeconds" xml:space="preserve">
+    <value>{0}s</value>
+    <comment>MainWindow.FormatUncertainty, sub-minute branch, feeding Garden_HarvestWindowLineWithUncertainty. {0} is the elapsed seconds, formatted "F0" via Formats.Number.</comment>
+  </data>
+  <data name="Garden_UncertaintyMinutes" xml:space="preserve">
+    <value>{0}m</value>
+    <comment>MainWindow.FormatUncertainty, sub-hour branch, feeding Garden_HarvestWindowLineWithUncertainty. {0} is the elapsed minutes, formatted "F0" via Formats.Number.</comment>
+  </data>
+  <data name="Garden_UncertaintyHours" xml:space="preserve">
+    <value>{0}h</value>
+    <comment>MainWindow.FormatUncertainty, hour-or-more branch, feeding Garden_HarvestWindowLineWithUncertainty. {0} is the elapsed hours, formatted "F1" via Formats.Number.</comment>
+  </data>
+  <data name="Sweep_StatusRow" xml:space="preserve">
+    <value>{0}: bed {1}, {2} left ({3})</value>
+    <comment>MainWindow.DrawSchedulerStatus, the running-sweep row. {0} is GameWords.Action(SchedulerMain.CurrentKind), the game's own bed-menu verb for the sweep; {1} is the current bed number via Formats.Number, or Sweep_NoActiveBed when none; {2} is the remaining worklist count via Formats.Number; {3} is the scheduler's own internal GardenerState name, a diagnostic token like a ConditionFlag name (do-not-translate).</comment>
+  </data>
+  <data name="Sweep_NoActiveBed" xml:space="preserve">
+    <value>-</value>
+    <comment>MainWindow.DrawSchedulerStatus, placeholder for Sweep_StatusRow's bed slot when SchedulerMain.CurrentBedNumber is null.</comment>
+  </data>
+  <data name="Sweep_StopButton" xml:space="preserve">
+    <value>Stop</value>
+    <comment>MainWindow.DrawSchedulerStatus, ends the running sweep.</comment>
+  </data>
+  <data name="Sweep_AllButton" xml:space="preserve">
+    <value>{0}: all beds</value>
+    <comment>MainWindow.DrawSweepButtons, all three sweep buttons (Tend/Harvest/Fertilize). {0} is GameWords.Action(kind), the game's own bed-menu verb for the sweep.</comment>
+  </data>
+  <data name="Sweep_ConfirmTend" xml:space="preserve">
+    <value>{0}: every occupied bed on this patch?</value>
+    <comment>MainWindow.DrawSweepButtons, SweepKind.Tend confirm message. {0} is GameWords.Action(MenuKey.Care).</comment>
+  </data>
+  <data name="Sweep_ConfirmHarvest" xml:space="preserve">
+    <value>{0}: every mature bed on this patch?</value>
+    <comment>MainWindow.DrawSweepButtons, SweepKind.Harvest confirm message. {0} is GameWords.Action(MenuKey.Harvest).</comment>
+  </data>
+  <data name="Sweep_ConfirmFertilize" xml:space="preserve">
+    <value>{0}: every eligible bed on this patch?</value>
+    <comment>MainWindow.DrawSweepButtons, SweepKind.Fertilize confirm message. {0} is GameWords.Action(MenuKey.SetFertilizer).</comment>
+  </data>
+  <data name="Sweep_BedOrderVerified" xml:space="preserve">
+    <value>Bed order verified: {0}/{1}</value>
+    <comment>MainWindow.DrawSweepButtons. {0} is BedTargeting.VerifiedBedCount, {1} is the patch's own bed count, both integers via Formats.Number.</comment>
+  </data>
+  <data name="RemoveCrop_Header" xml:space="preserve">
+    <value>Remove a crop</value>
+    <comment>MainWindow.DrawRemoveCropButtons section header, shown above the per-bed Remove Crop buttons.</comment>
+  </data>
+  <data name="RemoveCrop_BedLine" xml:space="preserve">
+    <value>Bed {0}: {1}</value>
+    <comment>MainWindow.DrawRemoveCropButtons. {0} is the bed number via Formats.Number; {1} is the produce name, a client-language name.</comment>
+  </data>
+  <data name="RemoveCrop_ConfirmMessage" xml:space="preserve">
+    <value>{0}: {1} in bed {2}? This can't be undone.</value>
+    <comment>MainWindow.DrawRemoveCropButtons confirm popup. {0} is GameWords.Action(MenuKey.Dispose), the game's own bed-menu verb; {1} is the produce name, a client-language name; {2} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_HouseFallback" xml:space="preserve">
+    <value>House</value>
+    <comment>MainWindow.DrawHouseHeader fallback, shown when GardenJournal.EstateTypeFor has never recorded this house's estate type.</comment>
+  </data>
+  <data name="Garden_PlantedHoursAgoButton" xml:space="preserve">
+    <value>Planted {0}h ago</value>
+    <comment>MainWindow.DrawPlantedAtEstimate button that hand-sets PlantedAt from an hours-ago guess. {0} is the entered hour count, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_DueToTendHeader" xml:space="preserve">
+    <value>Due to tend</value>
+    <comment>MainWindow.DrawRemindersTab section header, above Reminders.DueToTend.</comment>
+  </data>
+  <data name="Reminders_AllTended" xml:space="preserve">
+    <value>Every bed is tended.</value>
+    <comment>MainWindow.DrawRemindersTab, DrawReminderGroup empty-state text for Reminders.DueToTend.</comment>
+  </data>
+  <data name="Reminders_TendLine" xml:space="preserve">
+    <value>{0}, bed {1}: wilts {2}</value>
+    <comment>MainWindow.DrawRemindersTab, one Reminders.DueToTend entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is the local wilt time via Formats.LocalDateTime.</comment>
+  </data>
+  <data name="Reminders_AboutToWitherHeader" xml:space="preserve">
+    <value>About to wither</value>
+    <comment>MainWindow.DrawRemindersTab section header, above Reminders.AboutToWither.</comment>
+  </data>
+  <data name="Reminders_NothingWithering" xml:space="preserve">
+    <value>Nothing is close to withering.</value>
+    <comment>MainWindow.DrawRemindersTab, DrawReminderGroup empty-state text for Reminders.AboutToWither.</comment>
+  </data>
+  <data name="Reminders_WitherLine" xml:space="preserve">
+    <value>{0}, bed {1}: withers {2}</value>
+    <comment>MainWindow.DrawRemindersTab, one Reminders.AboutToWither entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is the local wither time via Formats.LocalDateTime.</comment>
+  </data>
+  <data name="Reminders_ReadyHeader" xml:space="preserve">
+    <value>Ready to harvest</value>
+    <comment>MainWindow.DrawRemindersTab section header, above DrawHarvestGroup.</comment>
+  </data>
+  <data name="Reminders_TimingUnknownHeader" xml:space="preserve">
+    <value>Planting time unknown</value>
+    <comment>MainWindow.DrawRemindersTab section header, above Reminders.TimingUnknown.</comment>
+  </data>
+  <data name="Reminders_AllTimingKnown" xml:space="preserve">
+    <value>Every bed's planting time is known.</value>
+    <comment>MainWindow.DrawRemindersTab, DrawReminderGroup empty-state text for Reminders.TimingUnknown.</comment>
+  </data>
+  <data name="Reminders_TimingUnknownLine" xml:space="preserve">
+    <value>{0}, bed {1}: planting time unknown</value>
+    <comment>MainWindow.DrawRemindersTab, one Reminders.TimingUnknown entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_NothingReady" xml:space="preserve">
+    <value>Nothing is ready to harvest yet.</value>
+    <comment>MainWindow.DrawHarvestGroup empty-state text for Reminders.ReadyToHarvest.</comment>
+  </data>
+  <data name="Reminders_HarvestWindowLine" xml:space="preserve">
+    <value>{0}, bed {1}: ready between {2} and {3} ({4})</value>
+    <comment>MainWindow.DrawHarvestGroup, one Reminders.ReadyToHarvest entry with FromWindow true. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is the earliest local date/time via Formats.LocalDateTime; {3} is the latest local time via Formats.LocalTime; {4} is the shared HarvestConfidenceText.</comment>
+  </data>
+  <data name="Reminders_HarvestMatureLine" xml:space="preserve">
+    <value>{0}, bed {1}: mature (stage 4)</value>
+    <comment>MainWindow.DrawHarvestGroup, one Reminders.ReadyToHarvest entry with FromWindow false (stage 4 alone, no backing window). {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_ReachSuffix" xml:space="preserve">
+    <value>({0})</value>
+    <comment>MainWindow.DrawReminderLine, wraps Reminders.ReachText's own sentence (Phase 7 scope) in parentheses beside a reminder line.</comment>
+  </data>
+  <data name="Duration_Minutes_One" xml:space="preserve">
+    <value>{0} minute</value>
+    <comment>Phrases.Minutes, singular branch (n == 1): {0} is the minute count, already formatted through Formats.Number. Feeds MainWindow.GoalAgePhrase's sub-hour branch.</comment>
+  </data>
+  <data name="Duration_Minutes_Other" xml:space="preserve">
+    <value>{0} minutes</value>
+    <comment>Phrases.Minutes, plural branch (n != 1, including 0): {0} is the minute count, already formatted through Formats.Number. Feeds MainWindow.GoalAgePhrase's sub-hour branch.</comment>
+  </data>
+  <data name="SeedItems_ProduceRowFallback" xml:space="preserve">
+    <value>row {0}</value>
+    <comment>SeedItems.ProduceName fallback, reachable only when a GardeningSeed row's produce item does not resolve against the live Item sheet. {0} is the raw row id, an integer via Formats.Number.</comment>
+  </data>
+  <data name="SeedItems_ItemRowFallback" xml:space="preserve">
+    <value>row {0}'s seed</value>
+    <comment>SeedItems.SeedItemName fallback (the shared helper Task 2.5 consolidated from three former per-file copies), reachable only when a GardeningSeed row's seed item does not resolve against the live Item sheet. {0} is the raw row id, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_TabLabel" xml:space="preserve">
+    <value>Goal</value>
+    <comment>MainWindow.Draw, the visible half of "Goal###goalTab" (kept with its "###goalTab" id suffix, see Garden_TabLabel for why).</comment>
+  </data>
+  <data name="Goal_CurrentGoal" xml:space="preserve">
+    <value>Goal: {0}</value>
+    <comment>MainWindow.DrawGoalTab, the current-goal line. {0} is the target's produce name, a client-language name.</comment>
+  </data>
+  <data name="Goal_PickSomethingElseButton" xml:space="preserve">
+    <value>Pick something else</value>
+    <comment>MainWindow.DrawGoalTab, reopens DrawGoalPicker over the current goal.</comment>
+  </data>
+  <data name="Goal_ClearGoalButton" xml:space="preserve">
+    <value>Clear goal</value>
+    <comment>MainWindow.DrawGoalTab, sets GardenJournal.GoalSeedRow back to 0.</comment>
+  </data>
+  <data name="Goal_PickerIntro" xml:space="preserve">
+    <value>Pick what you want to grow and Gardener works out the steps from what you already hold.</value>
+    <comment>MainWindow.DrawGoalPicker, empty-state intro shown above the quick picks and the seed list.</comment>
+  </data>
+  <data name="Goal_PickerHeader" xml:space="preserve">
+    <value>Pick a seed</value>
+    <comment>MainWindow.DrawGoalPicker, header above the search box and seed list.</comment>
+  </data>
+  <data name="Goal_PickerSearchHint" xml:space="preserve">
+    <value>Search</value>
+    <comment>MainWindow.DrawGoalPicker, InputTextWithHint placeholder for the "##goalSearch" search box.</comment>
+  </data>
+  <data name="Goal_PickerRowLabel" xml:space="preserve">
+    <value>{0}   {1}</value>
+    <comment>MainWindow.DrawGoalPicker, one seed row's Selectable label (kept with its own "##goalpick-{row}" id suffix, appended outside this key). {0} is the produce name, a client-language name; {1} is the already-localized PickerTag phrase (Goal_TagGatherable / Goal_TagCrossbreedOnly / Goal_TagNoCrossData).</comment>
+  </data>
+  <data name="Goal_TagGatherable" xml:space="preserve">
+    <value>you can buy or gather this</value>
+    <comment>MainWindow.PickerTag, SeedTable.Gatherable(row) == true branch. A standalone noun phrase substituted into Goal_PickerRowLabel.</comment>
+  </data>
+  <data name="Goal_TagCrossbreedOnly" xml:space="preserve">
+    <value>crossbreed only</value>
+    <comment>MainWindow.PickerTag, SeedTable.CrossableTargets branch. A standalone noun phrase substituted into Goal_PickerRowLabel.</comment>
+  </data>
+  <data name="Goal_TagNoCrossData" xml:space="preserve">
+    <value>no crossbreed data, see Settings</value>
+    <comment>MainWindow.PickerTag fallback, covering both a row absent from the bundle and one present but missing its cross data. A standalone noun phrase substituted into Goal_PickerRowLabel. "Settings" names Gardener's own settings window.</comment>
+  </data>
+  <data name="Goal_QuickPicksHeader" xml:space="preserve">
+    <value>Quickest from what you hold right now:</value>
+    <comment>MainWindow.DrawQuickPicks header, shown above the up-to-three quick-pick buttons.</comment>
+  </data>
+  <data name="Goal_AlreadyHold" xml:space="preserve">
+    <value>You already hold {0} {1}.</value>
+    <comment>MainWindow.DrawGoalAlreadyMet, the opening line. {0} is the held count, an integer via Formats.Number; {1} is the seed item's own name (SeedItems.SeedItemName), a client-language name - count-first construction per composition contract rule 6, no article before {1}.</comment>
+  </data>
+  <data name="Goal_GrowTimeUnknown" xml:space="preserve">
+    <value>Gardener does not know how long this seed takes to grow.</value>
+    <comment>MainWindow.DrawGoalAlreadyMet, shown when SeedTable.Grow has no grow time recorded for the goal row.</comment>
+  </data>
+  <data name="Goal_AlreadyMetPlan" xml:space="preserve">
+    <value>Plant one in {0} and harvest in {1} for {2} {3} and {4} seed back.</value>
+    <comment>MainWindow.DrawGoalAlreadyMet, the planting/harvest economics line. {0} is the resolved yield-soil item name (GardeningItems.SoilName), a client-language item name, preceded by "in" per composition contract rule 6 rather than an article; {1} is a complete duration noun phrase from Phrases.AboutDays/AboutHours; {2} is the crop-yield count phrase from Phrases.OneNumberOrRange; {3} is the produce name, a client-language name; {4} is the seed-yield count phrase from Phrases.OneNumberOrRange.</comment>
+  </data>
+  <data name="Goal_SeedReturnNone" xml:space="preserve">
+    <value>It gives back no seeds when harvested, so plant another from your stock each time.</value>
+    <comment>MainWindow.DrawGoalAlreadyMet, seed-yield-tier branch selected when every recorded tier is 0. Key selection rather than a substituted count, per composition contract rule 3.</comment>
+  </data>
+  <data name="Goal_SeedReturnOne" xml:space="preserve">
+    <value>It gives back the one seed you planted, at any soil grade, so a bed sustains itself but never multiplies.</value>
+    <comment>MainWindow.DrawGoalAlreadyMet, seed-yield-tier branch selected when every recorded tier is 1. Key selection rather than a substituted count, per composition contract rule 3.</comment>
+  </data>
+  <data name="Goal_SeedReturnMany" xml:space="preserve">
+    <value>It gives back {0} seeds at any soil grade, so a bed of these multiplies over time.</value>
+    <comment>MainWindow.DrawGoalAlreadyMet, seed-yield-tier branch selected when every recorded tier agrees on a value other than 0 or 1. {0} is that tier value, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_NoCrossbreedNeeded" xml:space="preserve">
+    <value>You do not need to crossbreed {0}.</value>
+    <comment>MainWindow.DrawGoalNoCrossbreedNeeded, opening line. {0} is the goal's produce name, a client-language name.</comment>
+  </data>
+  <data name="Goal_SourcesWhere" xml:space="preserve">
+    <value>Where: {0}</value>
+    <comment>MainWindow.DrawGoalNoCrossbreedNeeded, shown when SeedTable.Sources has at least one entry. {0} is the bundled English source text joined with "; " (SeedTable.Sources, Decision 3 - out of scope for translation).</comment>
+  </data>
+  <data name="Goal_SourcesNotRecorded" xml:space="preserve">
+    <value>Where: not recorded.</value>
+    <comment>MainWindow.DrawGoalNoCrossbreedNeeded fallback, shown when SeedTable.Sources has no entries.</comment>
+  </data>
+  <data name="Goal_NoRouteCannotGrow" xml:space="preserve">
+    <value>Gardener cannot find a way to grow {0} from seeds you can buy or gather.</value>
+    <comment>MainWindow.DrawGoalNoRoute, first of three sentences (split per composition contract rule 4 rather than one long composed paragraph). {0} is the goal's produce name, a client-language name.</comment>
+  </data>
+  <data name="Goal_NoRouteNoParentPair" xml:space="preserve">
+    <value>Its crossbreed data has no parent pair for it, so there is nothing to plan.</value>
+    <comment>MainWindow.DrawGoalNoRoute, second of three sentences.</comment>
+  </data>
+  <data name="Goal_NoRouteCheckSettings" xml:space="preserve">
+    <value>Open Settings and check Data health.</value>
+    <comment>MainWindow.DrawGoalNoRoute, third of three sentences. "Settings" and "Data health" name Gardener's own settings window and section.</comment>
+  </data>
+  <data name="Goal_NeverSeenGarden" xml:space="preserve">
+    <value>Gardener has never seen a garden of yours. Stand at your plot once and it will know which step you are on.</value>
+    <comment>MainWindow.DrawGoalPlanBody, shown when the player is away from the garden and GardenJournal.AllRecords is empty.</comment>
+  </data>
+  <data name="Goal_NotAtGarden" xml:space="preserve">
+    <value>You are not at the garden.</value>
+    <comment>MainWindow.DrawGoalPlanBody, first of two sentences shown when away from the garden with a cached journal snapshot (split per composition contract rule 4).</comment>
+  </data>
+  <data name="Goal_LastVisitAge" xml:space="preserve">
+    <value>This is what Gardener saw on your last visit, {0} ago.</value>
+    <comment>MainWindow.DrawGoalPlanBody, second of the two away-from-garden sentences. {0} is a complete duration noun phrase from MainWindow.GoalAgePhrase (Phrases.Minutes/Hours/Days).</comment>
+  </data>
+  <data name="Goal_StepProgress" xml:space="preserve">
+    <value>Step {0} of {1}</value>
+    <comment>MainWindow.DrawGoalPlanBody, current-step-of-total header. {0} is the current step's own Number; {1} is the highest step Number in the plan, both integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_TotalStepsCount" xml:space="preserve">
+    <value>{0} steps.</value>
+    <comment>MainWindow.DrawGoalPlanBody, first of three summary sentences (split per composition contract rule 4 rather than one composed line). {0} is the plan's total step count, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_BestCaseDuration" xml:space="preserve">
+    <value>About {0} if the gamble lands first time.</value>
+    <comment>MainWindow.DrawGoalPlanBody, second summary sentence. {0} is a complete duration noun phrase from Phrases.Days/Hours over plan.BestCaseDuration.</comment>
+  </data>
+  <data name="Goal_PeakBeds" xml:space="preserve">
+    <value>{0} beds at the busiest step.</value>
+    <comment>MainWindow.DrawGoalPlanBody, third summary sentence. {0} is plan.PeakBeds, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_StepHeader" xml:space="preserve">
+    <value>Step {0}: {1}</value>
+    <comment>MainWindow.DrawGoalStepGroup, the visible half of the "###goalstep-{number}"-suffixed CollapsingHeader (id suffix appended outside this key, keyed off the step number rather than the title - see the code comment at the call site). {0} is the step's Number, an integer via Formats.Number; {1} is GoalStep.Title, generated by Planner/GoalRoute.cs (Phase 6 scope) and rendered here as-is.</comment>
+  </data>
+  <data name="Goal_MarkerNow" xml:space="preserve">
+    <value>Now</value>
+    <comment>MainWindow.DrawGoalStepGroup, right-aligned marker shown on the current step's header.</comment>
+  </data>
+  <data name="Goal_MarkerDone" xml:space="preserve">
+    <value>Done</value>
+    <comment>MainWindow.DrawGoalStepGroup, right-aligned marker shown on a step header once every member is GoalStepStatus.Done.</comment>
+  </data>
+  <data name="Goal_StepDoneWithSeed" xml:space="preserve">
+    <value>Done. You hold {0} {1}.</value>
+    <comment>MainWindow.StatusLine, GoalStepStatus.Done branch, shared by ObtainStep and CrossStep (same sentence either way - only which seed row is being counted differs). {0} is the held count, an integer via Formats.Number; {1} is the seed item's own name (SeedItems.SeedItemName), a client-language name - count-first construction per composition contract rule 6.</comment>
+  </data>
+  <data name="Goal_StepDonePlain" xml:space="preserve">
+    <value>Done.</value>
+    <comment>MainWindow.StatusLine, GoalStepStatus.Done fallback for a GoalStep subtype that is neither ObtainStep nor CrossStep.</comment>
+  </data>
+  <data name="Goal_AttemptUnresolved" xml:space="preserve">
+    <value>Bed {0} is growing. You will know whether it crossed when it is ready to harvest.</value>
+    <comment>MainWindow.StatusLine, GoalStepStatus.AttemptUnresolved branch. {0} is the bed number, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_NotStarted" xml:space="preserve">
+    <value>Not started.</value>
+    <comment>MainWindow.StatusLine fallback (GoalStepStatus.NotStarted with no GoalStepProgress.Blocker set - Blocker itself is generated in Planner/GoalProgress.cs, Phase 6 scope, and rendered as-is when present).</comment>
+  </data>
+  <data name="Goal_GrowingUnknownTiming" xml:space="preserve">
+    <value>Growing in bed {0}. Gardener does not know when this one is ready. Set when you planted it on the Garden tab.</value>
+    <comment>MainWindow.GrowingStatusLine, shown when the bed record is missing or its harvest window confidence is HarvestConfidence.Unknown. {0} is the bed number, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_ReadyToHarvest" xml:space="preserve">
+    <value>Ready to harvest in bed {0}.</value>
+    <comment>MainWindow.GrowingStatusLine, shown once the harvest window's earliest time has passed. {0} is the bed number, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_WiltedTendBeforeWithers" xml:space="preserve">
+    <value>Growing in bed {0}. It has wilted; tend it before it withers.</value>
+    <comment>MainWindow.GrowingStatusLine, shown once the bed has wilted but has not yet withered. {0} is the bed number, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_TendWithinHours_One" xml:space="preserve">
+    <value>Growing in bed {0}. Tend it within {1} hour or it wilts.</value>
+    <comment>MainWindow.GrowingStatusLine, singular branch (n == 1), shown when the bed wilts within 6 hours. {0} is the bed number; {1} is the whole hours remaining until wilt (rounded up), both integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_TendWithinHours_Other" xml:space="preserve">
+    <value>Growing in bed {0}. Tend it within {1} hours or it wilts.</value>
+    <comment>MainWindow.GrowingStatusLine, plural branch (n != 1, including 0), shown when the bed wilts within 6 hours. {0} is the bed number; {1} is the whole hours remaining until wilt (rounded up), both integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_GrowingNoEarliest" xml:space="preserve">
+    <value>Growing in bed {0}.</value>
+    <comment>MainWindow.GrowingStatusLine fallback, shown when the harvest window carries no earliest time at all. {0} is the bed number, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_GrowingTimeLeft" xml:space="preserve">
+    <value>Growing in bed {0}. About {1} left, at the earliest.</value>
+    <comment>MainWindow.GrowingStatusLine, confident-timing branch. {0} is the bed number, an integer via Formats.Number; {1} is a complete duration noun phrase from Phrases.Days/Hours. Sibling of Goal_GrowingTimeLeftEstimated rather than a shared template with a concatenated suffix, since a trailing comma-clause does not compose in Spanish (composition contract rule 3).</comment>
+  </data>
+  <data name="Goal_GrowingTimeLeftEstimated" xml:space="preserve">
+    <value>Growing in bed {0}. About {1} left, at the earliest, estimated.</value>
+    <comment>MainWindow.GrowingStatusLine, HarvestConfidence.Estimated branch - the whole-sentence sibling of Goal_GrowingTimeLeft, selected instead of appending a ", estimated" suffix onto it. {0} is the bed number, an integer via Formats.Number; {1} is a complete duration noun phrase from Phrases.Days/Hours.</comment>
+  </data>
+  <data name="Goal_StandAtGardenSeeBeds" xml:space="preserve">
+    <value>Stand at your garden to see which beds this uses.</value>
+    <comment>MainWindow.DrawGoalCurrentStepDetail, shown above the disabled handoff when the player is away from the garden.</comment>
+  </data>
+  <data name="Goal_StandAtGardenPlantHandoff" xml:space="preserve">
+    <value>Stand at your garden to plant this step.</value>
+    <comment>MainWindow.DrawGoalCurrentStepDetail, the disabled handoff's own reason when the player is away from the garden.</comment>
+  </data>
+  <data name="Goal_NeedBothSeeds" xml:space="preserve">
+    <value>You need {0} and {1} to plant this step.</value>
+    <comment>MainWindow.MissingSeedForHandoff, whole disabled-reason sentence for the branch where neither seed is held at all. {0} and {1} are the two seed items' own names (SeedItems.SeedItemName), client-language names. A whole sentence rather than a noun-phrase fragment, since this and Goal_NeedOneMoreSeed inflect differently in Spanish and cannot share one host template.</comment>
+  </data>
+  <data name="Goal_NeedOneMoreSeed" xml:space="preserve">
+    <value>You need 1 more {0} to plant this step.</value>
+    <comment>MainWindow.MissingSeedForHandoff, whole disabled-reason sentence shared by both single-seed-missing branches (first seed short, or second seed short - same sentence shape either way). {0} is the missing seed item's own name (SeedItems.SeedItemName), a client-language name.</comment>
+  </data>
+  <data name="Goal_NoSoilForStepFallback" xml:space="preserve">
+    <value>You have no soil for this step.</value>
+    <comment>MainWindow.DrawGoalCurrentStepDetail fallback, used only when GardeningItems.SoilUnavailable itself returns null.</comment>
+  </data>
+  <data name="Goal_MineHint" xml:space="preserve">
+    <value>Mine Grade 3 in {0}.</value>
+    <comment>MainWindow.DrawGoalCurrentStepDetail, appended as its own sentence after the soil-unavailable reason (space joined in code, not composed via a slot) whenever the soil preference is not SoilPreference.Fixed. {0} is SoilSources.Where's own location noun phrase, containing bundled English zone text (Decision 3, out of scope for translation).</comment>
+  </data>
+  <data name="Goal_PairBedPlantHere" xml:space="preserve">
+    <value>bed {0}: plant {1} here</value>
+    <comment>MainWindow.DrawGoalCurrentStepDetail, pair-strip cell for a bed the single-step plan will plant into (LayoutPlan.ExpectedTargets). {0} is the bed number, an integer via Formats.Number; {1} is the produce name, a client-language name.</comment>
+  </data>
+  <data name="Goal_PairBedExisting" xml:space="preserve">
+    <value>bed {0}: {1}</value>
+    <comment>MainWindow.DrawGoalCurrentStepDetail, pair-strip cell for a bed already holding the seed the plan reads (not one of LayoutPlan.ExpectedTargets). {0} is the bed number, an integer via Formats.Number; {1} is the produce name, a client-language name.</comment>
+  </data>
+  <data name="Goal_CannotFitStep" xml:space="preserve">
+    <value>Gardener cannot fit this step into the free beds on this patch.</value>
+    <comment>MainWindow.DrawGoalHandoff, shown when CrossPlanner.Verify rejects the single-step plan.</comment>
+  </data>
+  <data name="Goal_PlantStepButton" xml:space="preserve">
+    <value>{0}: this step</value>
+    <comment>MainWindow.DrawGoalHandoff, the handoff button (Decision 2: borrows the game's own bed-menu verb, like the sweep buttons). {0} is GameWords.Action(MenuKey.SetSeed), the game's own "Plant Seeds" wording.</comment>
+  </data>
+  <data name="Goal_ConfirmPlantStepTitle" xml:space="preserve">
+    <value>Plant this step?</value>
+    <comment>MainWindow.DrawGoalHandoff, confirm popup title (the "Confirm plant goal step" popup id is a literal identifier, never translated).</comment>
+  </data>
+  <data name="Goal_ConfirmPlantStepBody" xml:space="preserve">
+    <value>Gardener will plant {0}. It plants this one step and stops.</value>
+    <comment>MainWindow.DrawGoalHandoff, confirm popup body. {0} is MainWindow.PlantingPhrase's own roster of seed/bed/soil clauses, itself built from Goal_PlantingClause_One/_Other joined with "; ".</comment>
+  </data>
+  <data name="Goal_PlantingClause_One" xml:space="preserve">
+    <value>{0} in bed {1}, using {2}</value>
+    <comment>MainWindow.PlantingPhrase, singular branch (one bed in the group). {0} is the seed item's own name (SeedItems.SeedItemName); {1} is the bed number, joined through TextList.And (a single number when there is only one); {2} is the soil item's own name (ItemSheet.Name). Both {0} and {2} are client-language item names.</comment>
+  </data>
+  <data name="Goal_PlantingClause_Other" xml:space="preserve">
+    <value>{0} in beds {1}, using {2}</value>
+    <comment>MainWindow.PlantingPhrase, plural branch (more than one bed in the group). {0} is the seed item's own name (SeedItems.SeedItemName); {1} is the bed numbers joined through TextList.And; {2} is the soil item's own name (ItemSheet.Name). Both {0} and {2} are client-language item names.</comment>
+  </data>
+</root>

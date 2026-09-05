@@ -6,6 +6,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Gardener.Game;
+using Gardener.Localization;
 using XivHubPluginKit.Inventory;
 using XivHubPluginKit.UI;
 
@@ -14,38 +15,51 @@ namespace Gardener.Windows
     public class ConfigWindow : Window, IDisposable
     {
         // Combo labels indexed by SoilPreference's own declaration order; a mismatch here would
-        // silently pick the wrong family or the wrong pinned-soil mode.
-        private static readonly string[] SoilPreferenceLabels =
+        // silently pick the wrong family or the wrong pinned-soil mode. A property, not a cached
+        // array: Strings.* resolves through the current Loc.Culture on every access, so caching it
+        // once would freeze the labels at whatever language was active on first Draw().
+        private static string[] SoilPreferenceLabels => new[]
         {
-            "Highest-grade Thanalan Topsoil (best intercross rate)",
-            "Highest-grade Shroud Topsoil (best yield)",
-            "Highest-grade La Noscean Topsoil (Potting Soil-equivalent)",
-            "One specific soil, pinned below",
+            Strings.Config_SoilPreference_HighestThanalan,
+            Strings.Config_SoilPreference_HighestShroud,
+            Strings.Config_SoilPreference_HighestLaNoscean,
+            Strings.Config_SoilPreference_Fixed,
         };
+
+        // "" / "en" / "es" written to Configuration.UiLanguageOverride, indexed the same as
+        // DrawLanguageCombo's own label array.
+        private static readonly string[] LanguageCodes = { "", "en", "es" };
 
         private readonly Configuration cfg;
 
-        public ConfigWindow(Configuration configuration) : base("Gardener Settings")
+        public ConfigWindow(Configuration configuration) : base($"{Strings.Config_WindowTitle}###GardenerConfig")
         {
             cfg = configuration;
         }
 
         public void Dispose() { }
 
+        // WindowName feeds ImGui.Begin before Draw() runs, so a language switch made through
+        // DrawLanguageCombo needs its own refresh point here rather than inside Draw() itself.
+        public override void PreDraw() => WindowName = $"{Strings.Config_WindowTitle}###GardenerConfig";
+
         public override void Draw()
         {
+            DrawLanguageCombo();
+            ImGui.Separator();
+
             DrawAutomationSection();
             DrawPlantingSection();
             DrawFertilizerSection();
             DrawRemindersSection();
 
             ImGui.Separator();
-            if (ImGui.CollapsingHeader("Developer"))
+            if (ImGui.CollapsingHeader($"{Strings.Config_Developer_Header}###developerHeader"))
             {
-                ImGui.TextDisabled("Streams live activity + state snapshots to a local log server.");
-                BoolInput("Enable dev telemetry", () => cfg.DevLog, v => cfg.DevLog = v);
+                ImGui.TextDisabled(Strings.Config_Developer_TelemetryDesc);
+                BoolInput(Strings.Config_Developer_EnableTelemetry, () => cfg.DevLog, v => cfg.DevLog = v);
                 var url = cfg.DevLogUrl;
-                if (ImGui.InputText("Log server URL", ref url, 256))
+                if (ImGui.InputText(Strings.Config_Developer_LogUrl, ref url, 256))
                 {
                     cfg.DevLogUrl = url;
                     cfg.Save();
@@ -57,39 +71,67 @@ namespace Gardener.Windows
             DrawThemeSection();
         }
 
+        /// <summary>
+        /// Writes <see cref="Configuration.UiLanguageOverride"/> and applies it immediately through
+        /// <see cref="Loc.SetLanguage"/>, so a language switch is visible on the very next frame
+        /// without reopening the window or reloading the plugin.
+        /// </summary>
+        private void DrawLanguageCombo()
+        {
+            var labels = new[]
+            {
+                Strings.Config_Language_Automatic,
+                Strings.Config_Language_English,
+                Strings.Config_Language_Spanish,
+            };
+
+            var current = Array.IndexOf(LanguageCodes, cfg.UiLanguageOverride);
+            if (current < 0)
+                current = 0;
+
+            if (ImGui.Combo(Strings.Config_Language_Label, ref current, labels, labels.Length))
+            {
+                cfg.UiLanguageOverride = LanguageCodes[current];
+                cfg.Save();
+                Loc.SetLanguage(string.IsNullOrEmpty(cfg.UiLanguageOverride)
+                    ? Plugin.PluginInterface.UiLanguage
+                    : cfg.UiLanguageOverride);
+            }
+        }
+
         private void DrawAutomationSection()
         {
-            ImGui.TextDisabled("Automation");
-            IntSlider("Delay between actions (ms)", () => cfg.StepDelayMs, v => cfg.StepDelayMs = v, 100, 4000);
-            ImGui.TextColored(HubStyle.Faint, "Raising this makes runs slower but more reliable.");
-            IntSlider("Delay between beds (ms)", () => cfg.BedDelayMs, v => cfg.BedDelayMs = v, 200, 6000);
-            ImGui.TextColored(HubStyle.Faint, "Raising this makes runs slower but more reliable.");
-            IntSlider("Menu wait timeout (ms)", () => cfg.MenuTimeoutMs, v => cfg.MenuTimeoutMs = v, 1000, 15000);
-            BoolInput("Stop a run if I move", () => cfg.StopIfPlayerMoves, v => cfg.StopIfPlayerMoves = v);
+            ImGui.TextDisabled(Strings.Config_Automation_Header);
+            IntSlider(Strings.Config_Automation_StepDelayMs, () => cfg.StepDelayMs, v => cfg.StepDelayMs = v, 100, 4000);
+            ImGui.TextColored(HubStyle.Faint, Strings.Config_Automation_SlowerReliable);
+            IntSlider(Strings.Config_Automation_BedDelayMs, () => cfg.BedDelayMs, v => cfg.BedDelayMs = v, 200, 6000);
+            ImGui.TextColored(HubStyle.Faint, Strings.Config_Automation_SlowerReliable);
+            IntSlider(Strings.Config_Automation_MenuTimeoutMs, () => cfg.MenuTimeoutMs, v => cfg.MenuTimeoutMs = v, 1000, 15000);
+            BoolInput(Strings.Config_Automation_StopIfPlayerMoves, () => cfg.StopIfPlayerMoves, v => cfg.StopIfPlayerMoves = v);
             if (cfg.StopIfPlayerMoves)
             {
                 ImGui.Indent();
-                FloatSlider("Distance that counts as moved away (yalms)",
+                FloatSlider(Strings.Config_Automation_MoveAbortDistance,
                     () => cfg.MoveAbortDistance, v => cfg.MoveAbortDistance = v, 1f, 10f);
                 ImGui.Unindent();
             }
-            FloatSlider("Reach distance to start a run (yalms)",
+            FloatSlider(Strings.Config_Automation_BedReachDistance,
                 () => cfg.BedReachDistance, v => cfg.BedReachDistance = v, 1f, 15f);
-            BoolInput("Confirm before running a sweep", () => cfg.ConfirmBeforeRun, v => cfg.ConfirmBeforeRun = v);
+            BoolInput(Strings.Config_Automation_ConfirmBeforeRun, () => cfg.ConfirmBeforeRun, v => cfg.ConfirmBeforeRun = v);
         }
 
         private void DrawPlantingSection()
         {
             ImGui.Separator();
-            ImGui.TextDisabled("Planting defaults");
-            ImGui.TextColored(HubStyle.Faint, "Which topsoil to reach for when the plugin plants for you.");
-            SoilCombo("Soil for a crossbreed step", () => cfg.SoilForCross, v => cfg.SoilForCross = v);
-            SoilCombo("Soil for a yield step", () => cfg.SoilForYield, v => cfg.SoilForYield = v);
+            ImGui.TextDisabled(Strings.Config_Planting_Header);
+            ImGui.TextColored(HubStyle.Faint, Strings.Config_Planting_Intro);
+            SoilCombo(Strings.Config_Planting_SoilForCross, () => cfg.SoilForCross, v => cfg.SoilForCross = v);
+            SoilCombo(Strings.Config_Planting_SoilForYield, () => cfg.SoilForYield, v => cfg.SoilForYield = v);
 
             if (cfg.SoilForCross == SoilPreference.Fixed || cfg.SoilForYield == SoilPreference.Fixed)
             {
                 ImGui.Spacing();
-                ImGui.TextUnformatted("Pinned soil");
+                ImGui.TextUnformatted(Strings.Config_Planting_PinnedSoilHeader);
                 DrawFixedSoilPicker();
             }
         }
@@ -118,7 +160,7 @@ namespace Gardener.Windows
                 if (!held)
                 {
                     ImGui.SameLine();
-                    ImGui.TextColored(HubStyle.Faint, "(not held)");
+                    ImGui.TextColored(HubStyle.Faint, Strings.Config_NotHeld);
                 }
             }
             ImGui.Unindent();
@@ -128,15 +170,13 @@ namespace Gardener.Windows
         private void DrawFertilizerSection()
         {
             ImGui.Separator();
-            ImGui.TextDisabled("Fertilizer");
-            BoolInput("Only fertilize a growing bed", () => cfg.FertilizeOnlyGrowing, v => cfg.FertilizeOnlyGrowing = v);
-            IntSlider("Cooldown per bed (minutes)", () => cfg.FertilizeCooldownMin, v => cfg.FertilizeCooldownMin = v, 30, 180);
-            ImGui.TextColored(HubStyle.Faint,
-                "The game accepts one application per bed per hour regardless of this setting; a shorter " +
-                "cooldown here just tries earlier and gets refused.");
+            ImGui.TextDisabled(Strings.Config_Fertilizer_Header);
+            BoolInput(Strings.Config_Fertilizer_OnlyGrowing, () => cfg.FertilizeOnlyGrowing, v => cfg.FertilizeOnlyGrowing = v);
+            IntSlider(Strings.Config_Fertilizer_CooldownMinutes, () => cfg.FertilizeCooldownMin, v => cfg.FertilizeCooldownMin = v, 30, 180);
+            ImGui.TextColored(HubStyle.Faint, Strings.Config_Fertilizer_CooldownNote);
 
             ImGui.Spacing();
-            ImGui.TextUnformatted("Which fertilizer to use");
+            ImGui.TextUnformatted(Strings.Config_Fertilizer_WhichHeader);
             DrawFixedFertilizerPicker();
         }
 
@@ -148,7 +188,7 @@ namespace Gardener.Windows
             var heldIds = Bags.Scan().Select(s => s.ItemId).ToHashSet();
 
             ImGui.Indent();
-            if (ImGui.RadioButton("Automatic (first one held)##fixedfertilizer-auto", cfg.FixedFertilizerItemId == 0))
+            if (ImGui.RadioButton($"{Strings.Config_Fertilizer_AutomaticFirstHeld}##fixedfertilizer-auto", cfg.FixedFertilizerItemId == 0))
             {
                 cfg.FixedFertilizerItemId = 0;
                 cfg.Save();
@@ -170,7 +210,7 @@ namespace Gardener.Windows
                 if (!held)
                 {
                     ImGui.SameLine();
-                    ImGui.TextColored(HubStyle.Faint, "(not held)");
+                    ImGui.TextColored(HubStyle.Faint, Strings.Config_NotHeld);
                 }
             }
             ImGui.Unindent();
@@ -179,21 +219,20 @@ namespace Gardener.Windows
         private void DrawRemindersSection()
         {
             ImGui.Separator();
-            ImGui.TextDisabled("Reminders");
-            BoolInput("Show reminder counts on the server info bar", () => cfg.DtrEnabled, v => cfg.DtrEnabled = v);
-            BoolInput("Echo reminders to chat", () => cfg.ChatReminders, v => cfg.ChatReminders = v);
-            IntSlider("Warn this many hours before a bed wilts", () => cfg.WiltWarningHours, v => cfg.WiltWarningHours = v, 1, 24);
+            ImGui.TextDisabled(Strings.Config_Reminders_Header);
+            BoolInput(Strings.Config_Reminders_ShowDtr, () => cfg.DtrEnabled, v => cfg.DtrEnabled = v);
+            BoolInput(Strings.Config_Reminders_ChatEcho, () => cfg.ChatReminders, v => cfg.ChatReminders = v);
+            IntSlider(Strings.Config_Reminders_WiltWarningHours, () => cfg.WiltWarningHours, v => cfg.WiltWarningHours = v, 1, 24);
 
             if (!cfg.ChatReminders)
                 ImGui.BeginDisabled();
-            IntSlider("Chat reminder interval (minutes)", () => cfg.ReminderIntervalMin, v => cfg.ReminderIntervalMin = v, 5, 120);
+            IntSlider(Strings.Config_Reminders_ChatIntervalMinutes, () => cfg.ReminderIntervalMin, v => cfg.ReminderIntervalMin = v, 5, 120);
             if (!cfg.ChatReminders)
                 ImGui.EndDisabled();
 
             ImGui.Spacing();
-            BoolInput("Narrate sweeps in chat", () => cfg.NarrateSweepActions, v => cfg.NarrateSweepActions = v);
-            ImGui.TextColored(HubStyle.Faint,
-                "Prints a line in chat as a sweep tends, fertilizes, harvests, plants or skips each bed.");
+            BoolInput(Strings.Config_Reminders_NarrateSweeps, () => cfg.NarrateSweepActions, v => cfg.NarrateSweepActions = v);
+            ImGui.TextColored(HubStyle.Faint, Strings.Config_Reminders_NarrateSweepsNote);
         }
 
         private void SoilCombo(string label, Func<SoilPreference> get, Action<SoilPreference> set)
@@ -215,46 +254,51 @@ namespace Gardener.Windows
         private void DrawDataSection()
         {
             ImGui.Separator();
-            ImGui.TextDisabled("Data health");
+            ImGui.TextDisabled(Strings.Config_Data_Header);
 
-            BoolInput("Record how long your own crops take to mature and become harvestable",
+            BoolInput(Strings.Config_Data_CollectGrowSamples,
                 () => cfg.CollectGrowSamples, v => cfg.CollectGrowSamples = v);
-            ImGui.TextColored(HubStyle.Faint, "Narrows the harvest window in the Reminders tab from your own garden's timing.");
+            ImGui.TextColored(HubStyle.Faint, Strings.Config_Data_CollectGrowSamplesNote);
 
-            BoolInput("Show data gap warnings", () => cfg.ShowDataGapWarnings, v => cfg.ShowDataGapWarnings = v);
+            BoolInput(Strings.Config_Data_ShowGapWarnings, () => cfg.ShowDataGapWarnings, v => cfg.ShowDataGapWarnings = v);
             if (!cfg.ShowDataGapWarnings)
                 return;
 
             var provenance = SeedTable.Provenance;
             using (ImRaii.PushColor(ImGuiCol.Text, HubStyle.Faint))
             {
-                ImGui.TextUnformatted($"Generated {provenance.Generated}");
-                ImGui.TextUnformatted($"Lotlab commit {provenance.LotlabCommit}");
-                ImGui.TextUnformatted($"nick75g commit {provenance.Nick75gCommit}");
-                ImGui.TextUnformatted($"XIVAPI schema {provenance.XivapiSchema}");
-                ImGui.TextUnformatted($"XIVAPI version {provenance.XivapiVersion}");
+                ImGui.TextUnformatted(Loc.Format(Strings.Config_Data_Generated, provenance.Generated));
+                ImGui.TextUnformatted(Loc.Format(Strings.Config_Data_LotlabCommit, provenance.LotlabCommit));
+                ImGui.TextUnformatted(Loc.Format(Strings.Config_Data_Nick75gCommit, provenance.Nick75gCommit));
+                ImGui.TextUnformatted(Loc.Format(Strings.Config_Data_XivapiSchema, provenance.XivapiSchema));
+                ImGui.TextUnformatted(Loc.Format(Strings.Config_Data_XivapiVersion, provenance.XivapiVersion));
             }
 
             ImGui.Spacing();
             var gaps = SeedTable.DataGaps;
-            DrawGapList("Bundled rows missing from the live sheet", gaps.BundledRowsMissingFromSheet.Count,
+            DrawGapList("bundled-missing-sheet", Strings.Config_Data_GapBundledMissing, gaps.BundledRowsMissingFromSheet.Count,
                 gaps.BundledRowsMissingFromSheet.Select(g => (g.Row, g.Name)));
-            DrawGapList("Live outdoor rows missing from the bundle", gaps.LiveRowsMissingFromBundle.Count,
+            DrawGapList("live-missing-bundle", Strings.Config_Data_GapLiveMissing, gaps.LiveRowsMissingFromBundle.Count,
                 gaps.LiveRowsMissingFromBundle.Select(g => (g.Row, g.Name)));
-            DrawGapList("Rows with no grow time", gaps.RowsWithNoGrowTime.Count,
+            DrawGapList("no-grow-time", Strings.Config_Data_GapNoGrowTime, gaps.RowsWithNoGrowTime.Count,
                 gaps.RowsWithNoGrowTime.Select(g => (g.Row, g.Name)));
-            DrawGapList("Rows absent from the cross data", gaps.RowsAbsentFromCrossData.Count,
+            DrawGapList("no-cross-data", Strings.Config_Data_GapNoCrossData, gaps.RowsAbsentFromCrossData.Count,
                 gaps.RowsAbsentFromCrossData.Select(g => (g.Row, g.Name)));
 
             ImGui.Spacing();
             var soilGaps = GardeningItems.LiveSoilsMissingFromTable;
-            DrawGapList("Live soils missing from the soil table", soilGaps.Count,
+            DrawGapList("soil-missing-table", Strings.Config_Data_GapSoilMissing, soilGaps.Count,
                 soilGaps.Select(g => (g.ItemId, g.Name)));
         }
 
-        private static void DrawGapList(string label, int count, IEnumerable<(uint Id, string Name)> gaps)
+        /// <summary>
+        /// <paramref name="id"/> is a stable identifier independent of <paramref name="label"/>:
+        /// the header's own visible text will be translated, and a CollapsingHeader's open state
+        /// is otherwise keyed off exactly that text.
+        /// </summary>
+        private static void DrawGapList(string id, string label, int count, IEnumerable<(uint Id, string Name)> gaps)
         {
-            var header = $"{label} ({count})###gap-{label}";
+            var header = $"{Loc.Format(Strings.Config_GapCountHeader, label, Formats.Number(count))}###gap-{id}";
             bool open;
             if (count > 0)
             {
@@ -280,8 +324,8 @@ namespace Gardener.Windows
         private static void DrawThemeSection()
         {
             ImGui.Separator();
-            ImGui.TextDisabled("Appearance");
-            ImGui.TextColored(HubStyle.Faint, "Shared with every XIV Hub plugin.");
+            ImGui.TextDisabled(Strings.Config_Theme_Header);
+            ImGui.TextColored(HubStyle.Faint, Strings.Config_Theme_SharedNote);
             ImGui.Spacing();
             HubThemeEditor.Draw(Plugin.ThemeConfig);
         }

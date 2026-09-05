@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Gardener.Game;
+using Gardener.Localization;
 
 namespace Gardener.Planner;
 
@@ -279,7 +280,7 @@ public static class GoalRoute
         {
             var needCount = Math.Max(1, obtainNeed.GetValueOrDefault(row));
             var heldCount = held.GetValueOrDefault(row);
-            var seedItemName = SeedItemName(row);
+            var seedItemName = SeedItems.SeedItemName(row);
             var produceName = SeedItems.ProduceName(row);
 
             var body = new List<string>
@@ -315,13 +316,13 @@ public static class GoalRoute
         var targetName = SeedItems.ProduceName(target);
         var body = new List<string>
         {
-            $"Plant {SeedItemName(first)} in half the beds around the ring, then plant {SeedItemName(second)} in " +
-            $"the beds between them, so every {SeedItemName(second)} has a {SeedItemName(first)} neighbour on both sides.",
+            $"Plant {SeedItems.SeedItemName(first)} in half the beds around the ring, then plant {SeedItems.SeedItemName(second)} in " +
+            $"the beds between them, so every {SeedItems.SeedItemName(second)} has a {SeedItems.SeedItemName(first)} neighbour on both sides.",
         };
 
         var singleOutcome = outcomes.Length <= 1;
         var targetGrowHours = SeedTable.Grow(target) ?? 0;
-        var roundDays = DurationDays(targetGrowHours);
+        var roundDays = Math.Max(1, (int)Math.Round(targetGrowHours / 24.0));
 
         if (singleOutcome)
         {
@@ -366,23 +367,26 @@ public static class GoalRoute
         // Two soils, not one: a bed planted while its ring neighbours are still empty crosses with
         // nothing, so it is harvested for its own seed and takes the yield soil, and only the beds
         // planted against it take the soil that moves the intercross rate.
-        var crossExplain = explainedFamilies.Add(family) ? $" {family} soil {SoilSources.Does(family)}." : "";
+        var crossSoilName = GardeningItems.SoilName(family, AssumedSoilGrade);
+        var crossExplain = explainedFamilies.Add(family) ? $" {SoilSources.Does(family, crossSoilName)}" : "";
         if (yieldFamily == family)
         {
-            body.Add($"Soil: Grade {AssumedSoilGrade} {family} Topsoil in every bed.{crossExplain}");
+            body.Add($"Soil: {crossSoilName} in every bed.{crossExplain}");
         }
         else
         {
+            var yieldSoilName = GardeningItems.SoilName(yieldFamily, AssumedSoilGrade);
             var yieldExplain = explainedFamilies.Add(yieldFamily)
-                ? $" {yieldFamily} soil {SoilSources.Does(yieldFamily)}."
+                ? $" {SoilSources.Does(yieldFamily, yieldSoilName)}"
                 : "";
             body.Add(
-                $"Soil: Grade {AssumedSoilGrade} {family} Topsoil in the beds you plant second, the ones that " +
-                $"cross; Grade {AssumedSoilGrade} {yieldFamily} Topsoil in the beds you plant first, which cross " +
+                $"Soil: {crossSoilName} in the beds you plant second, the ones that " +
+                $"cross; {yieldSoilName} in the beds you plant first, which cross " +
                 $"with nothing and are harvested for seed.{crossExplain}{yieldExplain}");
         }
 
-        body.Add($"Beds: {AssumedPatchBeds} ({AssumedPatchPairs} pairs). Ready {DurationPhrase(targetGrowHours)} after you plant.");
+        body.Add($"Beds: {AssumedPatchBeds} ({AssumedPatchPairs} pairs). Ready " +
+            $"{(targetGrowHours > 48 ? Phrases.AboutDays(Math.Round(targetGrowHours / 24.0)) : Phrases.AboutHours(Math.Round((double)targetGrowHours)))} after you plant.");
 
         if (singleOutcome)
         {
@@ -394,7 +398,7 @@ public static class GoalRoute
             {
                 var wiltHours = MinWiltHours(first, target);
                 if (wiltHours is { } w)
-                    body.Add($"Tend these beds {EveryDayPhrase(w)} or they wilt.");
+                    body.Add($"Tend these beds {Phrases.EveryDay(w)} or they wilt.");
             }
         }
         else if (isFinal)
@@ -425,13 +429,13 @@ public static class GoalRoute
             var growHours = SeedTable.Grow(target) ?? 0;
             var visits = wilt.Hours > 0 ? (int)Math.Ceiling(growHours / (double)wilt.Hours) : 1;
             body.Add(
-                $"{targetName} wilts after {DayPhrase(wilt.Hours)}, so visit it {EveryDayPhrase(wilt.Hours)} " +
+                $"{targetName} wilts after {Phrases.Days(Math.Round(wilt.Hours / 24.0, 1))}, so visit it {Phrases.EveryDay(wilt.Hours)} " +
                 $"until you harvest it. That is {visits} visits.");
         }
 
         var yields = SeedTable.Yields(target);
-        var cropText = OneNumberOrRange(yields?.Crop);
-        var seedText = OneNumberOrRange(yields?.Seed);
+        var cropText = Phrases.OneNumberOrRange(yields?.Crop);
+        var seedText = Phrases.OneNumberOrRange(yields?.Seed);
         var allAgree = yields?.Crop is { } cy && cy.Length > 0 && cy.All(v => v == cy[0]) &&
                         yields?.Seed is { } sy && sy.Length > 0 && sy.All(v => v == sy[0]);
         body.Add(allAgree
@@ -468,41 +472,7 @@ public static class GoalRoute
         return Math.Min(a.Value, b.Value);
     }
 
-    private static string SeedItemName(uint row) =>
-        SeedItems.SeedItemForRow(row) is { } itemId ? XivHubPluginKit.Inventory.ItemSheet.Name(itemId) : $"row {row}'s seed";
-
     private static string Capitalize(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
-
-    private static int DurationDays(int hours) => Math.Max(1, (int)Math.Round(hours / 24.0));
-
-    /// <summary>"about N days" above 48 hours, "about N hours" below — never a countdown to the
-    /// minute, matching how <see cref="Journal.Growth"/> speaks about a harvest window.</summary>
-    private static string DurationPhrase(double hours) =>
-        hours > 48 ? $"about {Math.Round(hours / 24.0):F0} days" : $"about {Math.Round(hours):F0} hours";
-
-    /// <summary>Wilt cycles are always day-scale (24, 36 or 48 hours), so the tend cadence is always
-    /// spoken in days regardless of <see cref="DurationPhrase"/>'s 48-hour threshold: "1 day", "1.5
-    /// days", "2 days".</summary>
-    private static string DayPhrase(int hours)
-    {
-        var days = Math.Round(hours / 24.0, 1);
-        var number = days % 1 == 0 ? ((int)days).ToString() : days.ToString("0.#");
-        return days == 1 ? $"{number} day" : $"{number} days";
-    }
-
-    /// <summary>"every day" reads better than "every 1 day"; every other cadence keeps the count.</summary>
-    private static string EveryDayPhrase(int hours) =>
-        Math.Round(hours / 24.0, 1) == 1 ? "every day" : $"every {DayPhrase(hours)}";
-
-    /// <summary>Rule 1 of the Goal tab's generated copy: a single number only when every soil tier
-    /// agrees, a range otherwise — the yield-tier meaning itself is unrecorded (G2), so quoting one
-    /// tier by guesswork would claim precision nobody has.</summary>
-    private static string OneNumberOrRange(int[]? tiers)
-    {
-        if (tiers is not { Length: > 0 })
-            return "an unknown number of";
-        return tiers.All(t => t == tiers[0]) ? tiers[0].ToString() : $"{tiers.Min()} to {tiers.Max()}";
-    }
 
     private static SoilFamily FamilyFor(SoilPreference preference) => preference switch
     {
