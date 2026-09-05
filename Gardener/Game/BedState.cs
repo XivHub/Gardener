@@ -4,7 +4,7 @@ namespace Gardener.Game;
 
 /// <summary>The three growth buckets <c>DataMap.Value2</c> distinguishes. The name is
 /// <c>MatureCandidate</c>, not <c>Ripe</c>: stage 4 is proven to mark an established planting, and
-/// nothing yet proves it means harvestable (see docs/RESEARCH.md). The <c>Harvest</c> menu entry at
+/// nothing yet proves it means harvestable. The <c>Harvest</c> menu entry at
 /// act time remains the authority for that question.</summary>
 public enum Maturity
 {

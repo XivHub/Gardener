@@ -1,4 +1,5 @@
 using System;
+using Gardener.Game;
 
 namespace Gardener.Journal;
 
@@ -18,9 +19,11 @@ namespace Gardener.Journal;
 /// another world. <see cref="LastSeenByCharacter"/> is a display-only note of which character made
 /// that last observation; it carries no identity of its own and is never part of the lookup key.
 ///
-/// There is no <c>Condition</c> enum and no <c>Dead</c> / <c>Depressed</c> / <c>Vigorous</c> state:
-/// those five <c>TALK_*</c> sentences are unreachable through the bed menu, and <c>Value3</c>/
-/// <c>Value4</c> read 0 on every bed observed, so the plugin has no observable source for any of them.
+/// The bed menu itself never offers a <c>Condition</c>: <see cref="LastObservedCropState"/> and
+/// <see cref="LastObservedCropStateAt"/> instead cache the most recent of the five <c>TALK_*</c>
+/// sentences a bed interaction echoes into chat, written only by
+/// <see cref="GardenJournal.ReconcileCropObservation"/>. <see cref="ObservedWithered"/> latches once
+/// <see cref="MenuKey.TalkDead"/> has ever been observed for this bed.
 /// </summary>
 public sealed class BedRecord
 {
@@ -44,4 +47,13 @@ public sealed class BedRecord
     /// action recorded here. Never used as a key or a filter — a garden belongs to the plot, and an
     /// alt tending a bed tends it exactly as much as the main would.</summary>
     public string? LastSeenByCharacter { get; set; }
+
+    /// <summary>The most recent <c>TALK_*</c> sentence observed for this bed, and when. Null until
+    /// the first crop chat line for this bed is ever read.</summary>
+    public MenuKey? LastObservedCropState { get; set; }
+    public DateTimeOffset? LastObservedCropStateAt { get; set; }
+
+    /// <summary>Set once a <see cref="MenuKey.TalkDead"/> line is observed for this bed. Growth.WiltsAt
+    /// stops projecting a wilt time once this is set — there is nothing left to tend.</summary>
+    public bool ObservedWithered { get; set; }
 }

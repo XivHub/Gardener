@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Gardener.Game;
 using Gardener.Helpers;
+using Gardener.Journal;
 using Gardener.Scheduler.Tasks;
 using XivHubPluginKit.Inventory;
 
@@ -48,6 +49,11 @@ public static class SchedulerMain
     public static int NoHarvestOfferedCount;
 
     private static GardenerState resumeState = GardenerState.OpeningBed;
+
+    static SchedulerMain()
+    {
+        CropChatState.Classified += OnCropChatClassified;
+    }
 
     public static bool Running => State != GardenerState.Idle;
 
@@ -142,7 +148,11 @@ public static class SchedulerMain
             return;
         }
 
-        if (GardenerGuard.BlockingReason() is { } reason)
+        // EnvironmentBlockingReason, not BlockingReason: the latter also folds in whether the player
+        // is "occupied", and Gardener's own bed interaction sets that same condition flag for as long
+        // as a bed menu it opened stays open — checking it here would stop a sweep on its own working
+        // state. See GardenerGuard.OccupiedBlockingReason.
+        if (GardenerGuard.EnvironmentBlockingReason() is { } reason)
         {
             ActivityLog.Warn_($"Stopped: {reason}");
             DisablePlugin();
@@ -267,6 +277,46 @@ public static class SchedulerMain
     {
         Plugin.Logger.Warning("[Gardener] scheduler entered Error state; stopping.");
         DisablePlugin();
+    }
+
+    /// <summary>
+    /// Attributes a classified <c>TALK_*</c> chat line to whichever bed this scheduler currently has
+    /// open — the one place a chat line can be tied to a specific bed with certainty, since an
+    /// interaction outside of a sweep gives this plugin no addon or event to key off. Lines that
+    /// arrive with no bed open are still classified and buffered by <see cref="CropChatState"/>, just
+    /// never attributed here.
+    /// </summary>
+    private static void OnCropChatClassified(CropChatLine line)
+    {
+        if (CurrentPatch is not { } patch || CurrentBedNumber is not { } bedNumber)
+            return;
+
+        // The two open questions the chat sentences settle, each read straight off the live DataMap
+        // value alongside the sentence rather than guessed: whether Value3/Value4 ever carry a wilt
+        // flag (TalkDepressed with both still 0 is the negative result that closes that search — a
+        // non-zero byte here is already caught and snapshotted by GardenMemory's own anomaly latch),
+        // and whether stage 4 (Maturity.MatureCandidate) means harvestable (settled by the Stage4 and
+        // HarvestOffered calibration series converging over time, not by any one observation — the
+        // MatureCandidate naming stays until they do).
+        foreach (var state in GardenMemory.Read(patch))
+        {
+            if (state.BedNumber != bedNumber)
+                continue;
+
+            if (line.Key == MenuKey.TalkDepressed && state.Value3 == 0 && state.Value4 == 0)
+                Plugin.Logger.Information(
+                    $"[Gardener] {patch.Key} bed {bedNumber}: TALK_DEPRESSED with Value3=0 Value4=0 — " +
+                    "DataMap carries no wilt flag here.");
+
+            if (line.Key == MenuKey.TalkRipe)
+                Plugin.Logger.Information(
+                    $"[Gardener] {patch.Key} bed {bedNumber}: TALK_RIPE observed at stage {state.Stage} " +
+                    $"(Maturity={state.Maturity}).");
+
+            break;
+        }
+
+        GardenJournal.ReconcileCropObservation(patch.Key, bedNumber, line.Key, line.At);
     }
 
     private static void EnterPause()

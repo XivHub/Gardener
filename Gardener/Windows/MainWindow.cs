@@ -242,8 +242,11 @@ namespace Gardener.Windows
 
         private static void DrawSeedAndStage(BedState state, BedRecord? record)
         {
-            var seedItemId = SeedItems.SeedItemForRow(state.SeedRow);
-            var seedName = seedItemId is { } id ? XivHubPluginKit.Inventory.ItemSheet.Name(id) : $"row {state.SeedRow}";
+            // What is in the ground is the produce, not the seed that grew it — "La Noscean Lettuce",
+            // not "La Noscean Lettuce Seeds". The seed name belongs where the plugin talks about what
+            // to plant or what is in the bag, not here.
+            var produceItemId = SeedItems.ProduceItemForRow(state.SeedRow);
+            var produceName = produceItemId is { } id ? XivHubPluginKit.Inventory.ItemSheet.Name(id) : $"row {state.SeedRow}";
             var stageText = state.Maturity switch
             {
                 Maturity.MatureCandidate => "mature (4)",
@@ -251,14 +254,41 @@ namespace Gardener.Windows
                 _ => "empty",
             };
 
-            ImGui.TextUnformatted(seedName);
+            ImGui.TextUnformatted(produceName);
             ImGui.TextColored(StageColor(state, record), stageText);
+            DrawCropState(record);
 
             if (record?.LastSeenByCharacter is { Length: > 0 } observer)
             {
                 var agoHours = (DateTimeOffset.UtcNow - record.LastSeenAt).TotalHours;
                 ImGui.TextColored(HubStyle.Faint, $"seen by {observer}, {agoHours:F0}h ago");
             }
+        }
+
+        /// <summary>The most recent <c>TALK_*</c> sentence chat has echoed for this bed (see
+        /// <see cref="CropChatState"/>) — the only source for wilted and true harvest-readiness the
+        /// bed menu itself never offers. A bed whose state has never been observed says so, rather
+        /// than rendering blank or implying healthy.</summary>
+        private static void DrawCropState(BedRecord? record)
+        {
+            if (record?.LastObservedCropState is not { } cropState || record.LastObservedCropStateAt is not { } observedAt)
+            {
+                ImGui.TextColored(HubStyle.Faint, "crop state never observed");
+                return;
+            }
+
+            var (text, color) = cropState switch
+            {
+                MenuKey.TalkVigorous => ("vigorous", HubStyle.Good),
+                MenuKey.TalkDepressed => ("wilted", HubStyle.Warn),
+                MenuKey.TalkRipe => ("ripe", HubStyle.Good),
+                MenuKey.TalkDead => ("withered", HubStyle.Bad),
+                MenuKey.TalkNone => ("empty", HubStyle.Faint),
+                _ => (cropState.ToString(), HubStyle.Faint),
+            };
+
+            var agoHours = (DateTimeOffset.UtcNow - observedAt).TotalHours;
+            ImGui.TextColored(color, $"{text}, {agoHours:F0}h ago");
         }
 
         /// <summary>Semantic bed-state colour per THEME.md: mature → Good, due to tend → Warn, about

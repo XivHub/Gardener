@@ -94,6 +94,7 @@ namespace Gardener
             Framework.Update += OnFrameworkUpdate;
             ClientState.Logout += OnLogout;
             ClientState.TerritoryChanged += OnTerritoryChanged;
+            ChatGui.ChatMessage += CropChatState.OnChatMessage;
         }
 
         private void OnFrameworkUpdate(IFramework framework)
@@ -133,6 +134,7 @@ namespace Gardener
             Framework.Update -= OnFrameworkUpdate;
             ClientState.Logout -= OnLogout;
             ClientState.TerritoryChanged -= OnTerritoryChanged;
+            ChatGui.ChatMessage -= CropChatState.OnChatMessage;
             SchedulerMain.DisablePlugin();
             GardenJournal.Flush();
             Telemetry.Dispose();

@@ -16,18 +16,19 @@ namespace Gardener.Helpers;
 /// </summary>
 public static class GardenerGuard
 {
+    // Deliberately excludes the Occupied* family (OccupiedInQuestEvent and friends): interacting with
+    // a garden bed sets OccupiedInQuestEvent for as long as its menu is open, so treating it as a
+    // per-frame stop condition would pause every sweep the instant it opened a bed. Those flags gate
+    // only whether a new sweep may *start* — see OccupiedBlockingReason — never whether a running one
+    // must pause. This is the opposite split from SealHunterGuard, where "occupied" always means
+    // something went wrong rather than the plugin's own working state; keep it that way here.
     public static bool IsScreenReady() =>
         GenericHelpers.IsScreenReady()
         && !Plugin.Condition[ConditionFlag.BetweenAreas]
         && !Plugin.Condition[ConditionFlag.BetweenAreas51]
         && !Plugin.Condition[ConditionFlag.OccupiedInCutSceneEvent]
         && !Plugin.Condition[ConditionFlag.WatchingCutscene]
-        && !Plugin.Condition[ConditionFlag.WatchingCutscene78]
-        && !Plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
-        && !Plugin.Condition[ConditionFlag.OccupiedSummoningBell]
-        && !Plugin.Condition[ConditionFlag.Occupied33]
-        && !Plugin.Condition[ConditionFlag.Occupied38]
-        && !Plugin.Condition[ConditionFlag.Occupied39];
+        && !Plugin.Condition[ConditionFlag.WatchingCutscene78];
 
     /// <summary>True once the player has moved more than <paramref name="max"/> yalms from
     /// <paramref name="origin"/> — the position recorded when the current sweep started. False
@@ -42,12 +43,40 @@ public static class GardenerGuard
 
     /// <summary>
     /// A sentence naming why a sweep cannot start right now, for both the pre-run guard and the
-    /// window's button area, or null when nothing is blocking. Checked in order: no house, no
-    /// patches discovered on the player's own plot, then reach — beds share the enclosing patch's own
-    /// world position (see docs/RESEARCH.md), so patch-centre distance is bed distance and there is no
-    /// nearer point on the patch to measure to.
+    /// window's button area, or null when nothing is blocking. Checked in order: whether the player is
+    /// occupied (<see cref="OccupiedBlockingReason"/>), then <see cref="EnvironmentBlockingReason"/>.
     /// </summary>
-    public static string? BlockingReason()
+    public static string? BlockingReason() => OccupiedBlockingReason() ?? EnvironmentBlockingReason();
+
+    /// <summary>
+    /// Pre-run only. A bed interaction sets these same condition flags for as long as its menu stays
+    /// open, so the scheduler's per-frame guard deliberately checks <see cref="EnvironmentBlockingReason"/>
+    /// instead of this method while a sweep is running — reading
+    /// these here would mean a sweep stops the moment its own interaction opened a bed. Names the
+    /// specific flag so the sentence is diagnosable rather than a bare "occupied".
+    /// </summary>
+    private static string? OccupiedBlockingReason()
+    {
+        if (Plugin.Condition[ConditionFlag.OccupiedInQuestEvent])
+            return "Player is occupied in a quest event (OccupiedInQuestEvent).";
+        if (Plugin.Condition[ConditionFlag.OccupiedSummoningBell])
+            return "Player is occupied at a summoning bell (OccupiedSummoningBell).";
+        if (Plugin.Condition[ConditionFlag.Occupied33])
+            return "Player is occupied (Occupied33).";
+        if (Plugin.Condition[ConditionFlag.Occupied38])
+            return "Player is occupied (Occupied38).";
+        if (Plugin.Condition[ConditionFlag.Occupied39])
+            return "Player is occupied (Occupied39).";
+        return null;
+    }
+
+    /// <summary>
+    /// No house, no patches discovered on the player's own plot, then reach — beds share the enclosing
+    /// patch's own world position, so patch-centre distance is bed distance and there is no nearer
+    /// point on the patch to measure to. Safe to check every frame while a sweep is running: none of
+    /// these three change because Gardener's own interaction is in progress.
+    /// </summary>
+    public static string? EnvironmentBlockingReason()
     {
         if (HouseKey.Current() is null)
             return "Not standing in a housing territory.";

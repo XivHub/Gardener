@@ -262,7 +262,7 @@ public static class DebugDump
             $"center=({patch.Center.X:F2},{patch.Center.Y:F2},{patch.Center.Z:F2}) rotation={patch.Rotation:F4} " +
             $"housingObjectId={patch.HousingObjectId} furnitureIndex={patch.FurnitureIndex} entityId=0x{patch.EntityId:X8}");
         // patch.Beds is sorted by EntityId (PatchDiscovery.Refresh); the bracketed index below is
-        // that array position, not the game's own "Nth Bed" number (see docs/RESEARCH.md).
+        // that array position, not the game's own "Nth Bed" number.
         for (var i = 0; i < patch.Beds.Count; i++)
             AppendBed(sb, i, patch.Beds[i]);
     }
@@ -321,7 +321,7 @@ public static class DebugDump
         sb.AppendLine();
         sb.AppendLine(
             "Per-patch correlation (DataMap[patch.FurnitureIndex]; slot index N is bed \"(N+1)th Bed\" — " +
-            "proven live, see docs/RESEARCH.md. The DataMap has no link to the patch's EventObj beds; " +
+            "proven live. The DataMap has no link to the patch's EventObj beds; " +
             "which EventObj is which bed is a separate, still-unverified question, see the menu dump):");
         foreach (var patch in patches)
         {
@@ -373,14 +373,33 @@ public static class DebugDump
         AppendTarget(sb);
         sb.AppendLine();
         AppendTalk(sb);
+        sb.AppendLine();
+        AppendCropChat(sb);
 
         return sb.ToString();
+    }
+
+    /// <summary>The last <see cref="CropChatState"/> ring buffer entries — the five <c>TALK_*</c>
+    /// sentences a bed interaction echoes into chat, the only source for wilted and true
+    /// harvest-readiness the bed menu itself never offers.</summary>
+    private static void AppendCropChat(StringBuilder sb)
+    {
+        sb.AppendLine("== Crop chat ==");
+        var lines = CropChatState.RecentLines;
+        if (lines.Count == 0)
+        {
+            sb.AppendLine("(none observed yet)");
+            return;
+        }
+
+        foreach (var line in lines)
+            sb.AppendLine($"  {line.At:O} [{line.ChatType}] {line.Key} \"{line.Text}\"");
     }
 
     /// <summary>
     /// Records the current target's <c>EntityId</c> alongside the sorted <c>EntityId</c> list of its
     /// enclosing patch's beds and the index the target holds in that list. Sorted-EntityId order is
-    /// the candidate for the game's own bed numbering (see docs/RESEARCH.md), unconfirmed; this
+    /// the candidate for the game's own bed numbering, unconfirmed; this
     /// capture is what two dumps at known different beds can use to prove or refute it. Record and
     /// report only — nothing here drives targeting.
     /// </summary>
@@ -441,7 +460,7 @@ public static class DebugDump
         }
 
         // The menu offers SetSeed only on an empty bed and Harvest only on a ripe one; every other
-        // entry set (Fertilize/Tend/Remove/Quit) means something is growing. See docs/RESEARCH.md.
+        // entry set (Fertilize/Tend/Remove/Quit) means something is growing.
         var bedState = entryKeys.Contains(MenuKey.SetSeed) ? "empty (SetSeed entry present)"
             : entryKeys.Contains(MenuKey.Harvest) ? "ripe (Harvest entry present)"
             : "growing (no SetSeed or Harvest entry)";
@@ -507,7 +526,7 @@ public static class DebugDump
     /// <c>[1]</c> is seed, and <c>ConfirmSeedAndSoilSelection()</c> submits them. <c>SelectedItems2</c>
     /// is a second, separately-offset array of the same element type whose role is not yet known —
     /// dumped alongside <c>SelectedItems</c> so a live capture can show whether it mirrors it or
-    /// carries something else (see docs/RESEARCH.md).
+    /// carries something else.
     /// </summary>
     private static unsafe void AppendAgentHousingPlant(StringBuilder sb)
     {

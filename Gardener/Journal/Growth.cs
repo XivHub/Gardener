@@ -17,7 +17,7 @@ public enum HarvestConfidence
 
 /// <summary>A harvest-readiness window, never a countdown to the second: observed time always exceeds
 /// true grow time, because growth advances on a server tick and readiness is only observable when the
-/// player visits (see docs/RESEARCH.md). <see cref="SampleCount"/> is the calibration sample count
+/// player visits. <see cref="SampleCount"/> is the calibration sample count
 /// behind <see cref="Confidence"/> == <see cref="HarvestConfidence.Calibrated"/>, 0 otherwise.</summary>
 public readonly record struct HarvestWindow(
     DateTimeOffset? Earliest,
@@ -36,9 +36,12 @@ public static class Growth
     // of the seed's own wilt time, and a mature (stage 4) planting never withers at all.
     private static readonly TimeSpan WitherAfterWilt = TimeSpan.FromHours(24);
 
-    /// <summary>Null when <c>LastTendedAt</c> is unset or the seed does not wilt.</summary>
+    /// <summary>Null when <c>LastTendedAt</c> is unset, the seed does not wilt, or
+    /// <see cref="BedRecord.ObservedWithered"/> is set — a withered plant has nothing left to tend.</summary>
     public static DateTimeOffset? WiltsAt(BedRecord record)
     {
+        if (record.ObservedWithered)
+            return null;
         if (record.LastTendedAt is not { } tendedAt)
             return null;
         if (SeedTable.Wilt(record.SeedRow) is not { } wilt)
@@ -48,7 +51,7 @@ public static class Growth
 
     /// <summary>Null once <see cref="BedRecord.FirstSeenStage4At"/> is set — a mature planting never
     /// withers since patch 4.0, and this therefore keys off the passive stage read and is only as
-    /// good as that stage-4 reading is (see docs/RESEARCH.md). Also null whenever <see cref="WiltsAt"/>
+    /// good as that stage-4 reading is. Also null whenever <see cref="WiltsAt"/>
     /// is null.</summary>
     public static DateTimeOffset? WithersAt(BedRecord record)
     {

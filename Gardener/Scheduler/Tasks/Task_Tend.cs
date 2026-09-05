@@ -10,7 +10,7 @@ namespace Gardener.Scheduler.Tasks;
 /// <summary>
 /// Selects the <see cref="MenuKey.Care"/> entry on the bed <see cref="Task_OpenBed"/> already proved
 /// is open and correct. There is no re-open confirmation step afterwards: the <c>TALK_VIGOROUS</c>
-/// sentence a re-check would read is unreachable through this menu (see docs/RESEARCH.md), so success
+/// sentence a re-check would read is unreachable through this menu, so success
 /// is simply having selected the entry.
 /// </summary>
 public static class Task_Tend

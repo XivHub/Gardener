@@ -77,11 +77,12 @@ public static class Task_OpenBed
             if (select is not { IsAddonReady: true })
             {
                 // The wait step above already timed out silently (AbortOnTimeout: false); nothing
-                // ever opened.
+                // ever opened. Terminal for this bed: complete the step rather than requesting a
+                // retry, matching every other terminal branch below.
                 ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: bed menu never opened; skipping.");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.OpeningBed;
-                return null;
+                return true;
             }
 
             var bedPatch = GardenMenuText.ParseBedPatch(select.Text);

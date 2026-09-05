@@ -19,9 +19,8 @@ public enum PatchKind
 }
 
 /// <summary>Bed columns per patch shape, used only to derive crossbreed neighbour direction
-/// (right/left vs up/down). Beds share the enclosing patch's own world position (see
-/// docs/RESEARCH.md), so this has no spatial meaning of its own — it is purely a property of the
-/// patch kind.</summary>
+/// (right/left vs up/down). Beds share the enclosing patch's own world position, so this has no
+/// spatial meaning of its own — it is purely a property of the patch kind.</summary>
 public static class PatchKindExtensions
 {
     public static int Cols(this PatchKind kind) => kind switch
@@ -46,7 +45,7 @@ public static class PatchKindExtensions
 /// position (proven live: patch-local position is (0,0,0) for all eight), so <see cref="EntityId"/>
 /// is the only field that distinguishes one bed from another. Bed identity — which bed a player means
 /// by "Nth Bed" — comes from the <c>HousingObjectManager.DataMap</c> slot index, not from this record
-/// or its position (see docs/RESEARCH.md); this type exists only to say which <c>EventObj</c>s belong
+/// or its position; this type exists only to say which <c>EventObj</c>s belong
 /// to which patch and to let the debug dump probe their live <c>EventState</c>.
 /// </summary>
 public sealed record Bed(uint EntityId, Vector3 Position);
@@ -116,7 +115,7 @@ public static class PatchDiscovery
     // holds 62 entries — 60 plot markers followed by 2 apartment-building markers, matching
     // _apartmentBuildings's own count of 2 (main and sub division). Marker index == plot index is
     // proven, not inferred: GetCurrentPlot() returned 39 on the plot the game calls plot 40, and that
-    // plot's own marker sits at index 39 (see docs/RESEARCH.md).
+    // plot's own marker sits at index 39.
     private const int PlotsPerWard = 60;
 
     private const long RefreshIntervalMs = 2000;
@@ -217,7 +216,7 @@ public static class PatchDiscovery
             }
 
             // Sorted by EntityId only for a stable, reproducible list order (and because it is the
-            // unverified candidate bed ordering under investigation — see docs/RESEARCH.md and
+            // unverified candidate bed ordering under investigation — and
             // DebugDump's target capture). It is not itself the bed's identity.
             var beds = associated
                 .OrderBy(b => b.EntityId)

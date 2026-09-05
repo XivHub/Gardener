@@ -203,6 +203,80 @@ public static class GardenJournal
         }
     }
 
+    /// <summary>
+    /// Folds one classified crop chat line — the <c>TALK_*</c> sentence a bed interaction echoes,
+    /// unreachable through the bed menu itself — into the record for the bed
+    /// whose menu was open when it arrived. Every transition below is the complete set:
+    /// <see cref="MenuKey.TalkNone"/> drops the record the same way an empty <see cref="Reconcile"/>
+    /// read does; every other key requires an existing record to attach the observation to, since
+    /// nothing here can invent a seed row or a planted-at.
+    /// <see cref="MenuKey.TalkDepressed"/> and <see cref="MenuKey.TalkVigorous"/> only move
+    /// <see cref="BedRecord.LastTendedAt"/> in the direction the sentence proves — never later than
+    /// observed-wilted, never earlier than observed-healthy — and leave it untouched when the seed has
+    /// no bundled wilt duration to derive a bound from, rather than inventing one.
+    /// </summary>
+    public static void ReconcileCropObservation(string patchKey, int bedNumber, MenuKey key, DateTimeOffset observedAt)
+    {
+        var recordKey = (patchKey, bedNumber);
+        var hasRecord = records.TryGetValue(recordKey, out var record);
+
+        if (key == MenuKey.TalkNone)
+        {
+            // Same as the passive read's IsEmpty branch, and for the same reason: the harvestable
+            // moment was never observed, so no calibration sample is pushed either.
+            if (hasRecord)
+            {
+                records.Remove(recordKey);
+                dirty = true;
+            }
+            return;
+        }
+
+        if (!hasRecord)
+            return; // No record to attach this observation to yet; the next passive Reconcile creates one.
+
+        record!.LastObservedCropState = key;
+        record.LastObservedCropStateAt = observedAt;
+        dirty = true;
+
+        switch (key)
+        {
+            case MenuKey.TalkDead:
+                record.ObservedWithered = true;
+                break;
+
+            case MenuKey.TalkDepressed:
+                if (SeedTable.Wilt(record.SeedRow) is { } wiltedFor)
+                {
+                    var noLaterThan = observedAt - TimeSpan.FromHours(wiltedFor.Hours);
+                    if (record.LastTendedAt is not { } existing || noLaterThan < existing)
+                        record.LastTendedAt = noLaterThan;
+                }
+                else
+                {
+                    Plugin.Logger.Information(
+                        $"[GardenJournal] {patchKey} bed {bedNumber}: observed wilted (TALK_DEPRESSED) but " +
+                        $"seed row {record.SeedRow} has no bundled wilt duration; LastTendedAt left as-is.");
+                }
+                break;
+
+            case MenuKey.TalkVigorous:
+                if (SeedTable.Wilt(record.SeedRow) is { } healthyFor)
+                {
+                    var noEarlierThan = observedAt - TimeSpan.FromHours(healthyFor.Hours);
+                    if (record.LastTendedAt is { } existing && existing < noEarlierThan)
+                        record.LastTendedAt = noEarlierThan;
+                }
+                break;
+
+            case MenuKey.TalkRipe:
+                if (record.FirstSeenHarvestOfferedAt is null)
+                    record.FirstSeenHarvestOfferedAt = observedAt;
+                RecordHarvestOfferedSample(record);
+                break;
+        }
+    }
+
     private static BedRecord FreshRecord(BedState state, string? observer) => new()
     {
         PatchKey = state.PatchKey,

@@ -6,7 +6,7 @@ namespace Gardener.Game;
 
 /// <summary>
 /// Bed number -&gt; bed <c>EventObj</c> map, and the one place that states the reverse-<c>EntityId</c>
-/// ordering rule (see docs/RESEARCH.md): every bed <c>EventObj</c> of a patch reports the enclosing
+/// ordering rule: every bed <c>EventObj</c> of a patch reports the enclosing
 /// patch's own world position, so <c>EntityId</c> is the only thing that tells them apart, and the
 /// pairing proven at the two endpoints of one Deluxe patch is bed <c>n</c> = <c>Beds[Beds.Count - n]</c>,
 /// where <c>Beds</c> is <see cref="PatchDiscovery"/>'s own ascending-<c>EntityId</c> order. This is a
@@ -115,7 +115,7 @@ public static class BedTargeting
             return map;
 
         // Bed n = Beds[Beds.Count - n]: the proven pairing at both endpoints of one Deluxe patch is
-        // exactly the reverse of PatchDiscovery's ascending-EntityId order (see docs/RESEARCH.md).
+        // exactly the reverse of PatchDiscovery's ascending-EntityId order.
         var byBedNumber = new uint[patch.Beds.Count];
         for (var n = 1; n <= patch.Beds.Count; n++)
             byBedNumber[n - 1] = patch.Beds[patch.Beds.Count - n].EntityId;
