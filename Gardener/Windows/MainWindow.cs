@@ -645,6 +645,9 @@ namespace Gardener.Windows
         {
             var color = isCurrent || progress.Status != GoalStepStatus.NotStarted ? HubStyle.Text : HubStyle.Faint;
 
+            // The goal step text is prose, not labels, and a narrow window otherwise clips it at the
+            // right edge with no way to read the rest.
+            ImGui.PushTextWrapPos(0f);
             foreach (var line in step.Body)
                 ImGui.TextColored(color, line);
             foreach (var note in step.Notes)
@@ -652,6 +655,7 @@ namespace Gardener.Windows
 
             var (text, statusColor) = StatusLine(step, progress, held);
             ImGui.TextColored(statusColor, text);
+            ImGui.PopTextWrapPos();
         }
 
         /// <summary>The exact phrasing from the copy's "Status lines" set, chosen by
@@ -757,7 +761,9 @@ namespace Gardener.Windows
 
             var targetSeed = crossOrMultiply switch
             {
-                CrossStep c => (ushort)c.SecondSeedRow,
+                // The seed the cross is meant to produce, not either parent: the planner is being
+                // asked what to lay out to obtain it.
+                CrossStep c => (ushort)c.TargetRow,
                 MultiplyStep m => (ushort)m.SeedRow,
                 _ => (ushort)0,
             };
