@@ -7,6 +7,7 @@ using ECommons.Automation.NeoTaskManager;
 using ECommons.UIHelpers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Gardener.Game;
 using Gardener.Helpers;
@@ -136,6 +137,9 @@ public static class Task_Fertilize
                     return true;
                 }
 
+                // OpenForItemSlot creates ContextMenu synchronously, before this PostSetup listener's
+                // registration is live, so the listener is a diagnostic cross-check only; the poll in
+                // FindReadyContextMenu below is what actually gates the next two steps.
                 addonSeen = false;
                 Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, ContextMenuAddonName, OnContextMenuPostSetup);
                 inventoryContext->OpenForItemSlot(fertilizerSlot.Container, fertilizerSlot.SlotIndex, 0, inventoryAgent->AddonId);
@@ -144,30 +148,28 @@ public static class Task_Fertilize
             return true;
         }, $"Fertilize: open the fertilizer's context menu (bed {bedNumber})");
 
-        tm.Enqueue(() => addonSeen, $"Fertilize: wait for {ContextMenuAddonName} (bed {bedNumber})",
+        tm.Enqueue(() => addonSeen || FindReadyContextMenu() is not null,
+            $"Fertilize: wait for {ContextMenuAddonName} (bed {bedNumber})",
             new TaskManagerConfiguration { TimeLimitMS = Plugin.C.MenuTimeoutMs, AbortOnTimeout = false });
 
         tm.Enqueue(() =>
         {
             Plugin.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, ContextMenuAddonName, OnContextMenuPostSetup);
 
-            if (!addonSeen)
+            var contextMenu = FindReadyContextMenu();
+            if (contextMenu is null)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: the fertilizer's context menu never opened; skipping.");
+                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: {ContextMenuAddonName} is not open; skipping.");
+                LogContextAddonsForDiagnosis(patch.Key, bedNumber);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
             }
 
-            var addon = Plugin.GameGui.GetAddonByName(ContextMenuAddonName, 1);
-            var contextMenu = new AddonMaster.ContextMenu(addon);
-            if (addon.IsNull || !contextMenu.IsAddonReady)
-            {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: the fertilizer's context menu closed before it could be read; skipping.");
-                SchedulerMain.SkippedCount++;
-                SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
-            }
+            if (!addonSeen)
+                Plugin.Logger.Information(
+                    $"[Gardener] {patch.Key} bed {bedNumber}: {ContextMenuAddonName} PostSetup never fired; " +
+                    "found by polling instead.");
 
             var entries = contextMenu.Entries;
             var index = Array.FindIndex(entries, e => GardenMenuText.IsFertilizeAction(e.Text));
@@ -249,4 +251,58 @@ public static class Task_Fertilize
             .Concat(InventoryScan.ScanContainer(InventoryType.Inventory3))
             .Concat(InventoryScan.ScanContainer(InventoryType.Inventory4))
             .ToList();
+
+    /// <summary>The live <see cref="ContextMenuAddonName"/> addon if one is open and ready, found by
+    /// name rather than by the <c>PostSetup</c> listener: <c>AgentInventoryContext.OpenForItemSlot</c>
+    /// creates the addon synchronously, before a listener registered around that same call is
+    /// guaranteed to be live, so polling by name is the only check this step can trust.</summary>
+    private static unsafe AddonMaster.ContextMenu? FindReadyContextMenu()
+    {
+        var addon = Plugin.GameGui.GetAddonByName(ContextMenuAddonName, 1);
+        if (addon.IsNull)
+            return null;
+
+        var contextMenu = new AddonMaster.ContextMenu(addon);
+        return contextMenu.IsAddonReady ? contextMenu : null;
+    }
+
+    /// <summary>Every currently loaded addon whose name contains "Context", logged when
+    /// <see cref="FindReadyContextMenu"/> comes up empty so a stall is diagnosable from the devlog
+    /// rather than only from a screenshot: whether the menu is genuinely closed, open under a name
+    /// this class does not poll for, or open but unreadable. For an open <see cref="ContextMenuAddonName"/>,
+    /// also logs its entry count and text so a misread is visible immediately.</summary>
+    private static unsafe void LogContextAddonsForDiagnosis(string patchKey, int bedNumber)
+    {
+        var manager = RaptureAtkUnitManager.Instance();
+        if (manager == null)
+        {
+            ActivityLog.Warn_($"{patchKey} bed {bedNumber}: RaptureAtkUnitManager unavailable; cannot list open addons.");
+            return;
+        }
+
+        var units = manager->AllLoadedUnitsList;
+        var found = new List<string>();
+        for (var i = 0; i < units.Count; i++)
+        {
+            var unit = units.Entries[i].Value;
+            if (unit == null || !unit->NameString.Contains("Context", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var detail = $"{unit->NameString} (visible={unit->IsVisible})";
+            if (unit->NameString == ContextMenuAddonName && unit->IsVisible)
+            {
+                var values = unit->AtkValuesSpan;
+                var reportedCount = values.Length > 0 ? (int)values[0].UInt : -1;
+                var entries = new AddonMaster.ContextMenu(unit).Entries;
+                var texts = string.Join(", ", entries.Select(e => $"\"{e.Text}\""));
+                detail += $" entryCount(reported={reportedCount}, read={entries.Length}) entries=[{texts}]";
+            }
+
+            found.Add(detail);
+        }
+
+        ActivityLog.Warn_(found.Count == 0
+            ? $"{patchKey} bed {bedNumber}: no addon with \"Context\" in its name is currently open."
+            : $"{patchKey} bed {bedNumber}: open Context-named addon(s): {string.Join("; ", found)}");
+    }
 }

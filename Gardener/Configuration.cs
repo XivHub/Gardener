@@ -22,7 +22,11 @@ namespace Gardener
         public int MenuTimeoutMs { get; set; } = 5000;        // per-step TimeLimitMS for "wait for addon"
         public bool StopIfPlayerMoves { get; set; } = true;
         public float MoveAbortDistance { get; set; } = 3.0f;  // yalms from the position where the run started
-        public float BedReachDistance { get; set; } = 5.0f;   // refuse to start if the nearest bed is further
+        // Yalms from the player to the nearest patch centre, not to any one bed: every bed reports the
+        // enclosing patch's own position, so this is the only distance there is to measure. A player
+        // standing at a bed to work it is already several yalms from that centre, so the default has to
+        // clear that gap with room to spare rather than sit right at it.
+        public float BedReachDistance { get; set; } = 10.0f;
         public bool ConfirmBeforeRun { get; set; } = true;
 
         // Planting defaults

@@ -125,6 +125,9 @@ public static class SchedulerMain
         CurrentPatch = null;
         CurrentBedNumber = null;
         Worklist.Clear();
+        // A guard trip or the Stop button can both land here mid-interaction, with a bed menu,
+        // planting dialog or item context menu still open from whatever step Abort() just cut off.
+        GardeningUiCleanup.CloseAll();
         ActivityLog.Warn_("Stopped.", chat: false);
         return true;
     }
