@@ -60,9 +60,9 @@ namespace Gardener.Windows
         private void DrawAutomationSection()
         {
             ImGui.TextDisabled("Automation");
-            IntSlider("Delay between actions (ms)", () => cfg.StepDelayMs, v => cfg.StepDelayMs = v, 100, 2000);
+            IntSlider("Delay between actions (ms)", () => cfg.StepDelayMs, v => cfg.StepDelayMs = v, 100, 4000);
             ImGui.TextColored(HubStyle.Faint, "Raising this makes runs slower but more reliable.");
-            IntSlider("Delay between beds (ms)", () => cfg.BedDelayMs, v => cfg.BedDelayMs = v, 200, 3000);
+            IntSlider("Delay between beds (ms)", () => cfg.BedDelayMs, v => cfg.BedDelayMs = v, 200, 6000);
             ImGui.TextColored(HubStyle.Faint, "Raising this makes runs slower but more reliable.");
             IntSlider("Menu wait timeout (ms)", () => cfg.MenuTimeoutMs, v => cfg.MenuTimeoutMs = v, 1000, 15000);
             BoolInput("Stop a run if I move", () => cfg.StopIfPlayerMoves, v => cfg.StopIfPlayerMoves = v);

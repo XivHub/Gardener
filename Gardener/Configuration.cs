@@ -26,7 +26,7 @@ namespace Gardener
         // Between finishing one bed and interacting with the next: a bigger boundary than one step to
         // the next within a bed, and where a stale addon from the previous bed is most likely to
         // still be closing.
-        public int BedDelayMs { get; set; } = 1200;
+        public int BedDelayMs { get; set; } = 2200;
         public int MenuTimeoutMs { get; set; } = 5000;        // per-step TimeLimitMS for "wait for addon"
         public bool StopIfPlayerMoves { get; set; } = true;
         public float MoveAbortDistance { get; set; } = 3.0f;  // yalms from the position where the run started
