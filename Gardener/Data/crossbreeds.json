@@ -1,6 +1,6 @@
 {
   "provenance": {
-    "generated": "2026-09-05T15:12:51.251136+00:00",
+    "generated": "2026-09-05T16:56:15.234667+00:00",
     "lotlabCommit": "c143456f1bb8f34d9c5876ed1296de837b20bef7",
     "nick75gCommit": "7323c5b6a54dc9b6ffece18e4f117fe214634c5c",
     "xivapiSchema": "exdschema@2:rev:83e965d091116f895d5b17573cc5d12909a5f407",
@@ -3541,14 +3541,6 @@
     },
     {
       "a": 6,
-      "b": 35,
-      "targets": [
-        38
-      ],
-      "efficiency": {}
-    },
-    {
-      "a": 6,
       "b": 36,
       "targets": [
         9,
@@ -6255,14 +6247,6 @@
       "efficiency": {
         "8": 96
       }
-    },
-    {
-      "a": 9,
-      "b": 73,
-      "targets": [
-        8
-      ],
-      "efficiency": {}
     },
     {
       "a": 9,
@@ -23352,14 +23336,6 @@
     },
     {
       "a": 43,
-      "b": 54,
-      "targets": [
-        52
-      ],
-      "efficiency": {}
-    },
-    {
-      "a": 43,
       "b": 57,
       "targets": [
         54
@@ -23601,22 +23577,6 @@
         "8": 89,
         "54": 89
       }
-    },
-    {
-      "a": 44,
-      "b": 46,
-      "targets": [
-        50
-      ],
-      "efficiency": {}
-    },
-    {
-      "a": 44,
-      "b": 47,
-      "targets": [
-        32
-      ],
-      "efficiency": {}
     },
     {
       "a": 44,
@@ -27789,14 +27749,6 @@
       "efficiency": {
         "10": 91
       }
-    },
-    {
-      "a": 64,
-      "b": 81,
-      "targets": [
-        18
-      ],
-      "efficiency": {}
     },
     {
       "a": 64,

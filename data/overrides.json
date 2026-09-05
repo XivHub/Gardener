@@ -6,11 +6,9 @@
         81
       ],
       "chosen": {
-        "targets": [
-          18
-        ]
+        "excluded": true
       },
-      "why": "trends-and-families.csv's upper-triangle cell for Han Lemon x Cloud Acorn is 'X' (dead), but the mirrored lower-triangle cell reads 'Rolanberry', matching nick75g's recorded target (row 18, Rolanberry) exactly; this is one of only 2 pairs (out of 3,240) where the lower triangle disagrees with the upper, so the upper 'X' is treated as the erroneous cell here and the live cross is kept."
+      "why": "Only nick75g lists this pair. Neither the community matrix nor ffxivgardening.com's own confirmed-cross table has it, and the two-of-three rule used everywhere else in this file drops it. Curiel Root x Mimett Gourd and Curiel Root x Tantalplant additionally pair two Premium Chocobo Foods, one seed family crossed with itself, which the family rule says yields nothing novel; ffxivgardening.com's Thavnairian Onion page lists 50 pairs and every one crosses a Premium Chocobo Food with a seed outside that family."
     },
     {
       "pair": [
@@ -1858,11 +1856,9 @@
         54
       ],
       "chosen": {
-        "targets": [
-          52
-        ]
+        "excluded": true
       },
-      "why": "The matrix's extra entries for this pair are the parent seeds themselves, which a cross can return but which are not a result worth planning for; nick75g records only novel offspring. Verified across the whole diff: no pair anywhere adds an offspring outside its own parents."
+      "why": "Only nick75g lists this pair. Neither the community matrix nor ffxivgardening.com's own confirmed-cross table has it, and the two-of-three rule used everywhere else in this file drops it. Curiel Root x Mimett Gourd and Curiel Root x Tantalplant additionally pair two Premium Chocobo Foods, one seed family crossed with itself, which the family rule says yields nothing novel; ffxivgardening.com's Thavnairian Onion page lists 50 pairs and every one crosses a Premium Chocobo Food with a seed outside that family."
     },
     {
       "pair": [
@@ -1870,11 +1866,9 @@
         46
       ],
       "chosen": {
-        "targets": [
-          50
-        ]
+        "excluded": true
       },
-      "why": "The matrix's extra entries for this pair are the parent seeds themselves, which a cross can return but which are not a result worth planning for; nick75g records only novel offspring. Verified across the whole diff: no pair anywhere adds an offspring outside its own parents."
+      "why": "Only nick75g lists this pair. Neither the community matrix nor ffxivgardening.com's own confirmed-cross table has it, and the two-of-three rule used everywhere else in this file drops it. Curiel Root x Mimett Gourd and Curiel Root x Tantalplant additionally pair two Premium Chocobo Foods, one seed family crossed with itself, which the family rule says yields nothing novel; ffxivgardening.com's Thavnairian Onion page lists 50 pairs and every one crosses a Premium Chocobo Food with a seed outside that family."
     },
     {
       "pair": [
@@ -1882,11 +1876,9 @@
         47
       ],
       "chosen": {
-        "targets": [
-          32
-        ]
+        "excluded": true
       },
-      "why": "The matrix's extra entries for this pair are the parent seeds themselves, which a cross can return but which are not a result worth planning for; nick75g records only novel offspring. Verified across the whole diff: no pair anywhere adds an offspring outside its own parents."
+      "why": "Only nick75g lists this pair. Neither the community matrix nor ffxivgardening.com's own confirmed-cross table has it, and the two-of-three rule used everywhere else in this file drops it. Curiel Root x Mimett Gourd and Curiel Root x Tantalplant additionally pair two Premium Chocobo Foods, one seed family crossed with itself, which the family rule says yields nothing novel; ffxivgardening.com's Thavnairian Onion page lists 50 pairs and every one crosses a Premium Chocobo Food with a seed outside that family."
     },
     {
       "pair": [
@@ -1894,11 +1886,9 @@
         81
       ],
       "chosen": {
-        "targets": [
-          18
-        ]
+        "excluded": true
       },
-      "why": "The matrix's extra entries for this pair are the parent seeds themselves, which a cross can return but which are not a result worth planning for; nick75g records only novel offspring. Verified across the whole diff: no pair anywhere adds an offspring outside its own parents."
+      "why": "Only nick75g lists this pair. Neither the community matrix nor ffxivgardening.com's own confirmed-cross table has it, and the two-of-three rule used everywhere else in this file drops it. Curiel Root x Mimett Gourd and Curiel Root x Tantalplant additionally pair two Premium Chocobo Foods, one seed family crossed with itself, which the family rule says yields nothing novel; ffxivgardening.com's Thavnairian Onion page lists 50 pairs and every one crosses a Premium Chocobo Food with a seed outside that family."
     },
     {
       "pair": [
@@ -5681,11 +5671,9 @@
         35
       ],
       "chosen": {
-        "targets": [
-          38
-        ]
+        "excluded": true
       },
-      "why": "nick75g and trends-and-families.csv agree exactly that Popoto x Dalamud Popoto produces only La Noscean Leek (row 38); ffxivgardening.com has no cached page recording this pair at all, which is silence rather than a contradiction, so the two agreeing sources are kept."
+      "why": "Only nick75g lists this pair. Neither the community matrix nor ffxivgardening.com's own confirmed-cross table has it, and the two-of-three rule used everywhere else in this file drops it. Curiel Root x Mimett Gourd and Curiel Root x Tantalplant additionally pair two Premium Chocobo Foods, one seed family crossed with itself, which the family rule says yields nothing novel; ffxivgardening.com's Thavnairian Onion page lists 50 pairs and every one crosses a Premium Chocobo Food with a seed outside that family."
     },
     {
       "pair": [
@@ -5693,11 +5681,9 @@
         73
       ],
       "chosen": {
-        "targets": [
-          8
-        ]
+        "excluded": true
       },
-      "why": "nick75g and trends-and-families.csv agree exactly that Midland Cabbage x Windlight produces only Wizard Eggplant (row 8); ffxivgardening.com has no cached page recording this pair, which is silence rather than a contradiction, so the two agreeing sources are kept."
+      "why": "Only nick75g lists this pair. Neither the community matrix nor ffxivgardening.com's own confirmed-cross table has it, and the two-of-three rule used everywhere else in this file drops it. Curiel Root x Mimett Gourd and Curiel Root x Tantalplant additionally pair two Premium Chocobo Foods, one seed family crossed with itself, which the family rule says yields nothing novel; ffxivgardening.com's Thavnairian Onion page lists 50 pairs and every one crosses a Premium Chocobo Food with a seed outside that family."
     },
     {
       "pair": [
@@ -5773,7 +5759,7 @@
           27
         ]
       },
-      "why": "nick75g and trends-and-families.csv agree exactly that Prickly Pineapple x Lavender produces Rolanberry (row 18) and Flax (row 27); ffxivgardening.com adds Lightning Shard (row 75), but its own two pages disagree on what the pair's second outcome even is (the Flax page's row for this pair records the alternate as Rolanberry, matching nick75g, while the Rolanberry page's row for the same pair records the alternate as Lightning Shard instead of Flax) \u2014 an internal contradiction on the one site raising the claim, against two sources that agree with each other, so Lightning Shard is not added."
+      "why": "nick75g and trends-and-families.csv agree exactly that Prickly Pineapple x Lavender produces Rolanberry (row 18) and Flax (row 27); ffxivgardening.com adds Lightning Shard (row 75), but its own two pages disagree on what the pair's second outcome even is (the Flax page's row for this pair records the alternate as Rolanberry, matching nick75g, while the Rolanberry page's row for the same pair records the alternate as Lightning Shard instead of Flax) — an internal contradiction on the one site raising the claim, against two sources that agree with each other, so Lightning Shard is not added."
     },
     {
       "pair": [
@@ -5786,7 +5772,7 @@
           27
         ]
       },
-      "why": "nick75g and trends-and-families.csv agree exactly that Prickly Pineapple x Voidrake produces Rolanberry (row 18) and Flax (row 27); ffxivgardening.com adds Lightning Shard (row 75) the same way it does for Prickly Pineapple x Lavender (row pair 20+22), and is internally inconsistent there too \u2014 the Flax page's row for this pair records the alternate as Rolanberry, matching nick75g, while the Rolanberry page's row for the same pair records the alternate as Lightning Shard instead of Flax \u2014 so Lightning Shard is not added."
+      "why": "nick75g and trends-and-families.csv agree exactly that Prickly Pineapple x Voidrake produces Rolanberry (row 18) and Flax (row 27); ffxivgardening.com adds Lightning Shard (row 75) the same way it does for Prickly Pineapple x Lavender (row pair 20+22), and is internally inconsistent there too — the Flax page's row for this pair records the alternate as Rolanberry, matching nick75g, while the Rolanberry page's row for the same pair records the alternate as Lightning Shard instead of Flax — so Lightning Shard is not added."
     },
     {
       "pair": [
@@ -5824,7 +5810,7 @@
           50
         ]
       },
-      "why": "Halone Gerbera x Mimett Gourd, one of the routes to Thavnairian Onion. nick75g records two outcomes, Shroud Tea (row 39) and Thavnairian Onion (row 50), both at 88% efficiency. trends-and-families.csv's cell for this pair reads exactly 'Shroud Tea' and 'Thav. Onion' \u2014 the same two rows, with no third token. ffxivgardening.com adds a third outcome, Tantalplant (row 47), as the alternate on its Shroud Tea page, but its own Thavnairian Onion page's row for the same pair lists the alternate as Shroud Tea, not Tantalplant, so the site does not corroborate Tantalplant against itself either. With the community matrix agreeing with nick75g exactly and ffxivgardening.com internally inconsistent about the third outcome, Tantalplant is not added; the planner keeps only the two cross-source-confirmed targets for the seed players care most about."
+      "why": "Halone Gerbera x Mimett Gourd, one of the routes to Thavnairian Onion. nick75g records two outcomes, Shroud Tea (row 39) and Thavnairian Onion (row 50), both at 88% efficiency. trends-and-families.csv's cell for this pair reads exactly 'Shroud Tea' and 'Thav. Onion' — the same two rows, with no third token. ffxivgardening.com adds a third outcome, Tantalplant (row 47), as the alternate on its Shroud Tea page, but its own Thavnairian Onion page's row for the same pair lists the alternate as Shroud Tea, not Tantalplant, so the site does not corroborate Tantalplant against itself either. With the community matrix agreeing with nick75g exactly and ffxivgardening.com internally inconsistent about the third outcome, Tantalplant is not added; the planner keeps only the two cross-source-confirmed targets for the seed players care most about."
     }
   ],
   "seedYields": [
