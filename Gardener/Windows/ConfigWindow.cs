@@ -50,7 +50,7 @@ namespace Gardener.Windows
                     cfg.DevLogUrl = url;
                     cfg.Save();
                 }
-                ImGui.TextDisabled("e.g. http://192.168.88.248:9999/log");
+                ImGui.TextDisabled("e.g. http://127.0.0.1:9999/log");
             }
 
             DrawDataSection();
