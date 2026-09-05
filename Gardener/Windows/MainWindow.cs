@@ -4,10 +4,14 @@ using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using Gardener.Game;
 using Gardener.Helpers;
 using Gardener.Journal;
+using Gardener.Planner;
 using Gardener.Scheduler;
+using Gardener.Scheduler.Tasks;
+using XivHubPluginKit.Inventory;
 using XivHubPluginKit.UI;
 
 namespace Gardener.Windows
@@ -17,6 +21,11 @@ namespace Gardener.Windows
         // Staged hours for each bed's "planted about N hours ago" control, keyed the same way the
         // journal itself is (patch + bed, never a character) so the widget survives a redraw.
         private static readonly Dictionary<(string PatchKey, int BedNumber), int> pendingEstimateHours = new();
+
+        // The Plan tab's own target picker, shared across every patch drawn below it rather than
+        // one per patch: it names what to plant next, not where, and the "where" is a per-patch
+        // question the plan itself answers. 0 means nothing chosen yet.
+        private static ushort planTargetSeed;
 
         // Housing wards recheck harvest readiness roughly once an hour rather than the instant a
         // plant matures, so a harvest estimate always lags behind the plant's own clock.
@@ -45,7 +54,10 @@ namespace Gardener.Windows
                 ImGui.EndTabItem();
             }
             if (ImGui.BeginTabItem("Plan"))
+            {
+                DrawPlanTab();
                 ImGui.EndTabItem();
+            }
             if (ImGui.BeginTabItem("Reminders"))
             {
                 DrawRemindersTab();
@@ -296,6 +308,225 @@ namespace Gardener.Windows
 
             ImGui.EndPopup();
         }
+
+        /// <summary>
+        /// The crossbreed planner: a target picker over every row <see cref="SeedTable.CrossableTargets"/>
+        /// names (greyed with a reason for one <see cref="SeedTable.DataGaps"/> flags), then one block
+        /// per discovered patch showing what <see cref="CrossPlanner.PlanSingleStep"/> would plant there
+        /// for that target, or <see cref="CrossPlanner.Route"/>'s suggested chain when no single step is
+        /// possible from what is held or already growing. <see cref="Task_RemoveCrop"/>'s per-bed button
+        /// lives at the bottom of each patch's block, never gated by anything a sweep also gates on.
+        /// </summary>
+        private static void DrawPlanTab()
+        {
+            DrawSchedulerStatus();
+            ImGui.Separator();
+
+            var targets = SeedTable.CrossableTargets.OrderBy(SeedItems.ProduceName).ToList();
+            var preview = planTargetSeed == 0 ? "Choose a seed..." : SeedItems.ProduceName(planTargetSeed);
+            if (ImGui.BeginCombo("Target seed", preview))
+            {
+                foreach (var row in targets)
+                {
+                    var gapReason = TargetGapReason((ushort)row);
+                    ImGui.BeginDisabled(gapReason is not null);
+                    if (ImGui.Selectable(SeedItems.ProduceName(row), row == planTargetSeed) && gapReason is null)
+                        planTargetSeed = (ushort)row;
+                    ImGui.EndDisabled();
+                    if (gapReason is { } reason)
+                    {
+                        ImGui.SameLine();
+                        ImGui.TextColored(HubStyle.Faint, reason);
+                    }
+                }
+                ImGui.EndCombo();
+            }
+
+            if (planTargetSeed == 0)
+            {
+                ImGui.TextColored(HubStyle.Faint, "Pick a seed to plan a cross for.");
+                return;
+            }
+
+            var patches = PatchDiscovery.Patches;
+            if (patches.Count == 0)
+            {
+                ImGui.TextColored(HubStyle.Faint, "No patches discovered. Stand in an outdoor housing plot.");
+                return;
+            }
+
+            foreach (var patch in patches)
+                DrawPlanForPatch(patch, planTargetSeed);
+        }
+
+        /// <summary>Why <paramref name="row"/> is greyed in the target picker, or null when it is not:
+        /// checked against every <see cref="SeedTable.DataGaps"/> list a crossable target could actually
+        /// land in, never a blanket "unavailable".</summary>
+        private static string? TargetGapReason(ushort row)
+        {
+            var gaps = SeedTable.DataGaps;
+            if (gaps.BundledRowsMissingFromSheet.Any(g => g.Row == row))
+                return "not found in the live seed sheet";
+            if (gaps.RowsAbsentFromCrossData.Any(g => g.Row == row))
+                return "missing cross data";
+            if (gaps.RowsWithNoGrowTime.Any(g => g.Row == row))
+                return "no grow time data";
+            return null;
+        }
+
+        private static void DrawPlanForPatch(Patch patch, ushort target)
+        {
+            ImGui.Separator();
+            ImGui.TextUnformatted($"{patch.Kind} patch");
+            ImGui.TextColored(HubStyle.Faint, patch.Key);
+
+            var memory = GardenMemory.Read(patch);
+            if (memory.Count == 0)
+            {
+                ImGui.TextColored(HubStyle.Faint, "no data for this patch");
+                return;
+            }
+
+            var bag = Bags.Scan();
+            var plan = CrossPlanner.PlanSingleStep(target, patch, memory, bag);
+
+            if (plan.Steps.Count == 0)
+                DrawRouteView(patch, target, plan, bag);
+            else
+                DrawPlanSteps(patch, plan);
+
+            DrawRemoveCropButtons(patch, memory);
+        }
+
+        private static void DrawRouteView(Patch patch, ushort target, LayoutPlan plan, IReadOnlyList<SlotView> bag)
+        {
+            foreach (var warning in plan.Warnings)
+                ImGui.TextColored(HubStyle.Warn, warning);
+
+            var held = bag
+                .Select(s => SeedItems.SeedRowForItem(s.ItemId))
+                .Where(r => r.HasValue)
+                .Select(r => r!.Value)
+                .Distinct()
+                .ToList();
+            var route = CrossPlanner.Route(target, held);
+            ImGui.TextColored(HubStyle.Faint, route.Summary);
+
+            foreach (var step in route.Steps)
+            {
+                var a = SeedItems.ProduceName(step.ParentA);
+                var b = SeedItems.ProduceName(step.ParentB);
+                var t = SeedItems.ProduceName(step.Target);
+                var yieldText = step.SeedYield is { } y ? $"{y} seed(s)" : "seed yield unknown";
+                var sustainText = step.Sustains ? "sustains itself" : "won't sustain itself alone";
+                ImGui.TextUnformatted($"{a} x {b} -> {t} ({yieldText}, {sustainText})");
+            }
+        }
+
+        private static void DrawPlanSteps(Patch patch, LayoutPlan plan)
+        {
+            if (ImGui.BeginTable($"##plan-{patch.Key}", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg))
+            {
+                ImGui.TableSetupColumn("Bed");
+                ImGui.TableSetupColumn("Plant");
+                ImGui.TableSetupColumn("Soil");
+                ImGui.TableSetupColumn("Why");
+                ImGui.TableHeadersRow();
+
+                foreach (var step in plan.Steps.OrderBy(s => s.BedNumber))
+                {
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted(step.BedNumber.ToString());
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted(SeedItems.ProduceName(step.SeedRow));
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted(ItemSheet.Name(step.SoilItemId));
+                    ImGui.TableNextColumn();
+                    ImGui.TextUnformatted(step.Why);
+                }
+
+                ImGui.EndTable();
+            }
+
+            foreach (var warning in plan.Warnings)
+                ImGui.TextColored(HubStyle.Warn, warning);
+
+            if (GardenerGuard.BlockingReason() is { } reason)
+            {
+                ImGui.TextColored(HubStyle.Faint, reason);
+                return;
+            }
+
+            using (HubStyle.Primary())
+            {
+                if (ImGui.Button($"Run plan##runplan-{patch.Key}"))
+                {
+                    if (Plugin.C.ConfirmBeforeRun)
+                        ImGui.OpenPopup($"Confirm run plan##{patch.Key}");
+                    else
+                        StartPlan(plan, patch);
+                }
+            }
+
+            if (!ImGui.BeginPopup($"Confirm run plan##{patch.Key}"))
+                return;
+
+            ImGui.TextUnformatted($"Plant {plan.Steps.Count} bed(s) on this patch as shown above?");
+            if (ImGui.Button("Confirm"))
+            {
+                StartPlan(plan, patch);
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel"))
+                ImGui.CloseCurrentPopup();
+            ImGui.EndPopup();
+        }
+
+        private static void StartPlan(LayoutPlan plan, Patch patch)
+        {
+            SchedulerMain.PendingPlan = plan;
+            SchedulerMain.EnablePlugin(SweepKind.Plan, patch);
+        }
+
+        /// <summary>One button per occupied bed, never part of a sweep: <see cref="GardenerGuard.BlockingReason"/>
+        /// gates starting a sweep, but tending needs no permission and removing a crop is a single
+        /// interaction rather than a worklist, so the only gate here is the confirm itself, which names
+        /// the seed being destroyed.</summary>
+        private static void DrawRemoveCropButtons(Patch patch, IReadOnlyList<BedState> memory)
+        {
+            var occupied = memory.Where(s => !s.IsEmpty).OrderBy(s => s.BedNumber).ToList();
+            if (occupied.Count == 0)
+                return;
+
+            ImGui.Spacing();
+            ImGui.TextColored(HubStyle.Faint, "Remove a crop");
+            foreach (var state in occupied)
+            {
+                var name = SeedItems.ProduceName(state.SeedRow);
+                var popupId = $"Confirm remove crop##{patch.Key}-{state.BedNumber}";
+                if (ImGui.Button($"Remove##removecrop-{patch.Key}-{state.BedNumber}"))
+                    ImGui.OpenPopup(popupId);
+                ImGui.SameLine();
+                ImGui.TextUnformatted($"Bed {state.BedNumber}: {name}");
+
+                if (!ImGui.BeginPopup(popupId))
+                    continue;
+
+                ImGui.TextColored(HubStyle.Warn, $"Destroy {name} in bed {state.BedNumber}? This can't be undone.");
+                if (ImGui.Button("Confirm"))
+                {
+                    Task_RemoveCrop.TryEnqueue(patch, state.BedNumber, state.SeedRow);
+                    ImGui.CloseCurrentPopup();
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Cancel"))
+                    ImGui.CloseCurrentPopup();
+                ImGui.EndPopup();
+            }
+        }
+
 
         private static void DrawLogTab()
         {

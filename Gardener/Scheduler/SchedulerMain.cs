@@ -10,9 +10,9 @@ using XivHubPluginKit.Inventory;
 
 namespace Gardener.Scheduler;
 
-/// <summary>Which automation a run is carrying out. <see cref="Plan"/> exists so the shape is settled
-/// now; its caller lands in a later phase, and <see cref="SchedulerMain.EnablePlugin"/> refuses to
-/// start it until then rather than silently running a sweep with nothing behind it.</summary>
+/// <summary>Which automation a run is carrying out. <see cref="Plan"/> is the odd one out: its worklist
+/// comes from <see cref="SchedulerMain.PendingPlan"/> rather than a live <see cref="GardenMemory"/>
+/// scan, so <see cref="SchedulerMain.EnablePlugin"/> refuses to start it when nothing is pending.</summary>
 public enum SweepKind
 {
     Tend,
@@ -24,8 +24,9 @@ public enum SweepKind
 /// <summary>
 /// Frame-driven state machine (ICE/SealHunter <c>SchedulerMain</c> pattern): top-of-tick guards run
 /// every frame, and the per-state dispatch below only advances once <c>TaskManager.NumQueuedTasks</c>
-/// is 0. One patch, one sweep kind, one bed at a time — the worklist for a sweep always comes from
-/// <see cref="GardenMemory.Read"/>, never from a menu, so a menu is only ever opened to act.
+/// is 0. One patch, one sweep kind, one bed at a time — a menu is only ever opened to act, never to
+/// build the worklist, which for every kind but <see cref="SweepKind.Plan"/> comes straight from
+/// <see cref="GardenMemory.Read"/> and for Plan comes from <see cref="PendingPlan"/> instead.
 /// </summary>
 public static class SchedulerMain
 {
@@ -43,7 +44,16 @@ public static class SchedulerMain
     public static int TendedCount;
     public static int HarvestedCount;
     public static int FertilizedCount;
+    public static int PlantedCount;
     public static int SkippedCount;
+
+    /// <summary>The plan a <see cref="SweepKind.Plan"/> sweep runs, set by the Plan tab immediately
+    /// before calling <see cref="EnablePlugin"/> — Plan is the one sweep kind whose worklist is not
+    /// derived from <see cref="GardenMemory"/> alone, so it needs a way in that the two-argument
+    /// <c>EnablePlugin(kind, patch)</c> call every other sweep shares does not carry.</summary>
+    public static Planner.LayoutPlan? PendingPlan;
+
+    private static readonly Dictionary<int, Planner.PlantStep> planStepsByBed = new();
 
     /// <summary>How many stage-4 beds the current run found with no <c>Harvest</c> entry — the direct
     /// evidence on whether stage 4 means harvestable.</summary>
@@ -66,9 +76,12 @@ public static class SchedulerMain
             return false;
         }
 
-        if (kind == SweepKind.Plan)
+        // Plan carries its worklist in PendingPlan rather than deriving it from GardenMemory, so it
+        // needs its own up-front check: nothing to run is refused here, the same shape as the harvest
+        // and fertilize guards below, rather than discovered bed by bed once the sweep has started.
+        if (kind == SweepKind.Plan && PendingPlan is not { Steps.Count: > 0 })
         {
-            Plugin.ChatGui.PrintError($"[Gardener] {kind} sweeps are not implemented yet.");
+            Plugin.ChatGui.PrintError("[Gardener] No plan to run.");
             return false;
         }
 
@@ -108,9 +121,11 @@ public static class SchedulerMain
         TendedCount = 0;
         HarvestedCount = 0;
         FertilizedCount = 0;
+        PlantedCount = 0;
         SkippedCount = 0;
         NoHarvestOfferedCount = 0;
         Worklist.Clear();
+        planStepsByBed.Clear();
 
         State = GardenerState.Scanning;
         ActivityLog.Good_($"Started {kind} on {patch.Kind} patch.",
@@ -130,6 +145,8 @@ public static class SchedulerMain
         CurrentPatch = null;
         CurrentBedNumber = null;
         Worklist.Clear();
+        PendingPlan = null;
+        planStepsByBed.Clear();
         // A guard trip or the Stop button can both land here mid-interaction, with a bed menu,
         // planting dialog or item context menu still open from whatever step Abort() just cut off.
         GardeningUiCleanup.CloseAll();
@@ -215,6 +232,12 @@ public static class SchedulerMain
 
     private static void RunScanning()
     {
+        if (CurrentKind == SweepKind.Plan)
+        {
+            RunScanningPlan();
+            return;
+        }
+
         var states = GardenMemory.Read(CurrentPatch!);
         IEnumerable<int> beds = CurrentKind switch
         {
@@ -233,6 +256,36 @@ public static class SchedulerMain
         {
             ActivityLog.Notify($"Nothing to {CurrentKind.ToString()!.ToLowerInvariant()} on {CurrentPatch!.Kind} patch.",
                 chatMessage: $"Nothing to {CurrentKind.ToString()!.ToLowerInvariant()} on your {CurrentPatch!.Kind} patch.");
+            State = GardenerState.Done;
+            return;
+        }
+
+        State = GardenerState.OpeningBed;
+    }
+
+    /// <summary>
+    /// Re-checks <see cref="PendingPlan"/> against a fresh <see cref="GardenMemory.Read"/> right before
+    /// running it — the plan may be minutes old by the time the player clicked Run plan, and
+    /// <see cref="Planner.CrossPlanner.Verify"/> is exactly the check that already caught this once,
+    /// at the moment the plan was built. Anything it downgrades here was already logged into the
+    /// plan's own <c>Warnings</c>; this only decides what actually gets queued.
+    /// </summary>
+    private static void RunScanningPlan()
+    {
+        var plan = PendingPlan!;
+        Planner.CrossPlanner.Verify(plan, CurrentPatch!);
+
+        planStepsByBed.Clear();
+        foreach (var step in plan.Steps)
+            planStepsByBed[step.BedNumber] = step;
+
+        foreach (var bed in plan.Steps.Select(s => s.BedNumber))
+            Worklist.Enqueue(bed);
+
+        if (Worklist.Count == 0)
+        {
+            ActivityLog.Warn_("Nothing left to plant; every step in the plan no longer checks out.",
+                chatMessage: "Nothing left to plant; the plan no longer checks out.");
             State = GardenerState.Done;
             return;
         }
@@ -265,9 +318,12 @@ public static class SchedulerMain
             case SweepKind.Fertilize:
                 Task_Fertilize.Enqueue();
                 break;
+            case SweepKind.Plan:
+                var step = planStepsByBed[CurrentBedNumber!.Value];
+                Task_Plant.Enqueue(step.SeedRow, step.SoilItemId);
+                break;
             default:
-                // EnablePlugin already refuses Plan, so reaching here means that guard was bypassed.
-                // Fail loud rather than silently doing nothing to the bed that is open.
+                // Every SweepKind has a case above; reaching here means a new one was added without one.
                 Plugin.Logger.Warning($"[Gardener] Acting reached with unsupported sweep kind {CurrentKind}");
                 State = GardenerState.Error;
                 break;
@@ -296,6 +352,7 @@ public static class SchedulerMain
             SweepKind.Harvest => $"Harvest complete: {HarvestedCount} harvested, {NoHarvestOfferedCount} " +
                                   $"stage-4 with no Harvest entry, {SkippedCount} skipped.",
             SweepKind.Fertilize => $"Fertilize complete: {FertilizedCount} fertilized, {SkippedCount} skipped.",
+            SweepKind.Plan => $"Plan complete: {PlantedCount} planted, {SkippedCount} skipped.",
             _ => "Sweep complete.",
         };
         // Chat drops the stage-4/no-harvest-entry detail above: that count is calibration evidence
@@ -305,6 +362,7 @@ public static class SchedulerMain
             SweepKind.Tend => $"Tend finished: {TendedCount} tended, {SkippedCount} skipped.",
             SweepKind.Harvest => $"Harvest finished: {HarvestedCount} harvested, {SkippedCount} skipped.",
             SweepKind.Fertilize => $"Fertilize finished: {FertilizedCount} fertilized, {SkippedCount} skipped.",
+            SweepKind.Plan => $"Plan finished: {PlantedCount} planted, {SkippedCount} skipped.",
             _ => "Sweep finished.",
         };
         ActivityLog.Good_(logSummary, chatMessage: chatSummary);
@@ -384,7 +442,7 @@ public static class SchedulerMain
         var pos = Plugin.ObjectTable.LocalPlayer?.Position ?? default;
         return $"state={State} kind={CurrentKind?.ToString() ?? "-"} patch={CurrentPatch?.Key ?? "-"} " +
                $"bed={CurrentBedNumber?.ToString() ?? "-"} worklist={Worklist.Count} tended={TendedCount} " +
-               $"harvested={HarvestedCount} fertilized={FertilizedCount} skipped={SkippedCount} " +
+               $"harvested={HarvestedCount} fertilized={FertilizedCount} planted={PlantedCount} skipped={SkippedCount} " +
                $"noHarvestOffered={NoHarvestOfferedCount} " +
                $"pos=({pos.X:0},{pos.Y:0},{pos.Z:0}) queued={Plugin.TaskManager.NumQueuedTasks}";
     }

@@ -27,7 +27,26 @@ public static class Task_Plant
 {
     private const string AddonName = "HousingGardening";
 
-    public static void Enqueue(ushort seedRow, SoilPreference soilPreference)
+    /// <summary>The everyday caller: soil is chosen fresh from whatever the bag holds when the dialog
+    /// opens, by family preference.</summary>
+    public static void Enqueue(ushort seedRow, SoilPreference soilPreference) =>
+        Enqueue(seedRow, bag => (GardeningItems.BestSoil(soilPreference, bag),
+            GardeningItems.SoilUnavailable(soilPreference) ?? "No soil available."));
+
+    /// <summary>A crossbreed plan's caller: the plan already resolved a specific soil item at plan-build
+    /// time and told the player which one it would use, so this re-verifies that exact item is still
+    /// held rather than silently substituting whatever family preference is highest-graded now — the
+    /// two could differ if the bag changed between reviewing the plan and running it.</summary>
+    public static void Enqueue(ushort seedRow, uint soilItemId) =>
+        Enqueue(seedRow, bag =>
+        {
+            var soil = GardeningItems.Soils.FirstOrDefault(s => s.ItemId == soilItemId);
+            var held = soil is not null && bag.Any(slot => slot.ItemId == soilItemId);
+            var reason = $"{ItemSheet.Name(soilItemId)} from the plan is no longer in the bag.";
+            return (held ? soil : null, reason);
+        });
+
+    private static void Enqueue(ushort seedRow, Func<List<SlotView>, (SoilItem? Soil, string Reason)> resolveSoil)
     {
         var tm = Plugin.TaskManager;
         var patch = SchedulerMain.CurrentPatch!;
@@ -90,12 +109,11 @@ public static class Task_Plant
                 return true;
             }
 
-            var bag = ScanBag();
+            var bag = Bags.Scan();
 
-            var soil = GardeningItems.BestSoil(soilPreference, bag);
+            var (soil, soilReason) = resolveSoil(bag);
             if (soil is null)
             {
-                var soilReason = GardeningItems.SoilUnavailable(soilPreference) ?? "No soil available.";
                 ActivityLog.SkippedBed(bedNumber,
                     $"{patch.Key} bed {bedNumber}: {soilReason}",
                     soilReason.TrimEnd('.'));
@@ -217,6 +235,7 @@ public static class Task_Plant
                 return true;
             }
 
+            SchedulerMain.PlantedCount++;
             var produce = SeedItems.ProduceName(seedRow);
             var soilName = ItemSheet.Name(plantedSoilItemId);
             ActivityLog.Good_($"{patch.Key} bed {bedNumber}: planted {produce} in {soilName}.",
@@ -226,10 +245,4 @@ public static class Task_Plant
         }, $"Plant: record and confirm (bed {bedNumber})");
     }
 
-    private static List<SlotView> ScanBag() =>
-        InventoryScan.ScanContainer(InventoryType.Inventory1)
-            .Concat(InventoryScan.ScanContainer(InventoryType.Inventory2))
-            .Concat(InventoryScan.ScanContainer(InventoryType.Inventory3))
-            .Concat(InventoryScan.ScanContainer(InventoryType.Inventory4))
-            .ToList();
 }

@@ -25,8 +25,12 @@ public sealed record SeedEntry(
     bool Gatherable,
     bool CrossOnly);
 
-/// <summary>An unordered cross of rows <see cref="A"/> x <see cref="B"/> and the row ids it can yield.</summary>
-public sealed record CrossPair(uint A, uint B, uint[] Targets);
+/// <summary>An unordered cross of rows <see cref="A"/> x <see cref="B"/> and the row ids it can yield.
+/// <see cref="Efficiency"/> is ffxivgardening.com's confirmed percentage of cross attempts that landed
+/// on a given outcome row, keyed by that row rather than by <see cref="Targets"/>: the two lists come
+/// from different sources and neither is a subset of the other, so a row can appear in one without the
+/// other. Null (never a fabricated figure) for a row this pair has no confirmed measurement for yet.</summary>
+public sealed record CrossPair(uint A, uint B, uint[] Targets, IReadOnlyDictionary<uint, int>? Efficiency);
 
 /// <summary>A row flagged by <see cref="SeedTable.Validate"/>, carrying both the row id and the seed item name.</summary>
 public sealed record SeedGap(uint Row, string Name);
@@ -55,6 +59,8 @@ public static class SeedTable
     private static readonly List<CrossPair> pairs = new();
     private static readonly Dictionary<(uint, uint), CrossPair> pairByKey = new();
     private static readonly HashSet<(uint, uint)> deadPairs = new();
+    private static readonly List<uint> gatherableRows = new();
+    private static readonly List<uint> crossableTargets = new();
 
     public static SeedDataProvenance Provenance { get; }
     public static DataGaps DataGaps { get; }
@@ -67,13 +73,20 @@ public static class SeedTable
         Provenance = seedsFile.Provenance;
 
         foreach (var entry in seedsFile.Seeds)
+        {
             bySeedRow[entry.Row] = entry;
+            if (entry.Gatherable)
+                gatherableRows.Add(entry.Row);
+        }
 
+        var targets = new HashSet<uint>();
         foreach (var pair in crossFile.Pairs)
         {
             pairs.Add(pair);
             pairByKey[NormalizeKey(pair.A, pair.B)] = pair;
+            targets.UnionWith(pair.Targets);
         }
+        crossableTargets.AddRange(targets);
 
         foreach (var dead in crossFile.Dead)
             deadPairs.Add(NormalizeKey(dead[0], dead[1]));
@@ -99,6 +112,14 @@ public static class SeedTable
     /// <summary>Whether the row is gatherable (as opposed to cross-only); null if the row is not bundled.</summary>
     public static bool? Gatherable(uint row) => bySeedRow.TryGetValue(row, out var e) ? e.Gatherable : null;
 
+    /// <summary>Every bundled row gatherable from the world without crossbreeding — the leaves a
+    /// <see cref="Route"/> search starts from alongside whatever the player already holds.</summary>
+    public static IReadOnlyList<uint> GatherableRows => gatherableRows;
+
+    /// <summary>Every row that appears as at least one pair's outcome — the seeds a target picker can
+    /// offer, since nothing else is reachable by planting two parents side by side.</summary>
+    public static IReadOnlyList<uint> CrossableTargets => crossableTargets;
+
     /// <summary>Every parent pair known to be able to yield <paramref name="target"/>.</summary>
     public static IReadOnlyList<(uint A, uint B)> Pairs(uint target) =>
         pairs.Where(p => p.Targets.Contains(target)).Select(p => (p.A, p.B)).ToList();
@@ -106,6 +127,16 @@ public static class SeedTable
     /// <summary>The offspring row ids for an unordered parent pair; empty if the pair is not a known cross.</summary>
     public static IReadOnlyList<uint> TargetsFor(uint a, uint b) =>
         pairByKey.TryGetValue(NormalizeKey(a, b), out var pair) ? pair.Targets : Array.Empty<uint>();
+
+    /// <summary>ffxivgardening.com's confirmed percentage of this unordered pair's attempts that landed
+    /// on <paramref name="target"/>; null if the pair is unknown or has no confirmed measurement for
+    /// that particular outcome yet. Never derived from the soil-grade headline rate — see
+    /// <see cref="CrossPair.Efficiency"/>.</summary>
+    public static int? EfficiencyFor(uint a, uint b, uint target) =>
+        pairByKey.TryGetValue(NormalizeKey(a, b), out var pair) && pair.Efficiency is { } eff &&
+        eff.TryGetValue(target, out var pct)
+            ? pct
+            : null;
 
     /// <summary>Whether the unordered parent pair is a known dead cross.</summary>
     public static bool IsDead(uint a, uint b) => deadPairs.Contains(NormalizeKey(a, b));

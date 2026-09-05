@@ -119,7 +119,7 @@ public static class Task_Fertilize
                 return true;
             }
 
-            var bag = ScanBag();
+            var bag = Bags.Scan();
             var fertilizerId = GardeningItems.BestFertilizer(bag);
             var fertilizerSlot = fertilizerId is { } id ? bag.FirstOrDefault(s => s.ItemId == id) : null;
             if (fertilizerSlot is null)
@@ -268,12 +268,6 @@ public static class Task_Fertilize
         return agent != null && agent->PlotType == FertilizePlotType;
     }
 
-    private static List<SlotView> ScanBag() =>
-        InventoryScan.ScanContainer(InventoryType.Inventory1)
-            .Concat(InventoryScan.ScanContainer(InventoryType.Inventory2))
-            .Concat(InventoryScan.ScanContainer(InventoryType.Inventory3))
-            .Concat(InventoryScan.ScanContainer(InventoryType.Inventory4))
-            .ToList();
 
     /// <summary>The live <see cref="ContextMenuAddonName"/> addon if one is open and ready, found by
     /// name rather than by the <c>PostSetup</c> listener: <c>AgentInventoryContext.OpenForItemSlot</c>

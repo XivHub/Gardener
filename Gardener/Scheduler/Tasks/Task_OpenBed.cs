@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using ECommons.Automation.NeoTaskManager;
 using ECommons.UIHelpers;
@@ -12,7 +13,10 @@ namespace Gardener.Scheduler.Tasks;
 /// Interacts with the bed <see cref="BedTargeting"/> predicts for a bed number and proves it is the
 /// right one before anything else touches it. This is the only place in the scheduler that ever opens
 /// a bed menu, and the only place that ever acts on one without first reading its "Nth Bed" prompt
-/// back: never act on an unparsed or mismatched prompt.
+/// back: never act on an unparsed or mismatched prompt. <paramref name="onOpened"/> and
+/// <paramref name="onGiveUp"/> default to the sweep's own state transitions (<see cref="GardenerState.Acting"/>
+/// and <see cref="GardenerState.OpeningBed"/>), so every sweep caller is unchanged; <see cref="Task_RemoveCrop"/>
+/// supplies its own instead, since it drives one bed outside the sweep worklist entirely.
 /// </summary>
 public static class Task_OpenBed
 {
@@ -20,8 +24,11 @@ public static class Task_OpenBed
     // means something is wrong with this bed specifically, not a one-off correction worth chasing.
     private const int MaxAttemptsPerBed = 3;
 
-    public static void Enqueue(Patch patch, int bedNumber, int attempt = 1)
+    public static void Enqueue(Patch patch, int bedNumber, Action? onOpened = null, Action? onGiveUp = null, int attempt = 1)
     {
+        onOpened ??= () => SchedulerMain.State = GardenerState.Acting;
+        onGiveUp ??= () => SchedulerMain.State = GardenerState.OpeningBed;
+
         var tm = Plugin.TaskManager;
         var targetEntityId = 0u;
 
@@ -34,7 +41,7 @@ public static class Task_OpenBed
                     $"{patch.Key} bed {bedNumber}: no predicted bed entity; skipping.",
                     "the game hasn't located this bed yet");
                 SchedulerMain.SkippedCount++;
-                SchedulerMain.State = GardenerState.OpeningBed;
+                onGiveUp();
                 return null;
             }
 
@@ -45,7 +52,7 @@ public static class Task_OpenBed
                     $"{patch.Key} bed {bedNumber}: bed entity 0x{entityId:X8} is no longer in the object table; skipping.",
                     "the bed can't be found right now");
                 SchedulerMain.SkippedCount++;
-                SchedulerMain.State = GardenerState.OpeningBed;
+                onGiveUp();
                 return null;
             }
 
@@ -63,7 +70,7 @@ public static class Task_OpenBed
                         $"{patch.Key} bed {bedNumber}: TargetSystem unavailable; skipping.",
                         "a game error while targeting");
                     SchedulerMain.SkippedCount++;
-                    SchedulerMain.State = GardenerState.OpeningBed;
+                    onGiveUp();
                     return null;
                 }
 
@@ -89,7 +96,7 @@ public static class Task_OpenBed
                     $"{patch.Key} bed {bedNumber}: bed menu never opened; skipping.",
                     "its menu never opened");
                 SchedulerMain.SkippedCount++;
-                SchedulerMain.State = GardenerState.OpeningBed;
+                onGiveUp();
                 return true;
             }
 
@@ -104,7 +111,7 @@ public static class Task_OpenBed
                 Task_CloseMenu.Enqueue();
                 Plugin.TaskManager.Enqueue(() =>
                 {
-                    SchedulerMain.State = GardenerState.OpeningBed;
+                    onGiveUp();
                     return true;
                 }, "OpenBed: skip after unparseable prompt");
                 return true;
@@ -113,7 +120,7 @@ public static class Task_OpenBed
             if (bp.Bed == bedNumber)
             {
                 BedTargeting.MarkVerified(patch, bedNumber);
-                SchedulerMain.State = GardenerState.Acting;
+                onOpened();
                 return true;
             }
 
@@ -130,7 +137,7 @@ public static class Task_OpenBed
                 Task_CloseMenu.Enqueue();
                 Plugin.TaskManager.Enqueue(() =>
                 {
-                    SchedulerMain.State = GardenerState.OpeningBed;
+                    onGiveUp();
                     return true;
                 }, "OpenBed: skip after max attempts");
                 return true;
@@ -140,7 +147,7 @@ public static class Task_OpenBed
             var nextAttempt = attempt + 1;
             Plugin.TaskManager.Enqueue(() =>
             {
-                Enqueue(patch, bedNumber, nextAttempt);
+                Enqueue(patch, bedNumber, onOpened, onGiveUp, nextAttempt);
                 return true;
             }, "OpenBed: retry after correction");
             return true;

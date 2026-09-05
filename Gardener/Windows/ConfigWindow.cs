@@ -99,7 +99,7 @@ namespace Gardener.Windows
         /// setup step, not a mistake to block.</summary>
         private void DrawFixedSoilPicker()
         {
-            var heldIds = ScanBag().Select(s => s.ItemId).ToHashSet();
+            var heldIds = Bags.Scan().Select(s => s.ItemId).ToHashSet();
 
             ImGui.Indent();
             foreach (var soil in GardeningItems.Soils)
@@ -124,12 +124,6 @@ namespace Gardener.Windows
             ImGui.Unindent();
         }
 
-        private static List<SlotView> ScanBag() =>
-            InventoryScan.ScanContainer(InventoryType.Inventory1)
-                .Concat(InventoryScan.ScanContainer(InventoryType.Inventory2))
-                .Concat(InventoryScan.ScanContainer(InventoryType.Inventory3))
-                .Concat(InventoryScan.ScanContainer(InventoryType.Inventory4))
-                .ToList();
 
         private void DrawFertilizerSection()
         {
@@ -151,7 +145,7 @@ namespace Gardener.Windows
         /// default <see cref="GardeningItems.BestFertilizer"/> falls back to.</summary>
         private void DrawFixedFertilizerPicker()
         {
-            var heldIds = ScanBag().Select(s => s.ItemId).ToHashSet();
+            var heldIds = Bags.Scan().Select(s => s.ItemId).ToHashSet();
 
             ImGui.Indent();
             if (ImGui.RadioButton("Automatic (first one held)##fixedfertilizer-auto", cfg.FixedFertilizerItemId == 0))
