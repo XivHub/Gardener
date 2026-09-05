@@ -401,15 +401,33 @@ public static class DebugDump
     private static void AppendCropChat(StringBuilder sb)
     {
         sb.AppendLine("== Crop chat ==");
-        var lines = CropChatState.RecentLines;
-        if (lines.Count == 0)
+
+        // The sentence the sheet says to look for, next to whatever actually arrived. An empty
+        // observed list with a populated unclassified list means the text does not match the sheet;
+        // both empty means the sentence never reached chat at all.
+        sb.AppendLine($"GardenMenuText.Available={GardenMenuText.Available}");
+        foreach (var key in new[]
+                 {
+                     MenuKey.TalkNone, MenuKey.TalkVigorous, MenuKey.TalkDepressed,
+                     MenuKey.TalkRipe, MenuKey.TalkDead,
+                 })
         {
-            sb.AppendLine("(none observed yet)");
-            return;
+            sb.AppendLine($"  sheet {key}: \"{GardenMenuText.TextFor(key) ?? "(missing)"}\"");
         }
 
+        var lines = CropChatState.RecentLines;
+        sb.AppendLine($"Observed ({lines.Count}):");
+        if (lines.Count == 0)
+            sb.AppendLine("  (none observed yet)");
         foreach (var line in lines)
             sb.AppendLine($"  {line.At:O} [{line.ChatType}] {line.Key} \"{line.Text}\"");
+
+        var unclassified = CropChatState.Unclassified;
+        sb.AppendLine($"Unclassified during the last sweep ({unclassified.Count}):");
+        if (unclassified.Count == 0)
+            sb.AppendLine("  (none)");
+        foreach (var line in unclassified)
+            sb.AppendLine($"  {line.At:O} [{line.ChatType}] \"{line.Text}\"");
     }
 
     /// <summary>

@@ -28,6 +28,19 @@ public static class CropChatState
     private static int head;
     private static int count;
 
+    private static readonly List<(DateTimeOffset At, XivChatType ChatType, string Text)> unclassified = new();
+
+    /// <summary>Whether to keep the text of lines that do not classify, for
+    /// <c>DebugDump</c> to print. Set only for the length of a sweep — every bed interaction a sweep
+    /// makes echoes one of the five sentences, so that window holds the line being looked for and
+    /// almost nothing else, and no chat is retained outside it.</summary>
+    public static bool CaptureUnclassified { get; set; }
+
+    /// <summary>The lines seen during the most recent sweep that matched none of the five keys,
+    /// oldest first. The evidence for "the sentence is not arriving as chat at all" versus "it is
+    /// arriving and the sheet text does not match it".</summary>
+    public static IReadOnlyList<(DateTimeOffset At, XivChatType ChatType, string Text)> Unclassified => unclassified;
+
     /// <summary>The most recently classified line, or null if none has been seen this session.</summary>
     public static CropChatLine? Last { get; private set; }
 
@@ -53,7 +66,15 @@ public static class CropChatState
         var key = GardenMenuText.Classify(text);
         if (key is not (MenuKey.TalkNone or MenuKey.TalkVigorous or MenuKey.TalkDepressed
             or MenuKey.TalkRipe or MenuKey.TalkDead))
+        {
+            if (CaptureUnclassified)
+            {
+                if (unclassified.Count >= RingSize)
+                    unclassified.RemoveAt(0);
+                unclassified.Add((DateTimeOffset.UtcNow, message.LogKind, text));
+            }
             return;
+        }
 
         var line = new CropChatLine(DateTimeOffset.UtcNow, message.LogKind, key, text);
         Last = line;

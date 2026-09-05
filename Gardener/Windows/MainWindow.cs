@@ -48,7 +48,7 @@ namespace Gardener.Windows
             SizeConstraints = new WindowSizeConstraints
             {
                 MinimumSize = new Vector2(380, 380),
-                MaximumSize = new Vector2(900, 1400),
+                MaximumSize = new Vector2(4000, 4000),
             };
         }
 
@@ -94,7 +94,6 @@ namespace Gardener.Windows
         private static void DrawGardenTab()
         {
             DrawSchedulerStatus();
-            ImGui.Separator();
 
             var patches = PatchDiscovery.Patches;
             if (patches.Count == 0)
@@ -198,13 +197,17 @@ namespace Gardener.Windows
 
         private static void DrawBedTable(Patch patch, IReadOnlyDictionary<int, BedState> byBed)
         {
-            if (!ImGui.BeginTable($"##bedgrid-{patch.Key}", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg))
+            // Stretch rather than fit-to-content: every cell but the bed number holds a sentence, and
+            // a fitted column sizes itself to the longest of them and pushes the rest off the window.
+            const ImGuiTableFlags flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg |
+                                          ImGuiTableFlags.Resizable | ImGuiTableFlags.SizingStretchProp;
+            if (!ImGui.BeginTable($"##bedgrid-{patch.Key}", 4, flags))
                 return;
 
-            ImGui.TableSetupColumn("Bed");
-            ImGui.TableSetupColumn("Seed / stage");
-            ImGui.TableSetupColumn("Wilt");
-            ImGui.TableSetupColumn("Harvest window");
+            ImGui.TableSetupColumn("Bed", ImGuiTableColumnFlags.WidthFixed, 30f);
+            ImGui.TableSetupColumn("Seed / stage", ImGuiTableColumnFlags.WidthStretch, 3f);
+            ImGui.TableSetupColumn("Wilt", ImGuiTableColumnFlags.WidthStretch, 3f);
+            ImGui.TableSetupColumn("Harvest window", ImGuiTableColumnFlags.WidthStretch, 4f);
             ImGui.TableHeadersRow();
 
             for (var bedNumber = 1; bedNumber <= patch.Kind.BedCount(); bedNumber++)
@@ -223,6 +226,10 @@ namespace Gardener.Windows
                 }
 
                 var record = GardenJournal.Get(patch.Key, bedNumber);
+
+                // Wrap at the cell's own right edge, which is what PushTextWrapPos(0) means inside a
+                // table; without it every cell here is one unbroken line and the last column is cut off.
+                ImGui.PushTextWrapPos(0f);
                 DrawSeedAndStage(state, record);
 
                 ImGui.TableNextColumn();
@@ -230,6 +237,7 @@ namespace Gardener.Windows
 
                 ImGui.TableNextColumn();
                 DrawHarvestWindow(patch.Key, bedNumber, record);
+                ImGui.PopTextWrapPos();
             }
 
             ImGui.EndTable();
@@ -237,20 +245,25 @@ namespace Gardener.Windows
             DrawRemoveCropButtons(patch, byBed.Values.ToList());
         }
 
-        /// <summary>Always visible regardless of what is blocking a new run, so a sweep already in
-        /// progress can always be stopped.</summary>
+        /// <summary>The running sweep's own row: what it is doing and the Stop that ends it. Drawn
+        /// regardless of what is blocking a <em>new</em> run, so a sweep in progress can always be
+        /// stopped, and drawn not at all when no sweep is running.</summary>
         private static void DrawSchedulerStatus()
         {
-            if (SchedulerMain.Running)
-            {
-                ImGui.TextColored(HubStyle.Warn,
-                    $"{SchedulerMain.CurrentKind}: bed {SchedulerMain.CurrentBedNumber?.ToString() ?? "-"}, " +
-                    $"{SchedulerMain.Worklist.Count} left ({SchedulerMain.State})");
-                ImGui.SameLine();
-            }
+            // Nothing running means nothing to stop: the row disappears rather than offering a button
+            // that does nothing.
+            if (!SchedulerMain.Running)
+                return;
+
+            ImGui.TextColored(HubStyle.Warn,
+                $"{SchedulerMain.CurrentKind}: bed {SchedulerMain.CurrentBedNumber?.ToString() ?? "-"}, " +
+                $"{SchedulerMain.Worklist.Count} left ({SchedulerMain.State})");
+            ImGui.SameLine();
 
             if (ImGui.Button("Stop"))
                 SchedulerMain.DisablePlugin("you clicked Stop.");
+
+            ImGui.Separator();
         }
 
         /// <summary>"Tend all" / "Harvest all" / "Fertilize all" for one patch, each behind
@@ -332,7 +345,6 @@ namespace Gardener.Windows
         private static void DrawGoalTab()
         {
             DrawSchedulerStatus();
-            ImGui.Separator();
 
             var held = SeedInventory.Counts();
             var goalRow = GardenJournal.GoalSeedRow;
@@ -1103,6 +1115,12 @@ namespace Gardener.Windows
 
             ImGui.TextUnformatted(produceName);
             ImGui.TextColored(StageColor(state, record), stageText);
+
+            // Only ever known for a bed Gardener planted itself: nothing in the game's own read says
+            // what soil a bed went in with, so a bed planted by hand shows no soil rather than a guess.
+            if (record?.SoilItemId is { } soilItemId and not 0)
+                ImGui.TextColored(HubStyle.Faint, ItemSheet.Name(soilItemId));
+
             DrawCropState(record);
 
             if (record?.LastSeenByCharacter is { Length: > 0 } observer)

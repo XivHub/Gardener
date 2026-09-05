@@ -128,6 +128,7 @@ public static class SchedulerMain
         CurrentKind = kind;
         CurrentPatch = patch;
         RunOrigin = pos;
+        CropChatState.CaptureUnclassified = true;
         CurrentBedNumber = null;
         TendedCount = 0;
         HarvestedCount = 0;
@@ -152,6 +153,7 @@ public static class SchedulerMain
     {
         Plugin.TaskManager.Abort();
         State = GardenerState.Idle;
+        CropChatState.CaptureUnclassified = false;
         CurrentKind = null;
         CurrentPatch = null;
         CurrentBedNumber = null;
