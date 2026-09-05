@@ -18,12 +18,17 @@ public enum HarvestConfidence
 /// <summary>A harvest-readiness window, never a countdown to the second: observed time always exceeds
 /// true grow time, because growth advances on a server tick and readiness is only observable when the
 /// player visits. <see cref="SampleCount"/> is the calibration sample count
-/// behind <see cref="Confidence"/> == <see cref="HarvestConfidence.Calibrated"/>, 0 otherwise.</summary>
+/// behind <see cref="Confidence"/> == <see cref="HarvestConfidence.Calibrated"/>, 0 otherwise.
+/// <see cref="AnchorUncertainty"/> is <see cref="BedRecord.PlantedAtUncertainty"/> passed through
+/// unchanged: how much later than the anchor the actual planting could have happened, independent of
+/// <see cref="Confidence"/>, which grades the grow-duration source and says nothing about the anchor
+/// itself.</summary>
 public readonly record struct HarvestWindow(
     DateTimeOffset? Earliest,
     DateTimeOffset? Estimate,
     HarvestConfidence Confidence,
-    int SampleCount);
+    int SampleCount,
+    TimeSpan? AnchorUncertainty);
 
 /// <summary>
 /// Pure functions over a <see cref="BedRecord"/> and the bundled <see cref="SeedTable"/>. Every field
@@ -98,7 +103,7 @@ public static class Growth
     public static HarvestWindow HarvestWindow(BedRecord record)
     {
         if (record.PlantedAt is not { } plantedAt)
-            return new HarvestWindow(null, null, HarvestConfidence.Unknown, 0);
+            return new HarvestWindow(null, null, HarvestConfidence.Unknown, 0, null);
 
         var calibrated = GardenJournal.Calibration.Estimate(record.SeedRow, CalibrationSeriesKind.HarvestOffered);
         var growHours = SeedTable.Grow(record.SeedRow);
@@ -125,7 +130,7 @@ public static class Growth
         }
 
         if (earliestDuration is null)
-            return new HarvestWindow(null, null, HarvestConfidence.Unknown, 0);
+            return new HarvestWindow(null, null, HarvestConfidence.Unknown, 0, null);
 
         var earliest = plantedAt + ApplyFertilizer(earliestDuration.Value, record);
         var estimate = estimateDuration is { } ed ? plantedAt + ApplyFertilizer(ed, record) : (DateTimeOffset?)null;
@@ -136,6 +141,6 @@ public static class Growth
                 ? HarvestConfidence.Calibrated
                 : HarvestConfidence.Bundled;
 
-        return new HarvestWindow(earliest, estimate, confidence, sampleCount);
+        return new HarvestWindow(earliest, estimate, confidence, sampleCount, record.PlantedAtUncertainty);
     }
 }

@@ -34,6 +34,14 @@ public sealed class BedRecord
     public uint SoilItemId { get; set; }
     public DateTimeOffset? PlantedAt { get; set; }
     public bool PlantedAtEstimated { get; set; }
+
+    /// <summary>Set only when <see cref="PlantedAt"/> was derived from an empty-bed observation
+    /// followed by an occupied one: the width of the gap between the two polls, i.e. how much later
+    /// than <see cref="PlantedAt"/> the planting could actually have happened. Null for every other
+    /// anchor — a hand-set <see cref="PlantedAtEstimated"/> guess, an exact planting time, or no
+    /// anchor at all — never a synthesized confidence bucket standing in for this number.</summary>
+    public TimeSpan? PlantedAtUncertainty { get; set; }
+
     public DateTimeOffset? LastTendedAt { get; set; }
     public DateTimeOffset? LastFertilizedAt { get; set; }
     public int FertilizerCount { get; set; }

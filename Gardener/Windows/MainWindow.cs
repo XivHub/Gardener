@@ -354,8 +354,24 @@ namespace Gardener.Windows
                 HarvestConfidence.Calibrated => $"observed, {window.SampleCount} sample(s)",
                 _ => "unknown",
             };
+            // A hand-set estimate already reads as "estimated" above, so this never doubles up with
+            // it: AnchorUncertainty is null exactly when the estimate widget last wrote PlantedAt.
+            if (window.AnchorUncertainty is { } anchorUncertainty)
+                confidenceText += $", planted-at ±{FormatUncertainty(anchorUncertainty)}";
             var when = window.Earliest is { } e ? e.ToLocalTime().ToString("g") : "?";
             ImGui.TextUnformatted($"{when} ({confidenceText})");
+        }
+
+        /// <summary>Renders a duration the way its own magnitude deserves: seconds for a transition
+        /// caught within the same poll, hours for one caught only after a long absence, never a single
+        /// unit that misrepresents either end.</summary>
+        private static string FormatUncertainty(TimeSpan span)
+        {
+            if (span.TotalMinutes < 1)
+                return $"{span.TotalSeconds:F0}s";
+            if (span.TotalHours < 1)
+                return $"{span.TotalMinutes:F0}m";
+            return $"{span.TotalHours:F1}h";
         }
 
         private static void DrawPlantedAtEstimate(string patchKey, int bedNumber, BedRecord record)
@@ -374,6 +390,7 @@ namespace Gardener.Windows
             {
                 record.PlantedAt = DateTimeOffset.UtcNow - TimeSpan.FromHours(hours);
                 record.PlantedAtEstimated = true;
+                record.PlantedAtUncertainty = null; // a hand-set guess replaces any transition anchor
                 GardenJournal.Upsert(record);
                 pendingEstimateHours.Remove(key);
             }

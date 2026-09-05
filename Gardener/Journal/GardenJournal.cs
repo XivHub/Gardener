@@ -35,6 +35,13 @@ public static class GardenJournal
 
     private static readonly Dictionary<(string PatchKey, int BedNumber), BedRecord> records = new();
     private static readonly Dictionary<string, HouseRecord> houses = new();
+
+    /// <summary>When each bed was last observed empty, in-session only — never persisted, since it
+    /// exists solely to date the next planting this session sees and would otherwise be journal
+    /// bloat for <see cref="Prune"/> to clean up. Populated by <see cref="Reconcile"/>'s <c>IsEmpty</c>
+    /// branch and consumed the moment a record is created for that bed.</summary>
+    private static readonly Dictionary<(string PatchKey, int BedNumber), DateTimeOffset> lastSeenEmptyAt = new();
+
     private static bool dirty;
     private static DateTimeOffset lastSaveAt = DateTimeOffset.MinValue;
 
@@ -146,6 +153,11 @@ public static class GardenJournal
 
             if (state.IsEmpty)
             {
+                // Dated whether or not a record existed: an empty read is what lets the *next*
+                // occupied read for this bed date its planting, and a record only existing on some
+                // of the polls in between must not blind that dating.
+                lastSeenEmptyAt[key] = state.ReadAt;
+
                 // Harvested or removed while away: the harvestable moment was never observed, so no
                 // calibration sample is pushed for it either.
                 if (hasRecord)
@@ -156,14 +168,22 @@ public static class GardenJournal
                 continue;
             }
 
+            var hadEmptyObservation = lastSeenEmptyAt.TryGetValue(key, out var observedEmptyAt);
+
             if (!hasRecord)
             {
-                // The normal first-run case for a garden Gardener did not plant, and no longer a
-                // seed-identity problem: memory names the seed, only the clock is missing.
-                records[key] = FreshRecord(state, observer);
+                // The bed was watched empty earlier this session: the planting happened somewhere in
+                // [observedEmptyAt, state.ReadAt], so that gap is real evidence, not the plain
+                // first-run case below where nothing was ever observed empty.
+                records[key] = FreshRecord(state, observer, hadEmptyObservation ? observedEmptyAt : null);
+                lastSeenEmptyAt.Remove(key);
                 dirty = true;
                 continue;
             }
+
+            // A record already exists for this bed; any pending empty-observation for it is stale
+            // (the transition it would have dated already produced a record through the branch above).
+            lastSeenEmptyAt.Remove(key);
 
             if (record!.SeedRow != state.SeedRow)
             {
@@ -277,7 +297,15 @@ public static class GardenJournal
         }
     }
 
-    private static BedRecord FreshRecord(BedState state, string? observer) => new()
+    /// <summary>
+    /// <paramref name="observedEmptyAt"/> is the last time this bed was seen empty this session, if
+    /// any — the only case where <see cref="BedRecord.PlantedAt"/> can be set here. It anchors
+    /// <see cref="BedRecord.PlantedAt"/> and <see cref="BedRecord.LastTendedAt"/> (planting counts as
+    /// tending) at that observation, with <see cref="BedRecord.PlantedAtUncertainty"/> carrying the
+    /// gap to <see cref="BedState.ReadAt"/> — the true planting time is somewhere in that window,
+    /// never assumed to be the stage the bed is now in, which is evidence of growth, not of a clock.
+    /// </summary>
+    private static BedRecord FreshRecord(BedState state, string? observer, DateTimeOffset? observedEmptyAt = null) => new()
     {
         PatchKey = state.PatchKey,
         BedNumber = state.BedNumber,
@@ -285,12 +313,14 @@ public static class GardenJournal
         LastSeenStage = state.Stage,
         LastSeenAt = state.ReadAt,
         LastSeenByCharacter = observer,
-        PlantedAt = null,
+        PlantedAt = observedEmptyAt,
         PlantedAtEstimated = false,
+        PlantedAtUncertainty = observedEmptyAt is { } emptyAt ? state.ReadAt - emptyAt : null,
+        LastTendedAt = observedEmptyAt,
         PlantedByGardener = false,
-        // SoilItemId, LastTendedAt, LastFertilizedAt, FertilizerCount, FirstSeenStage4At and
-        // FirstSeenHarvestOfferedAt all take their type's default: unknown until this plugin
-        // observes the fact itself, never guessed from the seed that used to be here.
+        // SoilItemId, LastFertilizedAt, FertilizerCount, FirstSeenStage4At and FirstSeenHarvestOfferedAt
+        // all take their type's default: unknown until this plugin observes the fact itself, never
+        // guessed from the seed that used to be here.
     };
 
     private static void RecordStage4Sample(BedRecord record, DateTimeOffset observedAt)
