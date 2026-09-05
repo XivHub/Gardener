@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Game.ClientState.Objects.Types;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
@@ -38,10 +39,25 @@ public sealed record Patch(
     IReadOnlyList<Bed> Beds);
 
 /// <summary>
-/// Finds outdoor garden patches and their beds from the object table, associates beds to the nearest
-/// patch within 5 yalms, and orders each patch's beds into a stable row-major spatial index. Refreshes
-/// on a timer (<see cref="Tick"/>) rather than every frame; <see cref="Refresh"/> is available for
-/// on-demand callers such as the debug dump.
+/// Counters from the most recent <see cref="PatchDiscovery.Refresh"/>, kept so a zero-patch result
+/// can say why it is zero without another round trip into the game.
+/// </summary>
+public readonly record struct DiscoveryDiagnostics(
+    int FurnitureArrayWalked,
+    int ObjectTableWalked,
+    IReadOnlyDictionary<uint, int> NearbyHousingEventObjectBaseIds,
+    IReadOnlyDictionary<uint, int> NearbyEventObjDataIds,
+    IReadOnlyList<(uint DataId, Vector3 Position)> UnassociatedBeds)
+{
+    public static readonly DiscoveryDiagnostics Empty = new(
+        0, 0, new Dictionary<uint, int>(), new Dictionary<uint, int>(), Array.Empty<(uint, Vector3)>());
+}
+
+/// <summary>
+/// Finds outdoor garden patches and their beds, associates beds to the nearest patch within 5 yalms,
+/// and orders each patch's beds into a stable row-major spatial index. Refreshes on a timer
+/// (<see cref="Tick"/>) rather than every frame; <see cref="Refresh"/> is available for on-demand
+/// callers such as the debug dump.
 /// </summary>
 public static class PatchDiscovery
 {
@@ -53,10 +69,16 @@ public static class PatchDiscovery
     // DailyRoutines' rule: a bed belongs to the nearest patch within this many yalms.
     private const float BedAssociationRadius = 5f;
 
+    // Radius for the "what's actually out here" diagnostic breakdowns, wide enough to catch a
+    // whole yard from wherever the player is standing in it.
+    private const float DiagnosticRadius = 30f;
+
     private const long RefreshIntervalMs = 2000;
     private static long lastRefreshTick;
 
     public static IReadOnlyList<Patch> Patches { get; private set; } = Array.Empty<Patch>();
+
+    public static DiscoveryDiagnostics LastDiagnostics { get; private set; } = DiscoveryDiagnostics.Empty;
 
     /// <summary>Call once per frame; actually rescans at most once every <see cref="RefreshIntervalMs"/>.</summary>
     public static void Tick()
@@ -68,27 +90,43 @@ public static class PatchDiscovery
         Refresh();
     }
 
-    /// <summary>Rescans the object table immediately, bypassing the timer.</summary>
+    /// <summary>Rescans immediately, bypassing the timer.</summary>
     public static void Refresh()
     {
         var house = HouseKey.Current();
         if (house is not { } houseKey)
         {
             Patches = Array.Empty<Patch>();
+            LastDiagnostics = DiscoveryDiagnostics.Empty;
             return;
         }
 
-        var patchObjects = new List<IGameObject>();
-        var bedObjects = new List<IGameObject>();
+        var playerPosition = Plugin.ObjectTable.LocalPlayer?.Position;
 
+        var (patchObjects, furnitureWalked, nearbyPatchBaseIds) = FindPatchObjects(playerPosition);
+
+        var bedObjects = new List<IGameObject>();
+        var objectTableWalked = 0;
+        var nearbyBedDataIds = new Dictionary<uint, int>();
         foreach (var obj in Plugin.ObjectTable)
         {
-            if (obj.ObjectKind == ObjectKind.HousingEventObject && obj.BaseId == PatchBaseId)
-                patchObjects.Add(obj);
-            else if (obj.ObjectKind == ObjectKind.EventObj &&
-                     (obj.BaseId == DeluxeBedDataId || obj.BaseId == OblongBedDataId || obj.BaseId == RoundBedDataId))
+            objectTableWalked++;
+            if (obj.ObjectKind != ObjectKind.EventObj)
+                continue;
+
+            if (obj.BaseId == DeluxeBedDataId || obj.BaseId == OblongBedDataId || obj.BaseId == RoundBedDataId)
                 bedObjects.Add(obj);
+
+            if (playerPosition is { } pp && Vector3.Distance(obj.Position, pp) <= DiagnosticRadius)
+                nearbyBedDataIds[obj.BaseId] = nearbyBedDataIds.GetValueOrDefault(obj.BaseId) + 1;
         }
+
+        var unassociatedBeds = bedObjects
+            .Where(b => !patchObjects.Any(p => Vector3.Distance(b.Position, p.Position) <= BedAssociationRadius))
+            .Select(b => (b.BaseId, b.Position))
+            .ToList();
+
+        LastDiagnostics = new DiscoveryDiagnostics(furnitureWalked, objectTableWalked, nearbyPatchBaseIds, nearbyBedDataIds, unassociatedBeds);
 
         var result = new List<Patch>();
         foreach (var patchObj in patchObjects)
@@ -147,12 +185,63 @@ public static class PatchDiscovery
                 }
             }
 
-            var (housingObjectId, furnitureIndex) = ReadHousingIdentity(patchObj);
             var key = $"{houseKey.KeyString()}:{patchObj.Position.X:F1}:{patchObj.Position.Z:F1}";
-            result.Add(new Patch(key, kind, cols, patchObj.Position, patchObj.Rotation, furnitureIndex, patchObj.EntityId, housingObjectId, beds));
+            result.Add(new Patch(
+                key, kind, cols, patchObj.Position, patchObj.Rotation,
+                patchObj.FurnitureIndex, patchObj.EntityId, patchObj.HousingObjectId, beds));
         }
 
         Patches = result;
+    }
+
+    /// <summary>A <c>HousingEventObject</c> read straight from the furniture object array.</summary>
+    private readonly record struct PatchObject(uint EntityId, Vector3 Position, float Rotation, uint HousingObjectId, short FurnitureIndex);
+
+    /// <summary>
+    /// Finds outdoor patch furniture (<c>HousingEventObject</c>, <c>BaseId</c> 131128) by walking
+    /// <c>HousingManager.OutdoorTerritory.FurnitureManager.ObjectManager.ObjectArray</c> directly,
+    /// the same route DailyRoutines' <c>AutoGardensWork</c> uses. Housing furniture is not reliably
+    /// present in Dalamud's <see cref="Plugin.ObjectTable"/> — that gap is what left
+    /// <see cref="Patches"/> empty despite a populated <c>DataMap</c>.
+    /// </summary>
+    private static unsafe (List<PatchObject> Patches, int Walked, Dictionary<uint, int> NearbyBaseIdCounts) FindPatchObjects(Vector3? playerPosition)
+    {
+        var patches = new List<PatchObject>();
+        var nearbyBaseIdCounts = new Dictionary<uint, int>();
+
+        // SAFETY: HousingManager.Instance() is a static client pointer; OutdoorTerritory is only
+        // non-null while standing in an outdoor housing territory, checked before the furniture
+        // array is touched.
+        var housing = HousingManager.Instance();
+        if (housing == null || housing->OutdoorTerritory == null)
+            return (patches, 0, nearbyBaseIdCounts);
+
+        var objectManager = &housing->OutdoorTerritory->FurnitureManager.ObjectManager;
+        var objects = objectManager->ObjectArray.Objects;
+        var walked = Math.Min((int)objectManager->ObjectArray.ObjectCount, objects.Length);
+
+        for (var i = 0; i < walked; i++)
+        {
+            var obj = objects[i].Value;
+            if (obj == null)
+                continue;
+            if ((ObjectKind)obj->ObjectKind != ObjectKind.HousingEventObject)
+                continue;
+
+            if (playerPosition is { } pp && Vector3.Distance(obj->Position, pp) <= DiagnosticRadius)
+                nearbyBaseIdCounts[obj->BaseId] = nearbyBaseIdCounts.GetValueOrDefault(obj->BaseId) + 1;
+
+            if (obj->BaseId != PatchBaseId)
+                continue;
+
+            // SAFETY: HousingEventObject is HousingObject at offset 0 (HousingEventObject :
+            // HousingObject : GameObject), matched by ObjectKind above, so reinterpreting the
+            // pointer reaches HousingFurnitureIndex and HousingObjectId safely.
+            var housingObj = (HousingObject*)obj;
+            patches.Add(new PatchObject(obj->EntityId, obj->Position, obj->Rotation, housingObj->HousingObjectId.Id, housingObj->HousingFurnitureIndex));
+        }
+
+        return (patches, walked, nearbyBaseIdCounts);
     }
 
     /// <summary>The live <c>GameObject.EventState</c> byte for a bed, if it is still in the object
@@ -167,15 +256,6 @@ public static class PatchDiscovery
         // field on the base GameObject struct that every entity kind shares, at a fixed offset
         // independent of the object's subtype.
         return ((GameObject*)obj.Address)->EventState;
-    }
-
-    private static unsafe (uint HousingObjectId, short FurnitureIndex) ReadHousingIdentity(IGameObject patchObj)
-    {
-        // SAFETY: patchObj was matched as ObjectKind.HousingEventObject, which is HousingObject at
-        // offset 0 (HousingEventObject : HousingObject : GameObject), so reinterpreting its address
-        // is safe and reaches the furniture-identity fields IGameObject does not expose.
-        var housing = (HousingObject*)patchObj.Address;
-        return (housing->HousingObjectId.Id, housing->HousingFurnitureIndex);
     }
 
     private static Vector3 RotateAroundY(Vector3 v, float radians)

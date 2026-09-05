@@ -166,7 +166,13 @@ public static class GardenMenuText
         const int patchProbe = 53;
         try
         {
-            SeStringParameter[] parameters = { bedProbe, patchProbe };
+            // The client fills <lnum(1)> with the patch number and <lnum(2)> with the bed number,
+            // the reverse of the English sentence's own reading order, so the probes go in that
+            // order rather than the intuitive one. The binding is client code rather than sheet
+            // text and so holds in every locale; only the reading order measured below moves with
+            // the language. The startup line logs what this resolved to, since a wrong binding
+            // would silently swap every bed number.
+            SeStringParameter[] parameters = { patchProbe, bedProbe };
             var evaluated = Plugin.SeStringEvaluator.EvaluateFromAddon(BedPatchPromptRow, parameters).ExtractText();
             var numbers = ExtractNumbers(evaluated);
             var bedIndex = numbers.IndexOf(bedProbe);
@@ -179,7 +185,11 @@ public static class GardenMenuText
                 return true;
             }
 
-            return bedIndex < patchIndex;
+            var bedFirst = bedIndex < patchIndex;
+            Plugin.Logger.Information(
+                $"[GardenMenuText] bed/patch order probe: language={Plugin.ClientState.ClientLanguage}, " +
+                $"probe rendered \"{evaluated}\", position 1={(bedFirst ? "bed" : "patch")}, position 2={(bedFirst ? "patch" : "bed")}");
+            return bedFirst;
         }
         catch (Exception ex)
         {

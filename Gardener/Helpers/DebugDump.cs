@@ -165,6 +165,9 @@ public static class DebugDump
         PatchDiscovery.Refresh();
         var patches = PatchDiscovery.Patches;
         sb.AppendLine();
+        AppendDiscoveryDiagnostics(sb, PatchDiscovery.LastDiagnostics);
+
+        sb.AppendLine();
         sb.AppendLine($"Patches: {patches.Count}");
         foreach (var patch in patches)
             AppendPatch(sb, patch);
@@ -173,6 +176,33 @@ public static class DebugDump
         AppendDataMap(sb, patches);
 
         return sb.ToString();
+    }
+
+    /// <summary>Says why <see cref="PatchDiscovery.Patches"/> is empty when it is empty, so a
+    /// zero-patch dump doesn't cost another in-game round trip to diagnose.</summary>
+    private static void AppendDiscoveryDiagnostics(StringBuilder sb, DiscoveryDiagnostics diag)
+    {
+        sb.AppendLine("== Patch discovery diagnostics ==");
+        sb.AppendLine($"Furniture array objects walked: {diag.FurnitureArrayWalked}");
+        sb.AppendLine($"Object table objects walked: {diag.ObjectTableWalked}");
+
+        sb.AppendLine($"HousingEventObject BaseIds within 30y ({diag.NearbyHousingEventObjectBaseIds.Count} distinct):");
+        if (diag.NearbyHousingEventObjectBaseIds.Count == 0)
+            sb.AppendLine("  (none)");
+        foreach (var (baseId, count) in diag.NearbyHousingEventObjectBaseIds.OrderByDescending(kv => kv.Value))
+            sb.AppendLine($"  baseId={baseId}: {count}");
+
+        sb.AppendLine($"EventObj DataIds within 30y ({diag.NearbyEventObjDataIds.Count} distinct):");
+        if (diag.NearbyEventObjDataIds.Count == 0)
+            sb.AppendLine("  (none)");
+        foreach (var (dataId, count) in diag.NearbyEventObjDataIds.OrderByDescending(kv => kv.Value))
+            sb.AppendLine($"  dataId={dataId}: {count}");
+
+        sb.AppendLine($"Beds matching a bed DataId but associated to no patch ({diag.UnassociatedBeds.Count}):");
+        if (diag.UnassociatedBeds.Count == 0)
+            sb.AppendLine("  (none)");
+        foreach (var (dataId, pos) in diag.UnassociatedBeds)
+            sb.AppendLine($"  dataId={dataId} pos=({pos.X:F2},{pos.Y:F2},{pos.Z:F2})");
     }
 
     private static void AppendPatch(StringBuilder sb, Patch patch)
