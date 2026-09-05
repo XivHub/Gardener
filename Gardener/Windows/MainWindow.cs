@@ -616,11 +616,16 @@ namespace Gardener.Windows
                 ImGui.SetNextItemOpen(false, ImGuiCond.FirstUseEver);
             var open = ImGui.CollapsingHeader($"Step {number}: {members[0].Step.Title}");
 
-            ImGui.SameLine();
-            if (isCurrent)
-                ImGui.TextColored(HubStyle.Accent, "Now");
-            else if (allDone)
-                ImGui.TextColored(HubStyle.Good, "Done");
+            // Right-aligned against the panel edge rather than trailing the title: a plain SameLine
+            // sits the marker hard against however long the step's own title happens to be, so it
+            // reads as part of the sentence instead of as a status.
+            var marker = isCurrent ? "Now" : allDone ? "Done" : null;
+            if (marker is not null)
+            {
+                var markerWidth = ImGui.CalcTextSize(marker).X;
+                ImGui.SameLine(ImGui.GetContentRegionMax().X - markerWidth - ImGui.GetStyle().FramePadding.X * 2f);
+                ImGui.TextColored(isCurrent ? HubStyle.Accent : HubStyle.Good, marker);
+            }
 
             if (open)
             {
