@@ -14,7 +14,8 @@ public sealed record SeedDataProvenance(
     string XivapiSchema,
     string XivapiVersion);
 
-/// <summary>One bundled <c>GardeningSeed</c> row's timings, yields and cross flags.</summary>
+/// <summary>One bundled <c>GardeningSeed</c> row's timings, yields, cross flags and, for a gatherable
+/// row, the vendor or gathering text bundled in <c>otherSources</c> — empty for a cross-only row.</summary>
 public sealed record SeedEntry(
     uint Row,
     int? GrowHours,
@@ -23,7 +24,8 @@ public sealed record SeedEntry(
     int[]? CropYield,
     int[]? SeedYield,
     bool Gatherable,
-    bool CrossOnly);
+    bool CrossOnly,
+    string[]? OtherSources);
 
 /// <summary>An unordered cross of rows <see cref="A"/> x <see cref="B"/> and the row ids it can yield.
 /// <see cref="Efficiency"/> is ffxivgardening.com's confirmed percentage of cross attempts that landed
@@ -111,6 +113,11 @@ public static class SeedTable
 
     /// <summary>Whether the row is gatherable (as opposed to cross-only); null if the row is not bundled.</summary>
     public static bool? Gatherable(uint row) => bySeedRow.TryGetValue(row, out var e) ? e.Gatherable : null;
+
+    /// <summary>The bundled vendor or gathering text for a row, verbatim and never reworded; empty for
+    /// a cross-only row or one the bundle has nothing to say about.</summary>
+    public static IReadOnlyList<string> Sources(uint row) =>
+        bySeedRow.TryGetValue(row, out var e) && e.OtherSources is { } sources ? sources : Array.Empty<string>();
 
     /// <summary>Every bundled row gatherable from the world without crossbreeding — the leaves a
     /// <see cref="Route"/> search starts from alongside whatever the player already holds.</summary>

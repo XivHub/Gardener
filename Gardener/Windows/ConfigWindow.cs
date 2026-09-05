@@ -215,7 +215,7 @@ namespace Gardener.Windows
         private void DrawDataSection()
         {
             ImGui.Separator();
-            ImGui.TextDisabled("Data");
+            ImGui.TextDisabled("Data health");
 
             BoolInput("Record how long your own crops take to mature and become harvestable",
                 () => cfg.CollectGrowSamples, v => cfg.CollectGrowSamples = v);

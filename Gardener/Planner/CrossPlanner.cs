@@ -8,21 +8,8 @@ using XivHubPluginKit.Inventory;
 
 namespace Gardener.Planner;
 
-/// <summary>One row a <see cref="CrossPlanner.Route"/> search adds along the way: the pair that
-/// produces it, and how many seeds harvesting it returns at the soil this plugin is configured to
-/// cross with — <see cref="SeedYield"/> is null when the bundled table has no figure for the row,
-/// never a fabricated zero, and <see cref="Sustains"/> is only ever true when a real figure clears the
-/// five-seed bar community testing found a self-sustaining loop needs.</summary>
-public readonly record struct RouteStep(uint ParentA, uint ParentB, uint Target, int? SeedYield, bool Sustains);
-
-/// <summary>The outcome of a <see cref="CrossPlanner.Route"/> search: <see cref="Found"/> false and an
-/// empty <see cref="Steps"/> means nothing reaches the target within four crosses, never that the
-/// target is unreachable outright — the search simply stops looking past that depth.</summary>
-public readonly record struct RouteResult(bool Found, IReadOnlyList<RouteStep> Steps, string Summary);
-
 /// <summary>
-/// Builds a one-cross <see cref="LayoutPlan"/> for a target seed on one patch, and separately searches
-/// for a multi-generation route to a target the player cannot cross directly yet. Occupancy and seed
+/// Builds a one-cross <see cref="LayoutPlan"/> for a target seed on one patch. Occupancy and seed
 /// identity always come from a live <c>GardenMemory.Read(patch)</c> snapshot passed in by the caller —
 /// never re-read here — and the journal is consulted only to exclude a withered occupying bed as a
 /// parent, since a withered plant cannot be crossbred with. Read-only throughout: nothing here plants
@@ -30,12 +17,6 @@ public readonly record struct RouteResult(bool Found, IReadOnlyList<RouteStep> S
 /// </summary>
 public static class CrossPlanner
 {
-    /// <summary>Five seeds returned per harvest is the community-measured floor for a cross loop to
-    /// replace what it consumes.</summary>
-    private const int SustainThreshold = 5;
-
-    private const int MaxRouteDepth = 4;
-
     /// <summary>
     /// One target seed's plan for one patch: at most a parent step followed by the crossing step that
     /// reaches it, chosen from every pair <see cref="SeedTable.Pairs"/> knows for <paramref name="target"/>
@@ -179,7 +160,7 @@ public static class CrossPlanner
         }
 
         var effText = SeedTable.EfficiencyFor(chosen.Pair.A, chosen.Pair.B, target) is { } pct
-            ? $"{pct}% measured"
+            ? $"measured {CrossOdds.OddsPhrase(pct / 100.0)}"
             : "efficiency not yet measured for this pair";
         plan.Steps.Add(new PlantStep(crossBed, (ushort)crossRow, crossSoil.ItemId,
             $"Crosses with bed {parentBed}'s {parentName} to reach {targetName} ({effText})."));
@@ -284,92 +265,6 @@ public static class CrossPlanner
         plan.Steps.Clear();
         plan.Steps.AddRange(kept);
         return allValid;
-    }
-
-    /// <summary>
-    /// Shortest chain of crosses from <paramref name="held"/> plus every bundled gatherable row to
-    /// <paramref name="target"/>, breadth-first over <see cref="SeedTable.TargetsFor"/> restricted to
-    /// parents already known at each depth — a row already gatherable or held is never something worth
-    /// routing to, so only a cross-only row ever becomes newly known along the way. Capped at
-    /// <see cref="MaxRouteDepth"/> crosses; read-only, returns names and counts, never a
-    /// <see cref="LayoutPlan"/>.
-    /// </summary>
-    public static RouteResult Route(uint target, IReadOnlyCollection<uint> held)
-    {
-        var targetName = SeedItems.ProduceName(target);
-        var known = new HashSet<uint>(held);
-        foreach (var row in SeedTable.GatherableRows)
-            known.Add(row);
-
-        if (known.Contains(target))
-            return new RouteResult(true, Array.Empty<RouteStep>(), $"{targetName} is already available.");
-
-        var producedBy = new Dictionary<uint, (uint A, uint B)>();
-        var frontier = known.ToList();
-
-        for (var depth = 1; depth <= MaxRouteDepth; depth++)
-        {
-            var newlyKnown = new List<uint>();
-            for (var i = 0; i < frontier.Count; i++)
-            for (var j = i + 1; j < frontier.Count; j++)
-            {
-                foreach (var t in SeedTable.TargetsFor(frontier[i], frontier[j]))
-                {
-                    if (known.Contains(t) || producedBy.ContainsKey(t))
-                        continue;
-                    producedBy[t] = (frontier[i], frontier[j]);
-                    newlyKnown.Add(t);
-                }
-            }
-
-            if (newlyKnown.Count == 0)
-                break;
-
-            known.UnionWith(newlyKnown);
-            frontier = newlyKnown;
-
-            if (producedBy.ContainsKey(target))
-                return new RouteResult(true, BuildSteps(target), $"{depth} cross(es) to {targetName}.");
-        }
-
-        return new RouteResult(false, Array.Empty<RouteStep>(), $"No route found within {MaxRouteDepth} steps.");
-
-        List<RouteStep> BuildSteps(uint finalTarget)
-        {
-            var order = new List<uint>();
-            var visited = new HashSet<uint>();
-            var soilGrade = ConfiguredCrossGrade();
-
-            void Collect(uint row)
-            {
-                if (!producedBy.TryGetValue(row, out var parents) || !visited.Add(row))
-                    return;
-                Collect(parents.A);
-                Collect(parents.B);
-                order.Add(row);
-            }
-            Collect(finalTarget);
-
-            return order.Select(row =>
-            {
-                var (a, b) = producedBy[row];
-                var seedYield = SeedTable.Yields(row)?.Seed is { } yields && soilGrade < yields.Length
-                    ? yields[soilGrade]
-                    : (int?)null;
-                return new RouteStep(a, b, row, seedYield, seedYield is { } y && y >= SustainThreshold);
-            }).ToList();
-        }
-    }
-
-    /// <summary>The soil grade a <see cref="Route"/> yield estimate is quoted at: the highest
-    /// <see cref="Configuration.SoilForCross"/>-family soil actually held, or the no-soil tier (index 0
-    /// of the bundled yield table) when none is — a real bundled figure either way, never a fabricated
-    /// one, though the caller should read <see cref="RouteResult.Summary"/> alongside it since a
-    /// no-soil estimate understates what the same route would return with topsoil in the bag.</summary>
-    private static int ConfiguredCrossGrade()
-    {
-        var bag = Bags.Scan();
-        return GardeningItems.BestSoil(Plugin.C.SoilForCross, bag)?.Grade ?? 0;
     }
 
 }

@@ -15,6 +15,11 @@ internal sealed class JournalFile
     public List<BedRecord> Records { get; set; } = new();
     public List<HouseRecord> Houses { get; set; } = new();
     public Calibration Calibration { get; set; } = new();
+
+    /// <summary>The Goal tab's chosen target, a <c>GardeningSeed</c> row; 0 means no goal set. Player
+    /// state, not a setting — it lives here rather than in <c>Configuration</c> — but a journal from
+    /// before this field existed deserialises it to 0 for free, so <see cref="Version"/> stays 1.</summary>
+    public uint GoalSeedRow { get; set; }
 }
 
 /// <summary>
@@ -46,6 +51,23 @@ public static class GardenJournal
     private static DateTimeOffset lastSaveAt = DateTimeOffset.MinValue;
 
     public static Calibration Calibration { get; private set; } = new();
+
+    private static uint goalSeedRow;
+
+    /// <summary>The Goal tab's chosen target; 0 means none. Survives a restart the same way every other
+    /// journal fact does, and every character on the account sees the same goal, matching a garden
+    /// belonging to the plot rather than to whoever is standing in it.</summary>
+    public static uint GoalSeedRow
+    {
+        get => goalSeedRow;
+        set
+        {
+            if (goalSeedRow == value)
+                return;
+            goalSeedRow = value;
+            dirty = true;
+        }
+    }
 
     static GardenJournal()
     {
@@ -441,6 +463,7 @@ public static class GardenJournal
             foreach (var house in file.Houses)
                 houses[house.HouseKey] = house;
             Calibration = file.Calibration;
+            goalSeedRow = file.GoalSeedRow;
         }
         catch (Exception ex)
         {
@@ -464,6 +487,7 @@ public static class GardenJournal
                 Records = records.Values.ToList(),
                 Houses = houses.Values.ToList(),
                 Calibration = Calibration,
+                GoalSeedRow = goalSeedRow,
             };
             File.WriteAllText(tempPath, JsonSerializer.Serialize(file, jsonOptions));
 

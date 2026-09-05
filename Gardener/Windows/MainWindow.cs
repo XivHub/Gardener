@@ -22,10 +22,20 @@ namespace Gardener.Windows
         // journal itself is (patch + bed, never a character) so the widget survives a redraw.
         private static readonly Dictionary<(string PatchKey, int BedNumber), int> pendingEstimateHours = new();
 
-        // The Plan tab's own target picker, shared across every patch drawn below it rather than
-        // one per patch: it names what to plant next, not where, and the "where" is a per-patch
-        // question the plan itself answers. 0 means nothing chosen yet.
-        private static ushort planTargetSeed;
+        // Whether the goal picker is open over the current goal rather than the step list — toggled
+        // by "Pick something else" / a fresh goal choice / "Clear goal". Search text is separate so it
+        // survives across draws without being tied to any one goal.
+        private static bool goalPickerOpen;
+        private static string goalPickerSearch = string.Empty;
+
+        // GoalRoute.Solve's own fixpoint relaxation is cheap but not free, and both the current goal
+        // and the "quickest from what you hold" empty-state picks call it; cached by reference against
+        // SeedInventory.Counts()' own once-a-second cache so neither reruns every frame.
+        private static IReadOnlyDictionary<uint, int>? goalPlanHeldCache;
+        private static uint goalPlanRowCache;
+        private static GoalPlan? goalPlanCache;
+        private static IReadOnlyDictionary<uint, int>? quickPicksHeldCache;
+        private static List<(uint Row, GoalPlan Plan)> quickPicksCache = new();
 
         // Housing wards recheck harvest readiness roughly once an hour rather than the instant a
         // plant matures, so a harvest estimate always lags behind the plant's own clock.
@@ -53,9 +63,9 @@ namespace Gardener.Windows
                 DrawGardenTab();
                 ImGui.EndTabItem();
             }
-            if (ImGui.BeginTabItem("Plan"))
+            if (ImGui.BeginTabItem("Goal"))
             {
-                DrawPlanTab();
+                DrawGoalTab();
                 ImGui.EndTabItem();
             }
             if (ImGui.BeginTabItem("Reminders"))
@@ -222,6 +232,8 @@ namespace Gardener.Windows
             }
 
             ImGui.EndTable();
+
+            DrawRemoveCropButtons(patch, byBed.Values.ToList());
         }
 
         /// <summary>Always visible regardless of what is blocking a new run, so a sweep already in
@@ -310,172 +322,518 @@ namespace Gardener.Windows
         }
 
         /// <summary>
-        /// The crossbreed planner: a target picker over every row <see cref="SeedTable.CrossableTargets"/>
-        /// names (greyed with a reason for one <see cref="SeedTable.DataGaps"/> flags), then one block
-        /// per discovered patch showing what <see cref="CrossPlanner.PlanSingleStep"/> would plant there
-        /// for that target, or <see cref="CrossPlanner.Route"/>'s suggested chain when no single step is
-        /// possible from what is held or already growing. <see cref="Task_RemoveCrop"/>'s per-bed button
-        /// lives at the bottom of each patch's block, never gated by anything a sweep also gates on.
+        /// The Goal tab: pick a produce, and Gardener works out the cheapest route to it
+        /// (<see cref="GoalRoute.Solve"/>) and which step the player is standing on
+        /// (<see cref="GoalProgress.Evaluate"/>). Held once per draw rather than cached across frames
+        /// beyond <see cref="GetOrSolveGoalPlan"/>'s own reference-equality cache, since ImGui redraws
+        /// this whole tab every frame it is open regardless.
         /// </summary>
-        private static void DrawPlanTab()
+        private static void DrawGoalTab()
         {
             DrawSchedulerStatus();
             ImGui.Separator();
 
-            var targets = SeedTable.CrossableTargets.OrderBy(SeedItems.ProduceName).ToList();
-            var preview = planTargetSeed == 0 ? "Choose a seed..." : SeedItems.ProduceName(planTargetSeed);
-            if (ImGui.BeginCombo("Target seed", preview))
+            var held = SeedInventory.Counts();
+            var goalRow = GardenJournal.GoalSeedRow;
+
+            if (goalRow == 0 || goalPickerOpen)
             {
-                foreach (var row in targets)
+                DrawGoalPicker(goalRow, held);
+                return;
+            }
+
+            ImGui.TextUnformatted($"Goal: {SeedItems.ProduceName(goalRow)}");
+            ImGui.SameLine();
+            if (ImGui.Button("Pick something else"))
+            {
+                goalPickerOpen = true;
+                goalPickerSearch = string.Empty;
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Clear goal"))
+                GardenJournal.GoalSeedRow = 0;
+
+            var heldGoalCount = held.GetValueOrDefault(goalRow);
+            if (heldGoalCount > 0)
+            {
+                DrawGoalAlreadyMet(goalRow, heldGoalCount);
+                return;
+            }
+
+            if (SeedTable.Gatherable(goalRow) == true)
+            {
+                DrawGoalNoCrossbreedNeeded(goalRow);
+                return;
+            }
+
+            var plan = GetOrSolveGoalPlan(goalRow, held);
+            if (plan is null)
+            {
+                DrawGoalNoRoute(goalRow);
+                return;
+            }
+
+            DrawGoalPlanBody(plan, held);
+        }
+
+        /// <summary><see cref="GoalRoute.Solve"/> runs a fixpoint relaxation over the whole cross
+        /// table; cached by (goal row, held-dictionary reference) so it reruns only when the goal
+        /// changes or <see cref="SeedInventory.Counts"/> actually recomputes (at most once a second),
+        /// never every frame the tab happens to be open.</summary>
+        private static GoalPlan? GetOrSolveGoalPlan(uint goalRow, IReadOnlyDictionary<uint, int> held)
+        {
+            if (goalRow == goalPlanRowCache && ReferenceEquals(held, goalPlanHeldCache))
+                return goalPlanCache;
+
+            var plan = GoalRoute.Solve(goalRow, held, Plugin.C.SoilForCross);
+            goalPlanRowCache = goalRow;
+            goalPlanHeldCache = held;
+            goalPlanCache = plan;
+            return plan;
+        }
+
+        /// <summary>The picker: search plus every outdoor seed by produce name, tagged with how it is
+        /// obtained. Doubles as the empty state (no goal set) and the "Pick something else" overlay
+        /// (goal set, player wants to change it) — the only difference is the paragraph and quick
+        /// picks above the list, shown only in the empty case.</summary>
+        private static void DrawGoalPicker(uint currentGoal, IReadOnlyDictionary<uint, int> held)
+        {
+            if (currentGoal == 0)
+            {
+                ImGui.TextWrapped("Pick what you want to grow and Gardener works out the steps from what you already hold.");
+                ImGui.Spacing();
+                DrawQuickPicks(held);
+                ImGui.Spacing();
+            }
+
+            ImGui.TextUnformatted("Pick a seed");
+            ImGui.SetNextItemWidth(-1);
+            ImGui.InputTextWithHint("##goalSearch", "Search", ref goalPickerSearch, 64);
+
+            var rows = Sheets.GardeningSeedSheet
+                .Where(s => s.RowId != 0 && !s.IsPlantPotFlowerSeed)
+                .Select(s => s.RowId)
+                .OrderBy(SeedItems.ProduceName)
+                .ToList();
+
+            if (ImGui.BeginChild("##goalPickerList", new Vector2(0, 260), true))
+            {
+                foreach (var row in rows)
                 {
-                    var gapReason = TargetGapReason((ushort)row);
-                    ImGui.BeginDisabled(gapReason is not null);
-                    if (ImGui.Selectable(SeedItems.ProduceName(row), row == planTargetSeed) && gapReason is null)
-                        planTargetSeed = (ushort)row;
-                    ImGui.EndDisabled();
-                    if (gapReason is { } reason)
+                    var produceName = SeedItems.ProduceName(row);
+                    if (goalPickerSearch.Length > 0 &&
+                        produceName.IndexOf(goalPickerSearch, StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+
+                    var label = $"{produceName}   {PickerTag(row)}";
+                    if (ImGui.Selectable($"{label}##goalpick-{row}", row == currentGoal))
                     {
-                        ImGui.SameLine();
-                        ImGui.TextColored(HubStyle.Faint, reason);
+                        GardenJournal.GoalSeedRow = row;
+                        goalPickerOpen = false;
                     }
                 }
-                ImGui.EndCombo();
+            }
+            ImGui.EndChild();
+        }
+
+        /// <summary>"you can buy or gather this" / "crossbreed only" / "no crossbreed data, see
+        /// Settings" — the third covers both a row absent from the bundle entirely and one present but
+        /// missing its cross data, since either way the picker has nothing to route from.</summary>
+        private static string PickerTag(uint row)
+        {
+            if (SeedTable.Gatherable(row) == true)
+                return "you can buy or gather this";
+            if (SeedTable.CrossableTargets.Contains(row))
+                return "crossbreed only";
+            return "no crossbreed data, see Settings";
+        }
+
+        /// <summary>The three cheapest cross-only goals reachable from what is already held, ranked by
+        /// <see cref="GoalPlan.BestCaseDuration"/> — "quickest" is what the header promises, and
+        /// duration is the number that actually answers it. Cached the same way
+        /// <see cref="GetOrSolveGoalPlan"/> is, since it runs <see cref="GoalRoute.Solve"/> once per
+        /// crossable target.</summary>
+        private static void DrawQuickPicks(IReadOnlyDictionary<uint, int> held)
+        {
+            if (!ReferenceEquals(held, quickPicksHeldCache))
+            {
+                var found = new List<(uint Row, GoalPlan Plan)>();
+                foreach (var row in SeedTable.CrossableTargets)
+                {
+                    if (SeedTable.Gatherable(row) == true)
+                        continue;
+                    if (GoalRoute.Solve(row, held, Plugin.C.SoilForCross) is { } plan)
+                        found.Add((row, plan));
+                }
+                quickPicksCache = found.OrderBy(f => f.Plan.BestCaseDuration).Take(3).ToList();
+                quickPicksHeldCache = held;
             }
 
-            if (planTargetSeed == 0)
+            if (quickPicksCache.Count == 0)
+                return;
+
+            ImGui.TextUnformatted("Quickest from what you hold right now:");
+            foreach (var (row, _) in quickPicksCache)
             {
-                ImGui.TextColored(HubStyle.Faint, "Pick a seed to plan a cross for.");
+                if (ImGui.Button($"{SeedItems.ProduceName(row)}##quickpick-{row}"))
+                    GardenJournal.GoalSeedRow = row;
+            }
+        }
+
+        private static void DrawGoalAlreadyMet(uint goalRow, int heldCount)
+        {
+            var produceName = SeedItems.ProduceName(goalRow);
+            ImGui.TextUnformatted($"You already hold {heldCount} {SeedItemName(goalRow)}.");
+
+            var growHours = SeedTable.Grow(goalRow);
+            var yieldSoil = SoilFamily.Shroud;
+            if (growHours is null)
+            {
+                ImGui.TextColored(HubStyle.Faint, "Gardener does not know how long this seed takes to grow.");
                 return;
             }
 
+            var days = GoalDaysPhrase(growHours.Value);
+            var yields = SeedTable.Yields(goalRow);
+            var cropText = GoalYieldText(yields?.Crop);
+            var seedText = GoalYieldText(yields?.Seed);
+
+            ImGui.TextWrapped(
+                $"Plant one in Grade 3 {yieldSoil} Topsoil and harvest in {days} for {cropText} {produceName} and " +
+                $"{seedText} seed back.");
+
+            var seedTiers = yields?.Seed;
+            if (seedTiers is { Length: > 0 } && seedTiers.All(y => y == seedTiers[0]))
+            {
+                ImGui.TextWrapped(seedTiers[0] switch
+                {
+                    0 => "It gives back no seeds when harvested, so plant another from your stock each time.",
+                    1 => "It gives back the one seed you planted, at any soil grade, so a bed sustains itself but never multiplies.",
+                    _ => $"It gives back {seedTiers[0]} seeds at any soil grade, so a bed of these multiplies over time.",
+                });
+            }
+        }
+
+        private static void DrawGoalNoCrossbreedNeeded(uint goalRow)
+        {
+            var produceName = SeedItems.ProduceName(goalRow);
+            ImGui.TextUnformatted($"You do not need to crossbreed {produceName}.");
+            var sources = SeedTable.Sources(goalRow);
+            ImGui.TextColored(HubStyle.Faint, sources.Count > 0
+                ? $"Where: {string.Join("; ", sources)}"
+                : "Where: not recorded.");
+        }
+
+        private static void DrawGoalNoRoute(uint goalRow)
+        {
+            var produceName = SeedItems.ProduceName(goalRow);
+            ImGui.TextWrapped(
+                $"Gardener cannot find a way to grow {produceName} from seeds you can buy or gather. Its crossbreed " +
+                "data has no parent pair for it, so there is nothing to plan. Open Settings and check Data health.");
+        }
+
+        /// <summary>
+        /// The step list plus the current step's detail and handoff. <see cref="GoalProgress.Evaluate"/>
+        /// needs a live snapshot when the player is at a discovered patch, and the journal's cached
+        /// <c>SeedRow</c> / <c>LastSeenStage</c> otherwise — the away-from-garden and never-seen-a-garden
+        /// states are named here, above everything else, so the player never reads a stale current-step
+        /// guess as if it were live.
+        /// </summary>
+        private static void DrawGoalPlanBody(GoalPlan plan, IReadOnlyDictionary<uint, int> held)
+        {
             var patches = PatchDiscovery.Patches;
-            if (patches.Count == 0)
+            IReadOnlyList<BedState> beds;
+            DateTimeOffset? observedAt;
+            var atGarden = patches.Count > 0;
+
+            if (atGarden)
             {
-                ImGui.TextColored(HubStyle.Faint, "No patches discovered. Stand in an outdoor housing plot.");
+                beds = patches.SelectMany(GardenMemory.Read).ToList();
+                observedAt = DateTimeOffset.UtcNow;
+            }
+            else
+            {
+                var records = GardenJournal.AllRecords;
+                if (records.Count == 0)
+                {
+                    ImGui.TextColored(HubStyle.Faint,
+                        "Gardener has never seen a garden of yours. Stand at your plot once and it will know which " +
+                        "step you are on.");
+                    beds = Array.Empty<BedState>();
+                    observedAt = null;
+                }
+                else
+                {
+                    beds = records
+                        .Select(r => new BedState(r.PatchKey, r.BedNumber, r.SeedRow, r.LastSeenStage, 0, 0, r.LastSeenAt))
+                        .ToList();
+                    observedAt = records.Max(r => r.LastSeenAt);
+                    ImGui.TextColored(HubStyle.Faint,
+                        $"You are not at the garden. This is what Gardener saw on your last visit, {GoalAgePhrase(observedAt.Value)} ago.");
+                }
+            }
+
+            var status = GoalProgress.Evaluate(plan, held, beds, observedAt);
+
+            var totalSteps = plan.Steps.Max(s => s.Number);
+            var currentNumber = plan.Steps[status.CurrentStepIndex].Number;
+            ImGui.TextUnformatted($"Step {currentNumber} of {totalSteps}");
+            ImGui.TextColored(HubStyle.Faint,
+                $"{totalSteps} steps. About {FormatDays(plan.BestCaseDuration)} if the gamble lands first time. " +
+                $"{plan.PeakBeds} beds at the busiest step.");
+
+            foreach (var warning in plan.Warnings)
+                ImGui.TextColored(HubStyle.Warn, warning);
+
+            ImGui.Separator();
+
+            var groups = plan.Steps
+                .Select((step, index) => (Step: step, Index: index))
+                .GroupBy(x => x.Step.Number)
+                .OrderBy(g => g.Key);
+
+            foreach (var group in groups)
+                DrawGoalStepGroup(group.Key, group.ToList(), status, plan, atGarden, held);
+        }
+
+        private static void DrawGoalStepGroup(
+            int number, List<(GoalStep Step, int Index)> members, GoalStatus status, GoalPlan plan, bool atGarden,
+            IReadOnlyDictionary<uint, int> held)
+        {
+            var isCurrent = members.Any(m => m.Index == status.CurrentStepIndex);
+            var allDone = members.All(m => status.Steps[m.Index].Status == GoalStepStatus.Done);
+
+            ImGui.PushID($"goalstep-{number}");
+            // The current step is always forced open — its detail and handoff live inside — since
+            // which step is current moves over time as the player makes progress, and ImGui's own
+            // FirstUseEver default would only ever expand whichever step happened to be current the
+            // very first time this header was drawn. Every other step defaults collapsed once and is
+            // then left to the player's own toggle, matching "steps after the current one render
+            // collapsed to their title" without fighting a manual expand to look something up.
+            if (isCurrent)
+                ImGui.SetNextItemOpen(true, ImGuiCond.Always);
+            else
+                ImGui.SetNextItemOpen(false, ImGuiCond.FirstUseEver);
+            var open = ImGui.CollapsingHeader($"Step {number}: {members[0].Step.Title}");
+
+            ImGui.SameLine();
+            if (isCurrent)
+                ImGui.TextColored(HubStyle.Accent, "Now");
+            else if (allDone)
+                ImGui.TextColored(HubStyle.Good, "Done");
+
+            if (open)
+            {
+                foreach (var (step, index) in members)
+                    DrawGoalStepBody(step, status.Steps[index], isCurrent, held);
+
+                if (isCurrent)
+                    DrawGoalCurrentStepDetail(plan, members, status, atGarden, held);
+            }
+
+            ImGui.PopID();
+        }
+
+        /// <summary>Body text dims to <see cref="HubStyle.Faint"/> once a step is behind or ahead of
+        /// the current one; the current step always reads at full strength, whatever its own status.</summary>
+        private static void DrawGoalStepBody(GoalStep step, GoalStepProgress progress, bool isCurrent, IReadOnlyDictionary<uint, int> held)
+        {
+            var color = isCurrent || progress.Status != GoalStepStatus.NotStarted ? HubStyle.Text : HubStyle.Faint;
+
+            foreach (var line in step.Body)
+                ImGui.TextColored(color, line);
+            foreach (var note in step.Notes)
+                ImGui.TextColored(HubStyle.Faint, note);
+
+            var (text, statusColor) = StatusLine(step, progress, held);
+            ImGui.TextColored(statusColor, text);
+        }
+
+        /// <summary>The exact phrasing from the copy's "Status lines" set, chosen by
+        /// <see cref="GoalStepProgress.Status"/> and, for the two growing statuses, by
+        /// <see cref="GoalStepProgress.Window"/>'s confidence and how close its bed is to wilting or
+        /// withering.</summary>
+        private static (string Text, Vector4 Color) StatusLine(GoalStep step, GoalStepProgress progress, IReadOnlyDictionary<uint, int> held)
+        {
+            switch (progress.Status)
+            {
+                case GoalStepStatus.Done:
+                    var doneText = step switch
+                    {
+                        ObtainStep o => $"Done. You hold {held.GetValueOrDefault(o.SeedRow)} {SeedItemName(o.SeedRow)}.",
+                        CrossStep c => $"Done. You hold {held.GetValueOrDefault(c.TargetRow)} {SeedItemName(c.TargetRow)}.",
+                        MultiplyStep m => $"Done. You hold {held.GetValueOrDefault(m.SeedRow)} {SeedItemName(m.SeedRow)}.",
+                        _ => "Done.",
+                    };
+                    return (doneText, HubStyle.Good);
+
+                case GoalStepStatus.AttemptUnresolved:
+                    return ($"Bed {progress.BedNumber} is growing. You will know whether it crossed when it is ready to harvest.", HubStyle.Text);
+
+                case GoalStepStatus.CrossedAndGrowing:
+                    return GrowingStatusLine(progress);
+
+                default:
+                    return (progress.Blocker ?? "Not started.", HubStyle.Text);
+            }
+        }
+
+        private static (string Text, Vector4 Color) GrowingStatusLine(GoalStepProgress progress)
+        {
+            var bedNumber = progress.BedNumber;
+            var record = progress.PatchKey is { } key && bedNumber is { } bn ? GardenJournal.Get(key, bn) : null;
+
+            if (record is null || progress.Window is not { Confidence: not HarvestConfidence.Unknown } window)
+                return ($"Growing in bed {bedNumber}. Gardener does not know when this one is ready. Set when you " +
+                       "planted it on the Garden tab.", HubStyle.Text);
+
+            var now = DateTimeOffset.UtcNow;
+            var earliest = window.Earliest;
+            if (earliest is { } e0 && now >= e0)
+                return ($"Ready to harvest in bed {bedNumber}.", HubStyle.Good);
+
+            var wiltsAt = Growth.WiltsAt(record);
+            if (wiltsAt is { } wa && now >= wa)
+            {
+                // Already wilted. Growth.WithersAt is null once the bed reads mature (stage 4, never
+                // withers) or wilt data is missing entirely, either of which means there is no real
+                // deadline to warn about here.
+                if (Growth.WithersAt(record) is { } withersAt && now < withersAt)
+                    return ($"Growing in bed {bedNumber}. It has wilted; tend it before it withers.", HubStyle.Bad);
+            }
+            else if (wiltsAt is { } wiltDeadline)
+            {
+                var untilWilt = wiltDeadline - now;
+                if (untilWilt <= TimeSpan.FromHours(6))
+                    return ($"Growing in bed {bedNumber}. Tend it within {Math.Max(0, (int)Math.Ceiling(untilWilt.TotalHours))} hours or it wilts.", HubStyle.Warn);
+            }
+
+            var confidenceNote = window.Confidence == HarvestConfidence.Estimated ? ", estimated" : "";
+            return earliest is { } e
+                ? ($"Growing in bed {bedNumber}. About {FormatDays(e - now)} left, at the earliest{confidenceNote}.", HubStyle.Text)
+                : ($"Growing in bed {bedNumber}.", HubStyle.Text);
+        }
+
+        /// <summary>The pair strip, economics and handoff for the one step currently in progress — the
+        /// only step whose planting detail matters right now. Renders nothing when the current step is
+        /// an obtain step, since there is no bed to strip yet.</summary>
+        private static void DrawGoalCurrentStepDetail(
+            GoalPlan plan, List<(GoalStep Step, int Index)> members, GoalStatus status, bool atGarden,
+            IReadOnlyDictionary<uint, int> held)
+        {
+            var crossOrMultiply = members.Select(m => m.Step).FirstOrDefault(s => s is CrossStep or MultiplyStep);
+            if (crossOrMultiply is null)
+                return;
+
+            if (!atGarden)
+            {
+                ImGui.TextColored(HubStyle.Faint, "Stand at your garden to see which beds this uses.");
+                DrawGoalHandoffDisabled("Stand at your garden to plant this step.");
                 return;
             }
 
-            foreach (var patch in patches)
-                DrawPlanForPatch(patch, planTargetSeed);
-        }
+            var patch = PatchDiscovery.Patches.First();
 
-        /// <summary>Why <paramref name="row"/> is greyed in the target picker, or null when it is not:
-        /// checked against every <see cref="SeedTable.DataGaps"/> list a crossable target could actually
-        /// land in, never a blanket "unavailable".</summary>
-        private static string? TargetGapReason(ushort row)
-        {
-            var gaps = SeedTable.DataGaps;
-            if (gaps.BundledRowsMissingFromSheet.Any(g => g.Row == row))
-                return "not found in the live seed sheet";
-            if (gaps.RowsAbsentFromCrossData.Any(g => g.Row == row))
-                return "missing cross data";
-            if (gaps.RowsWithNoGrowTime.Any(g => g.Row == row))
-                return "no grow time data";
-            return null;
-        }
+            if (MissingSeedForHandoff(crossOrMultiply, held) is { } missing)
+            {
+                DrawGoalHandoffDisabled($"You need {missing} to plant this step.");
+                return;
+            }
 
-        private static void DrawPlanForPatch(Patch patch, ushort target)
-        {
-            ImGui.Separator();
-            ImGui.TextUnformatted($"{patch.Kind} patch");
-            ImGui.TextColored(HubStyle.Faint, patch.Key);
+            var stepSoilPreference = crossOrMultiply is MultiplyStep ? SoilPreference.HighestShroud : Plugin.C.SoilForCross;
+            var bag = Bags.Scan();
+            if (GardeningItems.BestSoil(stepSoilPreference, bag) is null)
+            {
+                var family = SoilFamilyForPreference(stepSoilPreference);
+                DrawGoalHandoffDisabled(
+                    $"You have no {family} Topsoil. Mine Grade 3 in {SoilSources.Where(family, 3)}.");
+                return;
+            }
+
+            var targetSeed = crossOrMultiply switch
+            {
+                CrossStep c => (ushort)c.SecondSeedRow,
+                MultiplyStep m => (ushort)m.SeedRow,
+                _ => (ushort)0,
+            };
 
             var memory = GardenMemory.Read(patch);
-            if (memory.Count == 0)
+            var singleStepPlan = CrossPlanner.PlanSingleStep(targetSeed, patch, memory, bag);
+
+            if (singleStepPlan.Steps.Count > 0)
             {
-                ImGui.TextColored(HubStyle.Faint, "no data for this patch");
-                return;
-            }
-
-            var bag = Bags.Scan();
-            var plan = CrossPlanner.PlanSingleStep(target, patch, memory, bag);
-
-            if (plan.Steps.Count == 0)
-                DrawRouteView(patch, target, plan, bag);
-            else
-                DrawPlanSteps(patch, plan);
-
-            DrawRemoveCropButtons(patch, memory);
-        }
-
-        private static void DrawRouteView(Patch patch, ushort target, LayoutPlan plan, IReadOnlyList<SlotView> bag)
-        {
-            foreach (var warning in plan.Warnings)
-                ImGui.TextColored(HubStyle.Warn, warning);
-
-            var held = bag
-                .Select(s => SeedItems.SeedRowForItem(s.ItemId))
-                .Where(r => r.HasValue)
-                .Select(r => r!.Value)
-                .Distinct()
-                .ToList();
-            var route = CrossPlanner.Route(target, held);
-            ImGui.TextColored(HubStyle.Faint, route.Summary);
-
-            foreach (var step in route.Steps)
-            {
-                var a = SeedItems.ProduceName(step.ParentA);
-                var b = SeedItems.ProduceName(step.ParentB);
-                var t = SeedItems.ProduceName(step.Target);
-                var yieldText = step.SeedYield is { } y ? $"{y} seed(s)" : "seed yield unknown";
-                var sustainText = step.Sustains ? "sustains itself" : "won't sustain itself alone";
-                ImGui.TextUnformatted($"{a} x {b} -> {t} ({yieldText}, {sustainText})");
-            }
-        }
-
-        private static void DrawPlanSteps(Patch patch, LayoutPlan plan)
-        {
-            if (ImGui.BeginTable($"##plan-{patch.Key}", 4, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg))
-            {
-                ImGui.TableSetupColumn("Bed");
-                ImGui.TableSetupColumn("Plant");
-                ImGui.TableSetupColumn("Soil");
-                ImGui.TableSetupColumn("Why");
-                ImGui.TableHeadersRow();
-
-                foreach (var step in plan.Steps.OrderBy(s => s.BedNumber))
+                if (ImGui.BeginTable($"##goalpair-{patch.Key}", 2, ImGuiTableFlags.Borders))
                 {
                     ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted(step.BedNumber.ToString());
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted(SeedItems.ProduceName(step.SeedRow));
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted(ItemSheet.Name(step.SoilItemId));
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted(step.Why);
+                    foreach (var step in singleStepPlan.Steps.OrderBy(s => s.BedNumber))
+                    {
+                        ImGui.TableNextColumn();
+                        var label = singleStepPlan.ExpectedTargets.ContainsKey(step.BedNumber)
+                            ? $"bed {step.BedNumber}: plant {SeedItems.ProduceName(step.SeedRow)} here"
+                            : $"bed {step.BedNumber}: {SeedItems.ProduceName(step.SeedRow)}";
+                        ImGui.TextUnformatted($"[{label}]");
+                    }
+                    ImGui.EndTable();
                 }
-
-                ImGui.EndTable();
             }
 
-            foreach (var warning in plan.Warnings)
+            foreach (var warning in singleStepPlan.Warnings)
                 ImGui.TextColored(HubStyle.Warn, warning);
 
-            if (GardenerGuard.BlockingReason() is { } reason)
+            DrawGoalHandoff(patch, singleStepPlan);
+        }
+
+        /// <summary>The seed one more planting of the current step needs and does not have, worded for
+        /// the handoff's disabled reason — null when both are covered. A route can want several
+        /// attempts of a pair over its lifetime, but a single "Plant this step" press only ever plants
+        /// one, so this checks against 1, not the route's total.</summary>
+        private static string? MissingSeedForHandoff(GoalStep step, IReadOnlyDictionary<uint, int> held) => step switch
+        {
+            CrossStep c when held.GetValueOrDefault(c.FirstSeedRow) < 1 && held.GetValueOrDefault(c.SecondSeedRow) < 1 =>
+                $"{SeedItemName(c.FirstSeedRow)} and {SeedItemName(c.SecondSeedRow)}",
+            CrossStep c when held.GetValueOrDefault(c.FirstSeedRow) < 1 => $"1 more {SeedItemName(c.FirstSeedRow)}",
+            CrossStep c when held.GetValueOrDefault(c.SecondSeedRow) < 1 => $"1 more {SeedItemName(c.SecondSeedRow)}",
+            MultiplyStep m when held.GetValueOrDefault(m.SeedRow) < 1 => $"1 more {SeedItemName(m.SeedRow)}",
+            _ => null,
+        };
+
+        private static void DrawGoalHandoffDisabled(string reason) => ImGui.TextColored(HubStyle.Faint, reason);
+
+        /// <summary>The one-step handoff: a single <see cref="HubStyle.Primary"/> control that plants
+        /// exactly the beds named above and stops. Never queues a second step and never re-runs itself:
+        /// Gardener plants one step, when asked, and stops.</summary>
+        private static void DrawGoalHandoff(Patch patch, LayoutPlan singleStepPlan)
+        {
+            var canPlant = singleStepPlan.Steps.Count > 0 && CrossPlanner.Verify(singleStepPlan, patch);
+            if (!canPlant)
             {
-                ImGui.TextColored(HubStyle.Faint, reason);
+                DrawGoalHandoffDisabled("Gardener cannot fit this step into the free beds on this patch.");
                 return;
             }
 
             using (HubStyle.Primary())
             {
-                if (ImGui.Button($"Run plan##runplan-{patch.Key}"))
+                if (ImGui.Button("Plant this step"))
                 {
                     if (Plugin.C.ConfirmBeforeRun)
-                        ImGui.OpenPopup($"Confirm run plan##{patch.Key}");
+                        ImGui.OpenPopup("Confirm plant goal step");
                     else
-                        StartPlan(plan, patch);
+                        StartGoalStep(singleStepPlan, patch);
                 }
             }
 
-            if (!ImGui.BeginPopup($"Confirm run plan##{patch.Key}"))
+            if (!ImGui.BeginPopup("Confirm plant goal step"))
                 return;
 
-            ImGui.TextUnformatted($"Plant {plan.Steps.Count} bed(s) on this patch as shown above?");
-            if (ImGui.Button("Confirm"))
+            ImGui.TextUnformatted("Plant this step?");
+            var lines = singleStepPlan.Steps.OrderBy(s => s.BedNumber)
+                .Select(s => $"{SeedItemName(s.SeedRow)} in bed {s.BedNumber}");
+            ImGui.TextWrapped(
+                $"Gardener will plant {string.Join(" and ", lines)}, using {ItemSheet.Name(singleStepPlan.Steps[0].SoilItemId)}. " +
+                "It plants this one step and stops.");
+            if (ImGui.Button("Plant it"))
             {
-                StartPlan(plan, patch);
+                StartGoalStep(singleStepPlan, patch);
                 ImGui.CloseCurrentPopup();
             }
             ImGui.SameLine();
@@ -484,10 +842,49 @@ namespace Gardener.Windows
             ImGui.EndPopup();
         }
 
-        private static void StartPlan(LayoutPlan plan, Patch patch)
+        private static void StartGoalStep(LayoutPlan singleStepPlan, Patch patch)
         {
-            SchedulerMain.PendingPlan = plan;
+            SchedulerMain.PendingPlan = singleStepPlan;
             SchedulerMain.EnablePlugin(SweepKind.Plan, patch);
+        }
+
+        private static string SeedItemName(uint row) =>
+            SeedItems.SeedItemForRow(row) is { } itemId ? XivHubPluginKit.Inventory.ItemSheet.Name(itemId) : $"row {row}'s seed";
+
+        /// <summary>Which family drives a <see cref="SoilPreference"/>'s odds, for
+        /// <see cref="SoilSources.Where"/>'s sake — <see cref="SoilPreference.Fixed"/> pins one item
+        /// rather than a family, so it falls back to the one that actually moves intercross odds, the
+        /// same choice <see cref="GoalRoute"/> makes when it has no live pin to read either.</summary>
+        private static SoilFamily SoilFamilyForPreference(SoilPreference preference) => preference switch
+        {
+            SoilPreference.HighestThanalan => SoilFamily.Thanalan,
+            SoilPreference.HighestShroud => SoilFamily.Shroud,
+            SoilPreference.HighestLaNoscean => SoilFamily.LaNoscean,
+            SoilPreference.Fixed => SoilFamily.Thanalan,
+            _ => throw new ArgumentOutOfRangeException(nameof(preference), preference, "unhandled SoilPreference"),
+        };
+
+        /// <summary>Rule 1 of the Goal tab's generated copy: one number only when every soil tier
+        /// agrees, a range otherwise.</summary>
+        private static string GoalYieldText(int[]? tiers)
+        {
+            if (tiers is not { Length: > 0 })
+                return "an unknown number of";
+            return tiers.All(t => t == tiers[0]) ? tiers[0].ToString() : $"{tiers.Min()} to {tiers.Max()}";
+        }
+
+        private static string GoalDaysPhrase(int growHours) =>
+            growHours > 48 ? $"about {Math.Round(growHours / 24.0):F0} days" : $"about {Math.Round((double)growHours):F0} hours";
+
+        /// <summary>Durations round to days above 48 hours and to hours below, and never to the
+        /// minute — the same rule the harvest window and wilt cadence follow.</summary>
+        private static string FormatDays(TimeSpan span) =>
+            span.TotalHours > 48 ? $"{Math.Round(span.TotalDays):F0} days" : $"{Math.Round(span.TotalHours):F0} hours";
+
+        private static string GoalAgePhrase(DateTimeOffset at)
+        {
+            var span = DateTimeOffset.UtcNow - at;
+            return span.TotalHours < 1 ? $"{Math.Max(1, (int)span.TotalMinutes)} minutes" : $"{FormatDays(span)}";
         }
 
         /// <summary>One button per occupied bed, never part of a sweep: <see cref="GardenerGuard.BlockingReason"/>
