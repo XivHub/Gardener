@@ -8,6 +8,7 @@ using ECommons.Automation.NeoTaskManager;
 using XivHubPluginKit;
 using XivHubPluginKit.UI;
 using Gardener.Game;
+using Gardener.Helpers;
 using Gardener.Windows;
 
 namespace Gardener
@@ -32,6 +33,7 @@ namespace Gardener
         [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
         [PluginService] public static IDtrBar DtrBar { get; private set; } = null!;
         [PluginService] public static IGameGui GameGui { get; private set; } = null!;
+        [PluginService] public static ISeStringEvaluator SeStringEvaluator { get; private set; } = null!;
 
         public static TaskManager TaskManager { get; private set; } = null!;
         public static DevTelemetry Telemetry { get; private set; } = null!;
@@ -81,7 +83,7 @@ namespace Gardener
 
             CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Open the Gardener window."
+                HelpMessage = "Open the Gardener window. Subcommands: dump, dump menu."
             });
 
             PluginInterface.UiBuilder.Draw += DrawUI;
@@ -93,6 +95,7 @@ namespace Gardener
 
         private void OnFrameworkUpdate(IFramework framework)
         {
+            PatchDiscovery.Tick();
         }
 
         private void OnLogout(int type, int code)
@@ -120,7 +123,19 @@ namespace Gardener
 
         private void OnCommand(string command, string args)
         {
-            mainWindow.IsOpen = true;
+            var arg = args.Trim().ToLowerInvariant();
+            switch (arg)
+            {
+                case "dump":
+                    DebugDump.Run(menu: false);
+                    break;
+                case "dump menu":
+                    DebugDump.Run(menu: true);
+                    break;
+                default:
+                    mainWindow.IsOpen = true;
+                    break;
+            }
         }
 
         private void ToggleMainUi() => mainWindow.Toggle();
@@ -135,6 +150,10 @@ namespace Gardener
         /// </summary>
         private void DrawUI()
         {
+            // ImGui's clipboard is only safe to touch on the draw thread; the dump command queues
+            // text for this to pick up rather than writing it directly.
+            DebugDump.DrainClipboard();
+
             HubStyle.Push();
             try { WindowSystem.Draw(); }
             finally { HubStyle.Pop(); }
