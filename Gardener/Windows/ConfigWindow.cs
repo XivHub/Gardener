@@ -137,6 +137,46 @@ namespace Gardener.Windows
             ImGui.TextColored(HubStyle.Faint,
                 "The game accepts one application per bed per hour regardless of this setting; a shorter " +
                 "cooldown here just tries earlier and gets refused.");
+
+            ImGui.Spacing();
+            ImGui.TextUnformatted("Which fertilizer to use");
+            DrawFixedFertilizerPicker();
+        }
+
+        /// <summary>Every recognised fertilizer, greyed out when the player is not currently holding
+        /// it. <see cref="Configuration.FixedFertilizerItemId"/> 0 is "Automatic", the same first-held
+        /// default <see cref="GardeningItems.BestFertilizer"/> falls back to.</summary>
+        private void DrawFixedFertilizerPicker()
+        {
+            var heldIds = ScanBag().Select(s => s.ItemId).ToHashSet();
+
+            ImGui.Indent();
+            if (ImGui.RadioButton("Automatic (first one held)##fixedfertilizer-auto", cfg.FixedFertilizerItemId == 0))
+            {
+                cfg.FixedFertilizerItemId = 0;
+                cfg.Save();
+            }
+
+            foreach (var itemId in GardeningItems.Fertilizers)
+            {
+                var held = heldIds.Contains(itemId);
+                var selected = cfg.FixedFertilizerItemId == itemId;
+
+                using (ImRaii.PushColor(ImGuiCol.Text, held ? HubStyle.Text : HubStyle.Faint))
+                {
+                    if (ImGui.RadioButton($"{ItemSheet.Name(itemId)}##fixedfertilizer-{itemId}", selected))
+                    {
+                        cfg.FixedFertilizerItemId = itemId;
+                        cfg.Save();
+                    }
+                }
+                if (!held)
+                {
+                    ImGui.SameLine();
+                    ImGui.TextColored(HubStyle.Faint, "(not held)");
+                }
+            }
+            ImGui.Unindent();
         }
 
         private void DrawRemindersSection()

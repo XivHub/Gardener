@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
 using ECommons;
 using ECommons.UIHelpers;
+using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -370,6 +371,8 @@ public static class DebugDump
         sb.AppendLine();
         AppendAgentHousingPlant(sb);
         sb.AppendLine();
+        AppendContextMenu(sb);
+        sb.AppendLine();
         AppendTarget(sb);
         sb.AppendLine();
         AppendTalk(sb);
@@ -554,11 +557,53 @@ public static class DebugDump
         sb.AppendLine("SelectedItems2 (offset 0x68, role unknown):");
         AppendSelectedItems(sb, agent->SelectedItems2);
 
-        // The plant capture recorded SelectableItemCount == 0 throughout; dumped here too so a
-        // fertilizer-dialog capture (never taken) can show whether that flow populates this list
-        // instead of, or alongside, SelectedItems.
+        // Both the plant and the fertilize capture recorded SelectableItemCount == 0 throughout —
+        // fertilizing opens no dialog for this list to populate, see the Context menu section below.
+        // Dumped anyway: it is part of AgentHousingPlant's live state either way.
         sb.AppendLine($"SelectableItems (first {agent->SelectableItemCount}):");
         AppendSelectableItems(sb, agent->SelectableItems, agent->SelectableItemCount);
+    }
+
+    /// <summary>
+    /// The generic item context menu <c>AgentInventoryContext.OpenForItemSlot</c> opens: fertilizing
+    /// drives an item's own context menu rather than a dialog, so this is what a live capture needs to
+    /// confirm which entry the automation should select and that the menu opened at all.
+    /// <c>AgentHousingPlant.PlotType</c> is recorded alongside it because 14 (planting) and 15
+    /// (fertilizing) are the only signal that either mode is active once the bed's own
+    /// <c>SelectString</c> has already closed.
+    /// </summary>
+    private static unsafe void AppendContextMenu(StringBuilder sb)
+    {
+        sb.AppendLine("== Context menu ==");
+
+        // SAFETY: AgentModule.Instance() and GetAgentByInternalId return possibly-null pointers into
+        // live agent memory; guarded below before any field is read.
+        var agentModule = AgentModule.Instance();
+        var housingPlant = agentModule == null ? null : (AgentHousingPlant*)agentModule->GetAgentByInternalId(AgentId.HousingPlant);
+        sb.AppendLine(housingPlant == null
+            ? "AgentHousingPlant.PlotType: (unavailable)"
+            : $"AgentHousingPlant.PlotType: {housingPlant->PlotType}");
+
+        // SAFETY: GetAddonByName<AtkUnitBase> returns a possibly-null pointer into live addon memory;
+        // guarded below before any field is read.
+        var addon = Plugin.GameGui.GetAddonByName<AtkUnitBase>("ContextMenu");
+        if (addon == null || !addon->IsVisible)
+        {
+            sb.AppendLine("Open: no");
+            return;
+        }
+
+        sb.AppendLine("Open: yes");
+
+        var contextMenu = new AddonMaster.ContextMenu(addon);
+        sb.AppendLine("Entries:");
+        foreach (var entry in contextMenu.Entries)
+            sb.AppendLine($"  [{entry.Index}] \"{entry.Text}\" => {GardenMenuText.Classify(entry.Text)} enabled={entry.Enabled}");
+
+        sb.AppendLine("AtkValues:");
+        var values = addon->AtkValuesSpan;
+        for (var i = 0; i < values.Length; i++)
+            sb.AppendLine($"  [{i}] {values[i].Type}: {values[i].GetValueAsString()}");
     }
 
     private static unsafe void AppendSelectedItems(StringBuilder sb, Span<AgentHousingPlant.SelectedItem> items)

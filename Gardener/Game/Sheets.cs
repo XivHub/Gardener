@@ -9,11 +9,13 @@ public static class Sheets
     public static readonly ExcelSheet<GardeningSeed> GardeningSeedSheet;
     public static readonly ExcelSheet<Item> ItemSheet;
     public static readonly ExcelSheet<ItemUICategory> ItemUICategorySheet;
+    public static readonly ExcelSheet<Addon> AddonSheet;
 
     static Sheets()
     {
         GardeningSeedSheet = Plugin.DataManager.GetExcelSheet<GardeningSeed>()!;
         ItemSheet = Plugin.DataManager.GetExcelSheet<Item>()!;
         ItemUICategorySheet = Plugin.DataManager.GetExcelSheet<ItemUICategory>()!;
+        AddonSheet = Plugin.DataManager.GetExcelSheet<Addon>()!;
     }
 }

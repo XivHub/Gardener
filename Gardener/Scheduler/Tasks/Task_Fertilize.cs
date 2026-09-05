@@ -5,6 +5,7 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using ECommons.Automation.NeoTaskManager;
 using ECommons.UIHelpers;
+using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Gardener.Game;
@@ -16,17 +17,21 @@ namespace Gardener.Scheduler.Tasks;
 
 /// <summary>
 /// Selects the <see cref="MenuKey.SetFertilizer"/> entry on the bed <see cref="Task_OpenBed"/> already
-/// proved is open and correct, fills the <c>HousingGardening</c> dialog and confirms it. The dialog's
-/// shape for this flow has never been captured live — the seed/soil capture in
-/// <c>AgentHousingPlant.SelectedItems</c> is the only confirmed layout, and this task assumes the
-/// fertilizer sits in the same slot 0 a soil would occupy, since the struct offers no other confirm
-/// entry point (<c>ConfirmSeedAndSoilSelection()</c> is the only exposed member function). Confirm this
-/// assignment against a real capture (<c>/gardener dump menu</c> with Fertilize Crop selected) before
-/// relying on it.
+/// proved is open and correct, then follows the item's own path rather than the bed's: choosing
+/// Fertilize Crop opens no dialog. It closes the bed's <c>SelectString</c> and flips
+/// <c>AgentHousingPlant.PlotType</c> to 15, and the game waits for the fertilizer to be used from the
+/// bag's own context menu (<c>AgentInventoryContext.OpenForItemSlot</c>) — the same route DailyRoutines
+/// takes. Confirmed live: no <c>HousingGardening</c> addon opens, <c>SelectableItemCount</c> stays 0,
+/// and both <c>SelectedItems</c> entries stay zeroed throughout.
 /// </summary>
 public static class Task_Fertilize
 {
-    private const string AddonName = "HousingGardening";
+    private const string ContextMenuAddonName = "ContextMenu";
+
+    // FFXIVClientStructs marks AgentHousingPlant.PlotType's meaning unknown; a live capture resolved
+    // it: 14 is the seed/soil dialog, 15 is this item-context-menu flow, and there is no third value
+    // to confuse it with.
+    private const uint FertilizePlotType = 15;
 
     public static void Enqueue()
     {
@@ -35,7 +40,12 @@ public static class Task_Fertilize
         var bedNumber = SchedulerMain.CurrentBedNumber!.Value;
 
         var addonSeen = false;
-        void OnAddonPostSetup(AddonEvent type, AddonArgs args) => addonSeen = true;
+        void OnContextMenuPostSetup(AddonEvent type, AddonArgs args) => addonSeen = true;
+
+        // Set once the context-menu entry is actually clicked, so the record-writing step at the end
+        // only counts a fertilizer that was actually sent, never a bed an earlier step already gave up
+        // on.
+        var fertilizeSent = false;
 
         tm.Enqueue(() =>
         {
@@ -79,62 +89,112 @@ public static class Task_Fertilize
                 return true;
             }
 
-            addonSeen = false;
-            Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, AddonName, OnAddonPostSetup);
             entries[index].Select();
             return true;
         }, $"Fertilize: select SetFertilizer (bed {bedNumber})");
 
-        tm.Enqueue(() => addonSeen, $"Fertilize: wait for {AddonName} (bed {bedNumber})",
+        // No addon opens for this flow, so PlotType is the only readiness signal there is: it is 0
+        // before the entry is accepted and 15 once fertilize mode is active.
+        tm.Enqueue(() => IsInFertilizeMode(), $"Fertilize: wait for fertilize mode (bed {bedNumber})",
             new TaskManagerConfiguration { TimeLimitMS = Plugin.C.MenuTimeoutMs, AbortOnTimeout = false });
 
         tm.Enqueue(() =>
         {
-            Plugin.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, AddonName, OnAddonPostSetup);
-
-            if (!addonSeen)
+            if (!IsInFertilizeMode())
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: {AddonName} never opened; skipping.");
+                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: fertilize mode never engaged; skipping.");
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
             }
 
             var bag = ScanBag();
-            var fertilizerSlot = bag.FirstOrDefault(s => GardeningItems.Fertilizers.Contains(s.ItemId));
+            var fertilizerId = GardeningItems.BestFertilizer(bag);
+            var fertilizerSlot = fertilizerId is { } id ? bag.FirstOrDefault(s => s.ItemId == id) : null;
             if (fertilizerSlot is null)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: ran out of fertilizer mid-sweep; stopping.");
-                SchedulerMain.State = GardenerState.Error;
+                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: fertilizer is no longer in the bag; skipping.");
+                SchedulerMain.SkippedCount++;
+                SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
             }
 
             unsafe
             {
-                // SAFETY: AgentModule.Instance() is a static client pointer; GetAgentByInternalId's
-                // result is reinterpreted only after a null check, matching DebugDump's own read of
-                // this agent.
+                // SAFETY: AgentInventoryContext.Instance() already null-checks AgentModule internally.
+                // AgentModule.Instance() here is the same static client pointer, and the AgentInventory
+                // it returns is reinterpreted only after a null check, matching DebugDump's own reads
+                // of agent memory.
+                var inventoryContext = AgentInventoryContext.Instance();
                 var agentModule = AgentModule.Instance();
-                var agent = agentModule == null ? null : (AgentHousingPlant*)agentModule->GetAgentByInternalId(AgentId.HousingPlant);
-                if (agent == null)
+                var inventoryAgent = agentModule == null ? null : agentModule->GetAgentByInternalId(AgentId.Inventory);
+                if (inventoryContext == null || inventoryAgent == null)
                 {
-                    ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: AgentHousingPlant unavailable; skipping.");
+                    ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: inventory context agent unavailable; skipping.");
                     SchedulerMain.SkippedCount++;
                     SchedulerMain.State = GardenerState.ClosingMenu;
                     return true;
                 }
 
-                agent->SelectedItems[0] = new AgentHousingPlant.SelectedItem
-                {
-                    InventoryType = fertilizerSlot.Container,
-                    InventorySlot = (ushort)fertilizerSlot.SlotIndex,
-                    ItemId = fertilizerSlot.ItemId,
-                };
-                agent->ConfirmSeedAndSoilSelection();
+                addonSeen = false;
+                Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, ContextMenuAddonName, OnContextMenuPostSetup);
+                inventoryContext->OpenForItemSlot(fertilizerSlot.Container, fertilizerSlot.SlotIndex, 0, inventoryAgent->AddonId);
             }
 
             return true;
-        }, $"Fertilize: fill and confirm (bed {bedNumber})");
+        }, $"Fertilize: open the fertilizer's context menu (bed {bedNumber})");
+
+        tm.Enqueue(() => addonSeen, $"Fertilize: wait for {ContextMenuAddonName} (bed {bedNumber})",
+            new TaskManagerConfiguration { TimeLimitMS = Plugin.C.MenuTimeoutMs, AbortOnTimeout = false });
+
+        tm.Enqueue(() =>
+        {
+            Plugin.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, ContextMenuAddonName, OnContextMenuPostSetup);
+
+            if (!addonSeen)
+            {
+                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: the fertilizer's context menu never opened; skipping.");
+                SchedulerMain.SkippedCount++;
+                SchedulerMain.State = GardenerState.ClosingMenu;
+                return true;
+            }
+
+            var addon = Plugin.GameGui.GetAddonByName(ContextMenuAddonName, 1);
+            var contextMenu = new AddonMaster.ContextMenu(addon);
+            if (addon.IsNull || !contextMenu.IsAddonReady)
+            {
+                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: the fertilizer's context menu closed before it could be read; skipping.");
+                SchedulerMain.SkippedCount++;
+                SchedulerMain.State = GardenerState.ClosingMenu;
+                return true;
+            }
+
+            var entries = contextMenu.Entries;
+            var index = Array.FindIndex(entries, e => GardenMenuText.IsFertilizeAction(e.Text));
+            if (index < 0)
+            {
+                var seen = string.Join(", ", entries.Select(e => GardenMenuText.Classify(e.Text)));
+                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: no Fertilize entry on the item's context menu " +
+                                   $"(offered: {seen}); closing and skipping.");
+                SchedulerMain.SkippedCount++;
+                unsafe { contextMenu.Base->Close(true); }
+                SchedulerMain.State = GardenerState.ClosingMenu;
+                return true;
+            }
+
+            if (!entries[index].Select())
+            {
+                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: the Fertilize entry was disabled on the item's " +
+                                   "context menu; closing and skipping.");
+                SchedulerMain.SkippedCount++;
+                unsafe { contextMenu.Base->Close(true); }
+                SchedulerMain.State = GardenerState.ClosingMenu;
+                return true;
+            }
+
+            fertilizeSent = true;
+            return true;
+        }, $"Fertilize: select the item's Fertilize entry (bed {bedNumber})");
 
         tm.Enqueue(() =>
         {
@@ -147,8 +207,8 @@ public static class Task_Fertilize
 
         tm.Enqueue(() =>
         {
-            if (SchedulerMain.State == GardenerState.Error)
-                return true; // already terminal; nothing left to record
+            if (!fertilizeSent)
+                return true; // an earlier step already skipped this bed; nothing to record
 
             var record = GardenJournal.Get(patch.Key, bedNumber);
             if (record is null)
@@ -172,6 +232,15 @@ public static class Task_Fertilize
             SchedulerMain.State = GardenerState.ClosingMenu;
             return true;
         }, $"Fertilize: record (bed {bedNumber})");
+    }
+
+    private static unsafe bool IsInFertilizeMode()
+    {
+        // SAFETY: AgentModule.Instance() is a static client pointer; the agent pointer is reinterpreted
+        // only after a null check, matching DebugDump's own read of this agent.
+        var agentModule = AgentModule.Instance();
+        var agent = agentModule == null ? null : (AgentHousingPlant*)agentModule->GetAgentByInternalId(AgentId.HousingPlant);
+        return agent != null && agent->PlotType == FertilizePlotType;
     }
 
     private static List<SlotView> ScanBag() =>

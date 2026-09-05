@@ -141,6 +141,32 @@ public static class GardeningItems
         return $"No {family} Topsoil in the bag.";
     }
 
+    /// <summary>
+    /// The fertilizer to use, scanned fresh from <paramref name="bag"/> at the moment it is needed —
+    /// never a slot recorded earlier, since fertilizing runs the item's own context menu rather than
+    /// a dialog and the bag can change between the sweep's upfront check and this bed's turn.
+    /// <see cref="Configuration.FixedFertilizerItemId"/> is honoured the same way <see cref="BestSoil"/>
+    /// honours <see cref="SoilPreference.Fixed"/>: real, live and actually held, or null, never a
+    /// fallback to a different fertilizer. Zero means no pin, in which case the first held item this
+    /// sheet names as a fertilizer is used.
+    /// </summary>
+    public static uint? BestFertilizer(IEnumerable<SlotView> bag)
+    {
+        var held = bag as ICollection<SlotView> ?? bag.ToList();
+
+        if (Plugin.C.FixedFertilizerItemId != 0)
+        {
+            var fixedId = Plugin.C.FixedFertilizerItemId;
+            return fertilizers.Contains(fixedId) && held.Any(slot => slot.ItemId == fixedId) ? fixedId : null;
+        }
+
+        foreach (var id in fertilizers)
+            if (held.Any(slot => slot.ItemId == id))
+                return id;
+
+        return null;
+    }
+
     private static SoilFamily FamilyFor(SoilPreference preference) => preference switch
     {
         SoilPreference.HighestThanalan => SoilFamily.Thanalan,

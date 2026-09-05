@@ -39,6 +39,9 @@ public enum MenuKey
 /// </summary>
 public static class GardenMenuText
 {
+    // The gardening block of the Addon sheet spells the context-menu action "Fertilize".
+    private static readonly uint[] FertilizeAddonRows = { 6417u, 6423u };
+
     private const string SheetName = "custom/001/CmnDefHousingGardeningPlant_00151";
     private const string KeyPrefix = "TEXT_CMNDEFHOUSINGGARDENINGPLANT";
     private const uint BedPatchPromptRow = 6420;
@@ -135,6 +138,30 @@ public static class GardenMenuText
 
     /// <summary>Classifies observed <c>SelectString</c> or <c>Talk</c> text by exact match against
     /// the sheet's localised text, never by index and never by English.</summary>
+    /// <summary>
+    /// True when <paramref name="text"/> is the fertilize entry of an item's inventory context menu.
+    /// That menu is worded from the <c>Addon</c> sheet ("Fertilize"), not from the bed menu's own
+    /// sheet ("Fertilize Crop"), so both spellings have to be accepted to reach the same action.
+    /// </summary>
+    public static bool IsFertilizeAction(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        if (Classify(text) == MenuKey.SetFertilizer)
+            return true;
+
+        foreach (var row in FertilizeAddonRows)
+        {
+            var label = Sheets.AddonSheet.GetRowOrDefault(row)?.Text.ExtractText();
+            if (!string.IsNullOrWhiteSpace(label) &&
+                string.Equals(label.Trim(), text.Trim(), StringComparison.CurrentCultureIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
     public static MenuKey Classify(string text) =>
         Available && keyByText.TryGetValue(text, out var key) ? key : MenuKey.Unknown;
 
