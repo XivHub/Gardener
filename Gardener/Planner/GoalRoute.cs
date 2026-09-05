@@ -77,7 +77,7 @@ public static class GoalRoute
         {
             var (a, b) = winner[target];
             var outcomeCount = SeedTable.TargetsFor(a, b).Count;
-            var attempts = CrossOdds.BedsForNineInTen(ResolveChance(a, b, target, outcomeCount, family, AssumedSoilGrade));
+            var attempts = CrossOdds.BedsForNineInTen(ResolveChance(outcomeCount, family, AssumedSoilGrade));
             attemptsByTarget[target] = attempts;
 
             var heldA = held.GetValueOrDefault(a);
@@ -178,7 +178,7 @@ public static class GoalRoute
                         continue;
 
                     var outcomeCount = SeedTable.TargetsFor(a, b).Count;
-                    var p = ResolveChance(a, b, target, outcomeCount, family, AssumedSoilGrade);
+                    var p = ResolveChance(outcomeCount, family, AssumedSoilGrade);
                     var expectedBeds = p > 0 ? 1.0 / p : double.PositiveInfinity;
                     var candidate = costA + costB + expectedBeds * growHours;
 
@@ -198,19 +198,15 @@ public static class GoalRoute
     }
 
     /// <summary>
-    /// The chance one planting of this pair lands on <paramref name="target"/>, preferring
-    /// ffxivgardening.com's confirmed measurement (<see cref="Game.SeedTable.EfficiencyFor"/>) over the
-    /// soil's headline community-estimated rate wherever it applies safely. Only wired in for a
-    /// single-outcome pair: a pair's efficiency figures are recorded per outcome row and do not sum to
-    /// 100% across a pair's outcomes (they cover more than a strict partition, including the "grew as
-    /// itself" case), so splitting a multi-outcome pair's chance by measured figures would misstate it;
-    /// a single-outcome pair has no such ambiguity; "did this cross land" and "did it land on the only
-    /// outcome" are the same question.
+    /// The chance one planting lands on one particular outcome of a pair with
+    /// <paramref name="outcomeCount"/> possible offspring, sized purely from the soil's
+    /// community-estimated intercross rate split evenly across those outcomes.
+    /// <see cref="Game.SeedTable.EfficiencyFor"/> is not usable here: it is a per-pair rating with an
+    /// unpublished definition, not a measured chance, so it ranks candidate pairs against each other
+    /// elsewhere in this file but never sizes a step.
     /// </summary>
-    private static double ResolveChance(uint a, uint b, uint target, int outcomeCount, SoilFamily family, int grade) =>
-        outcomeCount == 1 && SeedTable.EfficiencyFor(a, b, target) is { } measuredPercent
-            ? measuredPercent / 100.0
-            : CrossOdds.Chance(outcomeCount, family, grade);
+    private static double ResolveChance(int outcomeCount, SoilFamily family, int grade) =>
+        CrossOdds.Chance(outcomeCount, family, grade);
 
     /// <summary>Longest path in growHours from the goal back to its leaves, counting sibling branches
     /// once (the max, not the sum) since independent crosses run in parallel beds — the number the
@@ -289,7 +285,7 @@ public static class GoalRoute
         else
         {
             var others = outcomes.Where(o => o != target).Select(SeedItems.ProduceName);
-            var chance = ResolveChance(first, second, target, outcomes.Length, family, AssumedSoilGrade);
+            var chance = ResolveChance(outcomes.Length, family, AssumedSoilGrade);
             body.Add(
                 $"The second bed becomes {targetName} or {string.Join(" or ", others)}, and you cannot pick which. " +
                 $"{Capitalize(CrossOdds.OddsPhrase(chance))} of these beds give {targetName}.");
@@ -327,11 +323,12 @@ public static class GoalRoute
         }
 
         var notes = new List<string>();
-        if (SeedTable.EfficiencyFor(first, second, target) is { } measured)
+        if (SeedTable.EfficiencyFor(first, second, target) is { } rating)
         {
-            notes.Add(singleOutcome
-                ? $"Measured: ffxivgardening.com's confirmed crosses land on {targetName} {CrossOdds.OddsPhrase(measured / 100.0)} of the time; Gardener sized this step from that instead of the general soil estimate."
-                : $"Measured: ffxivgardening.com's confirmed crosses land on {targetName} {CrossOdds.OddsPhrase(measured / 100.0)} of the time in their sample; Gardener still sizes this step from the general soil estimate, since a pair's measured figures don't split cleanly across every outcome.");
+            notes.Add(
+                $"ffxivgardening.com rates this pair {rating} out of 100. That rating is per pair, not per " +
+                "result, and its meaning isn't published, so Gardener only uses it to prefer one pair over " +
+                "another and sizes this step from the soil estimate instead.");
         }
         if (SeedTable.Wilt(target)?.Disputed == true)
             notes.Add($"{targetName}'s wilt time is disputed between sources; the cadence above is the shorter, safer figure.");

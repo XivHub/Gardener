@@ -28,10 +28,13 @@ public sealed record SeedEntry(
     string[]? OtherSources);
 
 /// <summary>An unordered cross of rows <see cref="A"/> x <see cref="B"/> and the row ids it can yield.
-/// <see cref="Efficiency"/> is ffxivgardening.com's confirmed percentage of cross attempts that landed
-/// on a given outcome row, keyed by that row rather than by <see cref="Targets"/>: the two lists come
-/// from different sources and neither is a subset of the other, so a row can appear in one without the
-/// other. Null (never a fabricated figure) for a row this pair has no confirmed measurement for yet.</summary>
+/// <see cref="Efficiency"/> is ffxivgardening.com's own rating of this pair, keyed by outcome row rather
+/// than by <see cref="Targets"/>: the two lists come from different sources and neither is a subset of
+/// the other, so a row can appear in one without the other. In 1,142 of 1,145 two-outcome pairs every
+/// outcome carries the identical value, and values run as high as 98 against an 89.06% theoretical
+/// ceiling on the best soil, so it is a property of the pair, not a chance of landing on one outcome
+/// over another; the site never publishes what it measures. Useful only to rank one candidate pair
+/// against another. Null (never a fabricated figure) for a row this pair has no rating for yet.</summary>
 public sealed record CrossPair(uint A, uint B, uint[] Targets, IReadOnlyDictionary<uint, int>? Efficiency);
 
 /// <summary>A row flagged by <see cref="SeedTable.Validate"/>, carrying both the row id and the seed item name.</summary>
@@ -135,10 +138,9 @@ public static class SeedTable
     public static IReadOnlyList<uint> TargetsFor(uint a, uint b) =>
         pairByKey.TryGetValue(NormalizeKey(a, b), out var pair) ? pair.Targets : Array.Empty<uint>();
 
-    /// <summary>ffxivgardening.com's confirmed percentage of this unordered pair's attempts that landed
-    /// on <paramref name="target"/>; null if the pair is unknown or has no confirmed measurement for
-    /// that particular outcome yet. Never derived from the soil-grade headline rate — see
-    /// <see cref="CrossPair.Efficiency"/>.</summary>
+    /// <summary>ffxivgardening.com's rating of this unordered pair against <paramref name="target"/>;
+    /// null if the pair is unknown or has no rating for that outcome yet. A ranking figure, not a
+    /// chance — see <see cref="CrossPair.Efficiency"/> for why.</summary>
     public static int? EfficiencyFor(uint a, uint b, uint target) =>
         pairByKey.TryGetValue(NormalizeKey(a, b), out var pair) && pair.Efficiency is { } eff &&
         eff.TryGetValue(target, out var pct)

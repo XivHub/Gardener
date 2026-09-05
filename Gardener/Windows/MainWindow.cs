@@ -769,7 +769,9 @@ namespace Gardener.Windows
             };
 
             var memory = GardenMemory.Read(patch);
-            var singleStepPlan = CrossPlanner.PlanSingleStep(targetSeed, patch, memory, bag);
+            var singleStepPlan = crossOrMultiply is CrossStep crossStep
+                ? CrossPlanner.PlanFillStep(targetSeed, crossStep.Beds, patch, memory, bag)
+                : CrossPlanner.PlanSingleStep(targetSeed, patch, memory, bag);
 
             if (singleStepPlan.Steps.Count > 0)
             {
