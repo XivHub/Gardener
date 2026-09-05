@@ -7,6 +7,7 @@ using Dalamud.Interface.Windowing;
 using Gardener.Game;
 using Gardener.Helpers;
 using Gardener.Journal;
+using Gardener.Scheduler;
 using XivHubPluginKit.UI;
 
 namespace Gardener.Windows
@@ -43,7 +44,10 @@ namespace Gardener.Windows
             if (ImGui.BeginTabItem("Reminders"))
                 ImGui.EndTabItem();
             if (ImGui.BeginTabItem("Log"))
+            {
+                DrawLogTab();
                 ImGui.EndTabItem();
+            }
 
             ImGui.EndTabBar();
         }
@@ -58,6 +62,9 @@ namespace Gardener.Windows
         /// </summary>
         private static void DrawGardenTab()
         {
+            DrawSchedulerStatus();
+            ImGui.Separator();
+
             var patches = PatchDiscovery.Patches;
             if (patches.Count == 0)
                 ImGui.TextColored(HubStyle.Faint, "No patches discovered. Stand in an outdoor housing plot.");
@@ -90,6 +97,8 @@ namespace Gardener.Windows
 
                 var byBed = states.ToDictionary(s => s.BedNumber);
                 DrawBedTable(patch, byBed);
+
+                DrawSweepButtons(patch);
 
                 ImGui.Spacing();
             }
@@ -148,6 +157,87 @@ namespace Gardener.Windows
             }
 
             ImGui.EndTable();
+        }
+
+        /// <summary>Always visible regardless of what is blocking a new run, so a sweep already in
+        /// progress can always be stopped.</summary>
+        private static void DrawSchedulerStatus()
+        {
+            if (SchedulerMain.Running)
+            {
+                ImGui.TextColored(HubStyle.Warn,
+                    $"{SchedulerMain.CurrentKind}: bed {SchedulerMain.CurrentBedNumber?.ToString() ?? "-"}, " +
+                    $"{SchedulerMain.Worklist.Count} left ({SchedulerMain.State})");
+                ImGui.SameLine();
+            }
+
+            if (ImGui.Button("Stop"))
+                SchedulerMain.DisablePlugin();
+        }
+
+        /// <summary>"Tend all" / "Harvest all" for one patch, each behind
+        /// <see cref="Configuration.ConfirmBeforeRun"/>, replaced by <see cref="GardenerGuard.BlockingReason"/>
+        /// when a sweep cannot start at all. <see cref="GardenerGuard.PermissionsWarning"/> renders
+        /// above them regardless, since it is independent of whether a run can start.</summary>
+        private static void DrawSweepButtons(Patch patch)
+        {
+            if (GardenerGuard.PermissionsWarning() is { } permissionsWarning)
+                ImGui.TextColored(HubStyle.Warn, permissionsWarning);
+
+            if (GardenerGuard.BlockingReason() is { } reason)
+            {
+                ImGui.TextColored(HubStyle.Faint, reason);
+                return;
+            }
+
+            using (HubStyle.Primary())
+            {
+                if (ImGui.Button($"Tend all##tend-{patch.Key}"))
+                {
+                    if (Plugin.C.ConfirmBeforeRun)
+                        ImGui.OpenPopup($"Confirm tend##{patch.Key}");
+                    else
+                        SchedulerMain.EnablePlugin(SweepKind.Tend, patch);
+                }
+            }
+            DrawConfirmPopup(patch, $"Confirm tend##{patch.Key}", "Tend every occupied bed on this patch?", SweepKind.Tend);
+
+            ImGui.SameLine();
+            if (ImGui.Button($"Harvest all##harvest-{patch.Key}"))
+            {
+                if (Plugin.C.ConfirmBeforeRun)
+                    ImGui.OpenPopup($"Confirm harvest##{patch.Key}");
+                else
+                    SchedulerMain.EnablePlugin(SweepKind.Harvest, patch);
+            }
+            DrawConfirmPopup(patch, $"Confirm harvest##{patch.Key}", "Harvest every mature bed on this patch?", SweepKind.Harvest);
+
+            ImGui.TextColored(HubStyle.Faint,
+                $"Bed order verified: {BedTargeting.VerifiedBedCount(patch)}/{patch.Kind.BedCount()}");
+        }
+
+        private static void DrawConfirmPopup(Patch patch, string popupId, string message, SweepKind kind)
+        {
+            if (!ImGui.BeginPopup(popupId))
+                return;
+
+            ImGui.TextUnformatted(message);
+            if (ImGui.Button("Confirm"))
+            {
+                SchedulerMain.EnablePlugin(kind, patch);
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel"))
+                ImGui.CloseCurrentPopup();
+
+            ImGui.EndPopup();
+        }
+
+        private static void DrawLogTab()
+        {
+            foreach (var entry in ActivityLog.Entries)
+                ImGui.TextColored(entry.Color, $"[{entry.Time}] {entry.Message}");
         }
 
         private static void DrawSeedAndStage(BedState state, BedRecord? record)

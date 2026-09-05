@@ -10,6 +10,7 @@ using XivHubPluginKit.UI;
 using Gardener.Game;
 using Gardener.Helpers;
 using Gardener.Journal;
+using Gardener.Scheduler;
 using Gardener.Windows;
 
 namespace Gardener
@@ -92,6 +93,7 @@ namespace Gardener
             PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
             Framework.Update += OnFrameworkUpdate;
             ClientState.Logout += OnLogout;
+            ClientState.TerritoryChanged += OnTerritoryChanged;
         }
 
         private void OnFrameworkUpdate(IFramework framework)
@@ -113,17 +115,25 @@ namespace Gardener
             }
 
             GardenJournal.Tick();
+            SchedulerMain.Tick();
         }
 
+        // Stop on logout so a character switch never resumes a sweep on a different character.
         private void OnLogout(int type, int code)
         {
+            SchedulerMain.DisablePlugin();
             GardenJournal.Flush();
         }
+
+        // Bed EntityIds are per-session; a zone change invalidates every patch's predicted map.
+        private void OnTerritoryChanged(uint territoryType) => BedTargeting.Invalidate();
 
         public void Dispose()
         {
             Framework.Update -= OnFrameworkUpdate;
             ClientState.Logout -= OnLogout;
+            ClientState.TerritoryChanged -= OnTerritoryChanged;
+            SchedulerMain.DisablePlugin();
             GardenJournal.Flush();
             Telemetry.Dispose();
 

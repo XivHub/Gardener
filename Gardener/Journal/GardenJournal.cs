@@ -231,6 +231,25 @@ public static class GardenJournal
         Calibration.Record(record.SeedRow, CalibrationSeriesKind.Stage4, observedAt - plantedAt);
     }
 
+    /// <summary>
+    /// Pushes a <see cref="CalibrationSeriesKind.HarvestOffered"/> sample from
+    /// <see cref="BedRecord.FirstSeenHarvestOfferedAt"/> — the act-time fact that a bed menu offered a
+    /// <c>Harvest</c> entry, which the passive <see cref="GardenMemory"/> read cannot produce — under
+    /// the same eligibility rule <see cref="Reconcile"/> applies to the Stage4 series: only for a bed
+    /// this plugin itself planted with a real (not estimated) <see cref="BedRecord.PlantedAt"/>.
+    /// </summary>
+    public static void RecordHarvestOfferedSample(BedRecord record)
+    {
+        if (!Plugin.C.CollectGrowSamples)
+            return;
+        if (!record.PlantedByGardener || record.PlantedAtEstimated)
+            return;
+        if (record.PlantedAt is not { } plantedAt || record.FirstSeenHarvestOfferedAt is not { } offeredAt)
+            return;
+
+        Calibration.Record(record.SeedRow, CalibrationSeriesKind.HarvestOffered, offeredAt - plantedAt);
+    }
+
     private static string SeedName(ushort row)
     {
         if (row != 0 && SeedItems.SeedItemForRow(row) is { } itemId)
