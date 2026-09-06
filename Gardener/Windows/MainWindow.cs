@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Gardener.Game;
@@ -22,6 +24,10 @@ namespace Gardener.Windows
         // Staged hours for each bed's "planted about N hours ago" control, keyed the same way the
         // journal itself is (patch + bed, never a character) so the widget survives a redraw.
         private static readonly Dictionary<(string PatchKey, int BedNumber), int> pendingEstimateHours = new();
+
+        // Staged hours for the "set all planting times" popup, keyed by patch (never a character):
+        // one bulk guess per patch, entered once and applied to every unset bed on it.
+        private static readonly Dictionary<string, int> pendingSetAllHours = new();
 
         // Whether the goal picker is open over the current goal rather than the step list — toggled
         // by "Pick something else" / a fresh goal choice / "Clear goal". Search text is separate so it
@@ -43,9 +49,11 @@ namespace Gardener.Windows
         {
             SizeConstraints = new WindowSizeConstraints
             {
-                MinimumSize = new Vector2(380, 380),
+                MinimumSize = new Vector2(420, 200),
                 MaximumSize = new Vector2(4000, 4000),
             };
+            Size = new Vector2(600, 480);
+            SizeCondition = ImGuiCond.FirstUseEver;
         }
 
         public void Dispose() { }
@@ -83,12 +91,13 @@ namespace Gardener.Windows
         }
 
         /// <summary>
-        /// Lists discovered patches (already filtered to the plot the player is standing on), built
-        /// entirely around the passive <see cref="GardenMemory"/> read: per patch, one row per bed
-        /// number <c>1..BedCount()</c> — the game's own "Nth Bed" numbering, not a spatial index —
-        /// showing the seed, stage, wilt time and harvest window. A patch whose <see
-        /// cref="GardenMemory.Read"/> came back empty renders as "no data for this patch", never as
-        /// eight empty beds: those are different facts.
+        /// Lists discovered patches (already filtered to the plot the player is standing on), one
+        /// <see cref="ImGui.CollapsingHeader"/> per patch so two patches at one house both fit without
+        /// scrolling. Built entirely around the passive <see cref="GardenMemory"/> read: per patch, one
+        /// row per bed number <c>1..BedCount()</c> — the game's own "Nth Bed" numbering, not a spatial
+        /// index — showing the crop, growth and readiness. A patch whose <see cref="GardenMemory.Read"/>
+        /// came back empty renders as "no data for this patch", never as eight empty beds: those are
+        /// different facts.
         /// </summary>
         private static void DrawGardenTab()
         {
@@ -97,28 +106,26 @@ namespace Gardener.Windows
             var patches = PatchDiscovery.Patches;
             if (patches.Count == 0)
                 ImGui.TextColored(HubStyle.Faint, Strings.Garden_NoPatches);
-            else
-                ImGui.TextColored(HubStyle.Faint, Strings.Garden_HarvestLagNote);
 
             var plot = PatchDiscovery.LastDiagnostics.CurrentPlot;
 
             foreach (var patch in patches)
             {
-                var houseKey = patch.Key.Split(':')[0];
-                var header = plot is { } p
-                    ? Loc.Format(Strings.Garden_PatchHeaderWithPlot, patch.Kind, Formats.Number(p + 1))
-                    : Loc.Format(Strings.Garden_PatchHeaderPlotUnknown, patch.Kind);
-                ImGui.TextUnformatted(header);
-                ImGui.TextColored(HubStyle.Faint, patch.Key);
+                ImGui.SetNextItemOpen(true, ImGuiCond.FirstUseEver);
+                // ###-suffixed: CollapsingHeader keys its own open/collapsed state off GetID(label),
+                // and the visible half (PatchLabel.Header) changes with the UI language.
+                var open = ImGui.CollapsingHeader($"{PatchLabel.Header(patch, plot)}###patch-{patch.Key}");
 
-                var estateType = GardenJournal.EstateTypeFor(houseKey);
-                var accessible = GardenJournal.CharactersWithAccess(houseKey);
-                if (estateType is not null || accessible.Count > 0)
-                {
-                    var estateText = estateType is { } et ? et.ToString() : Strings.Common_Unknown;
-                    var accessText = accessible.Count > 0 ? TextList.And(accessible) : Strings.Common_Unknown;
-                    ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Garden_EstateAccess, estateText, accessText));
-                }
+                // Drawn regardless of open/collapsed, via the same measure-and-SameLine idiom
+                // DrawGoalStepGroup's own marker uses, so a collapsed patch still answers "what needs
+                // doing" without expanding it.
+                var due = Reminders.SummaryTextFor(patch.Key);
+                var dueWidth = ImGui.CalcTextSize(due).X;
+                ImGui.SameLine(ImGui.GetContentRegionMax().X - dueWidth - ImGui.GetStyle().FramePadding.X * 2f);
+                ImGui.TextColored(HubStyle.Faint, due);
+
+                if (!open)
+                    continue;
 
                 var states = GardenMemory.Read(patch);
                 if (states.Count == 0)
@@ -129,14 +136,18 @@ namespace Gardener.Windows
                 }
 
                 var byBed = states.ToDictionary(s => s.BedNumber);
-                DrawBedTable(patch, byBed);
 
                 DrawSweepButtons(patch);
+                DrawPatchMetaLine(patch, byBed);
+                DrawBedTable(patch, byBed);
 
                 ImGui.Spacing();
             }
 
             DrawOrphans();
+
+            if (patches.Count > 0)
+                ImGui.TextColored(HubStyle.Faint, Strings.Garden_HarvestLagNote);
 
             ImGui.Separator();
             ImGui.TextDisabled(Strings.Garden_DebugDumpHeader);
@@ -198,21 +209,102 @@ namespace Gardener.Windows
                 : Loc.Format(Strings.Garden_UnresolvedSeedRow, Formats.Number(row));
         }
 
+        /// <summary>The facts that used to repeat on every one of a patch's rows, said once per patch
+        /// instead: who last saw it and how long ago, how many beds still need a planting time (with a
+        /// bulk setter for the common "I didn't watch it get planted" case), and the bed-order-verified
+        /// note — kept here rather than in <see cref="DrawSweepButtons"/> and shown only while it is
+        /// still incomplete, since a fully verified patch has nothing left to say about it.</summary>
+        private static void DrawPatchMetaLine(Patch patch, IReadOnlyDictionary<int, BedState> byBed)
+        {
+            var patchRecords = GardenJournal.AllRecords.Where(r => r.PatchKey == patch.Key).ToList();
+
+            var observedRecords = byBed.Values.Where(s => !s.IsEmpty)
+                .Select(s => GardenJournal.Get(patch.Key, s.BedNumber))
+                .Where(r => r?.LastSeenByCharacter is { Length: > 0 })
+                .Select(r => r!)
+                .ToList();
+            if (observedRecords.Count > 0)
+            {
+                var observers = observedRecords.Select(r => r.LastSeenByCharacter!).Distinct().ToList();
+                var oldest = observedRecords.Min(r => r.LastSeenAt);
+                var ageHours = (DateTimeOffset.UtcNow - oldest).TotalHours;
+                ImGui.TextColored(HubStyle.Faint,
+                    Loc.Format(Strings.Garden_LastSeenLine, TextList.And(observers), Formats.Number(ageHours, "F0")));
+            }
+
+            var unknownCount = patchRecords.Count(r => r.PlantedAt is null);
+            if (unknownCount > 0)
+            {
+                ImGui.TextColored(HubStyle.Faint, Loc.Format(
+                    unknownCount == 1 ? Strings.Garden_UnknownPlantingTimeCount_One : Strings.Garden_UnknownPlantingTimeCount_Other,
+                    Formats.Number(unknownCount)));
+                ImGui.SameLine();
+                if (ImGui.SmallButton($"{Strings.Garden_SetAllPlantingTimesButton}##setall-{patch.Key}"))
+                    ImGui.OpenPopup($"Set all planting times##{patch.Key}");
+            }
+            DrawSetAllPlantingTimesPopup(patch, patchRecords);
+
+            if (BedTargeting.VerifiedBedCount(patch) < patch.Kind.BedCount())
+                ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Sweep_BedOrderVerified,
+                    Formats.Number(BedTargeting.VerifiedBedCount(patch)), Formats.Number(patch.Kind.BedCount())));
+        }
+
+        private static void DrawSetAllPlantingTimesPopup(Patch patch, IReadOnlyList<BedRecord> patchRecords)
+        {
+            if (!ImGui.BeginPopup($"Set all planting times##{patch.Key}"))
+                return;
+
+            ImGui.TextUnformatted(Strings.Garden_SetAllPlantingTimesBody);
+
+            if (!pendingSetAllHours.TryGetValue(patch.Key, out var hours))
+                hours = 1;
+            ImGui.SetNextItemWidth(60);
+            ImGui.InputInt($"##setAllHours-{patch.Key}", ref hours);
+            hours = Math.Max(0, hours);
+            pendingSetAllHours[patch.Key] = hours;
+
+            if (ImGui.Button(Strings.Common_Confirm))
+            {
+                var plantedAt = DateTimeOffset.UtcNow - TimeSpan.FromHours(hours);
+                foreach (var record in patchRecords.Where(r => r.PlantedAt is null))
+                {
+                    record.PlantedAt = plantedAt;
+                    record.PlantedAtEstimated = true;
+                    record.PlantedAtUncertainty = null; // a hand-set guess replaces any transition anchor
+                    GardenJournal.Upsert(record);
+                }
+                pendingSetAllHours.Remove(patch.Key);
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button(Strings.Common_Cancel))
+                ImGui.CloseCurrentPopup();
+
+            ImGui.EndPopup();
+        }
+
+        /// <summary>Five columns: bed number, crop, a <see cref="StageIndicator"/> growth meter, one
+        /// "when" sentence (<see cref="DrawWhenCell"/>) and a per-row remove-crop action. Hovering the
+        /// crop or growth cell opens <see cref="DrawBedTooltip"/> for the facts too dense to keep on
+        /// every row: soil, exact wilt time, confidence, uncertainty and the last chat-observed
+        /// condition.</summary>
         private static void DrawBedTable(Patch patch, IReadOnlyDictionary<int, BedState> byBed)
         {
-            // Stretch rather than fit-to-content: every cell but the bed number holds a sentence, and
-            // a fitted column sizes itself to the longest of them and pushes the rest off the window.
+            // Stretch rather than fit-to-content for Crop/When: a fitted column sizes itself to the
+            // longest sentence and pushes the rest off the window.
             const ImGuiTableFlags flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg |
                                           ImGuiTableFlags.Resizable | ImGuiTableFlags.SizingStretchProp;
-            if (!ImGui.BeginTable($"##bedgrid-{patch.Key}", 4, flags))
+            if (!ImGui.BeginTable($"##bedgrid-{patch.Key}", 5, flags))
                 return;
 
             // ###-suffixed: the table is Resizable, and a translated header label must not read as
             // a different column from the one whose width the player already dragged.
-            ImGui.TableSetupColumn($"{Strings.Garden_ColBed}###col-bed", ImGuiTableColumnFlags.WidthFixed, 30f);
-            ImGui.TableSetupColumn($"{Strings.Garden_ColSeedStage}###col-seedstage", ImGuiTableColumnFlags.WidthStretch, 3f);
-            ImGui.TableSetupColumn($"{Strings.Garden_ColWilt}###col-wilt", ImGuiTableColumnFlags.WidthStretch, 3f);
-            ImGui.TableSetupColumn($"{Strings.Garden_ColHarvestWindow}###col-harvestwindow", ImGuiTableColumnFlags.WidthStretch, 4f);
+            ImGui.TableSetupColumn($"{Strings.Garden_ColBed}###col-bed", ImGuiTableColumnFlags.WidthFixed, 32f);
+            ImGui.TableSetupColumn($"{Strings.Garden_ColCrop}###col-crop", ImGuiTableColumnFlags.WidthStretch, 4f);
+            ImGui.TableSetupColumn($"{Strings.Garden_ColGrowth}###col-growth", ImGuiTableColumnFlags.WidthFixed, StageIndicator.Width());
+            ImGui.TableSetupColumn($"{Strings.Garden_ColWhen}###col-when", ImGuiTableColumnFlags.WidthStretch, 5f);
+            // No header label: the column holds one icon button, nothing a header word would describe.
+            ImGui.TableSetupColumn("##col-action", ImGuiTableColumnFlags.NoHeaderLabel | ImGuiTableColumnFlags.WidthFixed, 32f);
             ImGui.TableHeadersRow();
 
             for (var bedNumber = 1; bedNumber <= patch.Kind.BedCount(); bedNumber++)
@@ -227,27 +319,34 @@ namespace Gardener.Windows
                     ImGui.TextColored(HubStyle.Faint, Strings.Common_Empty);
                     ImGui.TableNextColumn();
                     ImGui.TableNextColumn();
+                    ImGui.TableNextColumn();
                     continue;
                 }
 
                 var record = GardenJournal.Get(patch.Key, bedNumber);
+                var color = BedColor(state, record);
 
                 // Wrap at the cell's own right edge, which is what PushTextWrapPos(0) means inside a
                 // table; without it every cell here is one unbroken line and the last column is cut off.
                 ImGui.PushTextWrapPos(0f);
-                DrawSeedAndStage(state, record);
+                ImGui.TextColored(color, SeedName(state.SeedRow));
+                if (ImGui.IsItemHovered())
+                    DrawBedTooltip(patch, bedNumber, state, record);
 
                 ImGui.TableNextColumn();
-                DrawWilt(record);
+                StageIndicator.Draw(state.Stage, color);
+                if (ImGui.IsItemHovered())
+                    DrawBedTooltip(patch, bedNumber, state, record);
 
                 ImGui.TableNextColumn();
-                DrawHarvestWindow(patch.Key, bedNumber, record);
+                DrawWhenCell(patch.Key, bedNumber, state, record);
                 ImGui.PopTextWrapPos();
+
+                ImGui.TableNextColumn();
+                DrawRemoveCropButton(patch, state);
             }
 
             ImGui.EndTable();
-
-            DrawRemoveCropButtons(patch, byBed.Values.ToList());
         }
 
         /// <summary>The running sweep's own row: what it is doing and the Stop that ends it. Drawn
@@ -325,9 +424,6 @@ namespace Gardener.Windows
             }
             DrawConfirmPopup(patch, $"Confirm fertilize##{patch.Key}",
                 Loc.Format(Strings.Sweep_ConfirmFertilize, GameWords.Action(MenuKey.SetFertilizer)), SweepKind.Fertilize);
-
-            ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Sweep_BedOrderVerified,
-                Formats.Number(BedTargeting.VerifiedBedCount(patch)), Formats.Number(patch.Kind.BedCount())));
         }
 
         private static void DrawConfirmPopup(Patch patch, string popupId, string message, SweepKind kind)
@@ -958,33 +1054,28 @@ namespace Gardener.Windows
                 : span.TotalHours > 48 ? Phrases.Days(Math.Round(span.TotalDays)) : Phrases.Hours(Math.Round(span.TotalHours));
         }
 
-        /// <summary>One button per occupied bed, never part of a sweep: <see cref="GardenerGuard.BlockingReason"/>
-        /// gates starting a sweep, but tending needs no permission and removing a crop is a single
-        /// interaction rather than a worklist, so the only gate here is the confirm itself, which names
-        /// the seed being destroyed.</summary>
-        private static void DrawRemoveCropButtons(Patch patch, IReadOnlyList<BedState> memory)
+        /// <summary>The action column's one control for an occupied bed, never part of a sweep:
+        /// <see cref="GardenerGuard.BlockingReason"/> gates starting a sweep, but removing a crop is a
+        /// single interaction rather than a worklist, so the only gate here is the confirm itself,
+        /// which names the seed being destroyed. Falls back to <c>ImGui.SmallButton("×")</c> (U+00D7,
+        /// outside <c>check_loc.py</c>'s letter check) if the FontAwesome trash glyph does not render —
+        /// unverifiable offline, see AGENTS.md's "Needs in-game verification".</summary>
+        private static void DrawRemoveCropButton(Patch patch, BedState state)
         {
-            var occupied = memory.Where(s => !s.IsEmpty).OrderBy(s => s.BedNumber).ToList();
-            if (occupied.Count == 0)
-                return;
+            ImGui.PushID($"removecrop-{patch.Key}-{state.BedNumber}");
 
-            ImGui.Spacing();
-            ImGui.TextColored(HubStyle.Faint, Strings.RemoveCrop_Header);
-            var removeLabel = GameWords.Action(MenuKey.Dispose);
-            foreach (var state in occupied)
+            var name = SeedItems.ProduceName(state.SeedRow);
+            var popupId = $"Confirm remove crop##{patch.Key}-{state.BedNumber}";
+            if (ImGuiComponents.IconButton("removecrop", FontAwesomeIcon.Trash))
+                ImGui.OpenPopup(popupId);
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip(Loc.Format(Strings.Garden_RemoveButtonTooltip,
+                    GameWords.Action(MenuKey.Dispose), Formats.Number(state.BedNumber), name));
+
+            if (ImGui.BeginPopup(popupId))
             {
-                var name = SeedItems.ProduceName(state.SeedRow);
-                var popupId = $"Confirm remove crop##{patch.Key}-{state.BedNumber}";
-                if (ImGui.Button($"{removeLabel}##removecrop-{patch.Key}-{state.BedNumber}"))
-                    ImGui.OpenPopup(popupId);
-                ImGui.SameLine();
-                ImGui.TextUnformatted(Loc.Format(Strings.RemoveCrop_BedLine, Formats.Number(state.BedNumber), name));
-
-                if (!ImGui.BeginPopup(popupId))
-                    continue;
-
                 ImGui.TextColored(HubStyle.Warn,
-                    Loc.Format(Strings.RemoveCrop_ConfirmMessage, removeLabel, name, Formats.Number(state.BedNumber)));
+                    Loc.Format(Strings.RemoveCrop_ConfirmMessage, GameWords.Action(MenuKey.Dispose), name, Formats.Number(state.BedNumber)));
                 if (ImGui.Button(Strings.Common_Confirm))
                 {
                     Task_RemoveCrop.TryEnqueue(patch, state.BedNumber, state.SeedRow);
@@ -995,8 +1086,9 @@ namespace Gardener.Windows
                     ImGui.CloseCurrentPopup();
                 ImGui.EndPopup();
             }
-        }
 
+            ImGui.PopID();
+        }
 
         private static void DrawLogTab()
         {
@@ -1123,75 +1215,18 @@ namespace Gardener.Windows
             ImGui.TextColored(HubStyle.Faint, houseKey);
         }
 
-        private static void DrawSeedAndStage(BedState state, BedRecord? record)
-        {
-            // What is in the ground is the produce, not the seed that grew it — "La Noscean Lettuce",
-            // not "La Noscean Lettuce Seeds". The seed name belongs where the plugin talks about what
-            // to plant or what is in the bag, not here.
-            var produceItemId = SeedItems.ProduceItemForRow(state.SeedRow);
-            var produceName = produceItemId is { } id
-                ? XivHubPluginKit.Inventory.ItemSheet.Name(id)
-                : Loc.Format(Strings.Garden_UnresolvedSeedRow, Formats.Number(state.SeedRow));
-            var stageText = state.Maturity switch
-            {
-                Maturity.MatureCandidate => Strings.Garden_StageMature,
-                Maturity.Growing => Loc.Format(Strings.Garden_StageGrowing, Formats.Number(state.Stage)),
-                _ => Strings.Common_Empty,
-            };
-
-            ImGui.TextUnformatted(produceName);
-            ImGui.TextColored(StageColor(state, record), stageText);
-
-            // Only ever known for a bed Gardener planted itself: nothing in the game's own read says
-            // what soil a bed went in with, so a bed planted by hand shows no soil rather than a guess.
-            if (record?.SoilItemId is { } soilItemId and not 0)
-                ImGui.TextColored(HubStyle.Faint, ItemSheet.Name(soilItemId));
-
-            DrawCropState(record);
-
-            if (record?.LastSeenByCharacter is { Length: > 0 } observer)
-            {
-                var agoHours = (DateTimeOffset.UtcNow - record.LastSeenAt).TotalHours;
-                ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Garden_SeenBy, observer, Formats.Number(agoHours, "F0")));
-            }
-        }
-
-        /// <summary>The most recent <c>TALK_*</c> sentence chat has echoed for this bed (see
-        /// <see cref="CropChatState"/>) — the only source for wilted and true harvest-readiness the
-        /// bed menu itself never offers. A bed whose state has never been observed says so, rather
-        /// than rendering blank or implying healthy.</summary>
-        private static void DrawCropState(BedRecord? record)
-        {
-            if (record?.LastObservedCropState is not { } cropState || record.LastObservedCropStateAt is not { } observedAt)
-            {
-                ImGui.TextColored(HubStyle.Faint, Strings.Garden_CropStateNeverObserved);
-                return;
-            }
-
-            // Gardener's own one-word crop-condition summary, not GardenMenuText's TALK_* sentence -
-            // the do-not-translate register does not apply here. An unclassified MenuKey (the switch's
-            // default arm) falls back to the raw enum name, which does.
-            var (text, color) = cropState switch
-            {
-                MenuKey.TalkVigorous => (Strings.Garden_CropVigorous, HubStyle.Good),
-                MenuKey.TalkDepressed => (Strings.Garden_CropWilted, HubStyle.Warn),
-                MenuKey.TalkRipe => (Strings.Garden_CropRipe, HubStyle.Good),
-                MenuKey.TalkDead => (Strings.Garden_CropWithered, HubStyle.Bad),
-                MenuKey.TalkNone => (Strings.Garden_CropEmpty, HubStyle.Faint),
-                _ => (cropState.ToString(), HubStyle.Faint),
-            };
-
-            var agoHours = (DateTimeOffset.UtcNow - observedAt).TotalHours;
-            ImGui.TextColored(color, Loc.Format(Strings.Garden_CropStateAge, text, Formats.Number(agoHours, "F0")));
-        }
-
-        /// <summary>Semantic bed-state colour per THEME.md: mature → Good, due to tend → Warn, about
-        /// to wither → Bad, empty or timing-unknown → Faint. Nothing here is a domain palette; these
-        /// are the four roles HubStyle already exposes.</summary>
-        private static Vector4 StageColor(BedState state, BedRecord? record)
+        /// <summary>Semantic bed-state colour per THEME.md: withered or overdue → Bad, due to tend soon
+        /// → Warn, ready or mature → Good, empty or timing-unknown → Faint. Nothing here is a domain
+        /// palette; these are the four roles HubStyle already exposes. Colours both the crop name and
+        /// the growth meter, so the two cells never disagree about a bed's condition.</summary>
+        private static Vector4 BedColor(BedState state, BedRecord? record)
         {
             if (state.IsEmpty)
                 return HubStyle.Faint;
+            if (record?.ObservedWithered == true)
+                return HubStyle.Bad;
+            if (record is { } withRecord && Growth.HarvestWindow(withRecord).Earliest is { } earliest && earliest <= DateTimeOffset.UtcNow)
+                return HubStyle.Good;
             if (state.Maturity == Maturity.MatureCandidate)
                 return HubStyle.Good;
 
@@ -1211,46 +1246,155 @@ namespace Gardener.Windows
             return HubStyle.Text;
         }
 
-        private static void DrawWilt(BedRecord? record)
-        {
-            if (record is { } r && Growth.WiltsAt(r) is { } wiltsAt)
-                ImGui.TextUnformatted(Formats.LocalDateTime(wiltsAt.ToLocalTime()));
-            else
-                ImGui.TextColored(HubStyle.Faint, Strings.Common_Unknown);
-        }
-
-        private static void DrawHarvestWindow(string patchKey, int bedNumber, BedRecord? record)
+        /// <summary>The bed table's "When" column: exactly one whole sentence, in branch order —
+        /// withered and wilted take priority over ready, and ready takes priority over the harvest
+        /// range, so a bed that needs tending is never upstaged by a stale harvest estimate. Confidence,
+        /// uncertainty and the exact window live in <see cref="DrawBedTooltip"/> instead, not here.</summary>
+        private static void DrawWhenCell(string patchKey, int bedNumber, BedState state, BedRecord? record)
         {
             if (record is not { } rec)
             {
-                ImGui.TextColored(HubStyle.Faint, Strings.Garden_PlantedAtUnknown);
+                ImGui.TextColored(HubStyle.Faint, Strings.Garden_WhenNotRecordedYet);
+                return;
+            }
+
+            if (rec.ObservedWithered)
+            {
+                ImGui.TextColored(HubStyle.Bad, Strings.Garden_WhenWithered);
+                return;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            var wiltsAt = Growth.WiltsAt(rec);
+            if (wiltsAt is { } wa && wa <= now)
+            {
+                if (Growth.WithersAt(rec) is { } withersAt && withersAt > now)
+                    ImGui.TextColored(HubStyle.Bad,
+                        Loc.Format(Strings.Garden_WhenWiltedTendBefore, Formats.LocalDateTime(withersAt.ToLocalTime())));
+                else
+                    ImGui.TextColored(HubStyle.Warn, Strings.Garden_WhenWiltedTendNow);
+                return;
+            }
+
+            var window = Growth.HarvestWindow(rec);
+            if (window.Earliest is { } earliest && earliest <= now)
+            {
+                ImGui.TextColored(HubStyle.Good, Strings.Garden_WhenReadyNow);
+                return;
+            }
+
+            if (state.Maturity == Maturity.MatureCandidate && window.Confidence == HarvestConfidence.Unknown)
+            {
+                ImGui.TextColored(HubStyle.Good, Strings.Garden_WhenMature);
+                return;
+            }
+
+            if (wiltsAt is { } upcomingWilt && upcomingWilt <= now + TimeSpan.FromHours(Plugin.C.WiltWarningHours))
+            {
+                ImGui.TextColored(HubStyle.Warn, Loc.Format(Strings.Garden_WhenTendBy, Formats.LocalDateTime(upcomingWilt.ToLocalTime())));
+                return;
+            }
+
+            if (window.Confidence != HarvestConfidence.Unknown && window.Earliest is { } e && window.Latest is { } l)
+            {
+                ImGui.TextUnformatted(Loc.Format(Strings.Garden_WhenReadyRange, Formats.LocalDateTime(e.ToLocalTime()), Formats.LocalTime(l.ToLocalTime())));
                 return;
             }
 
             if (rec.PlantedAt is null)
             {
-                ImGui.TextColored(HubStyle.Faint, Strings.Garden_PlantedAtUnknown);
-                DrawPlantedAtEstimate(patchKey, bedNumber, rec);
+                var popupId = $"Set planting time##{patchKey}-{bedNumber}";
+                if (ImGui.SmallButton($"{Strings.Garden_SetPlantingTimeButton}##setplant-{patchKey}-{bedNumber}"))
+                    ImGui.OpenPopup(popupId);
+                if (ImGui.BeginPopup(popupId))
+                {
+                    ImGui.TextUnformatted(Strings.Garden_PlantingTimePopupHeading);
+                    DrawPlantedAtEstimate(patchKey, bedNumber, rec);
+                    ImGui.EndPopup();
+                }
                 return;
             }
 
-            var window = Growth.HarvestWindow(rec);
-            if (window.Confidence == HarvestConfidence.Unknown)
+            ImGui.TextColored(HubStyle.Faint, Strings.Common_Unknown);
+        }
+
+        /// <summary>Every fact the density pass moved off the row: growth stage, soil, exact wilt time,
+        /// the full harvest window with its confidence and anchor uncertainty, the last chat-observed
+        /// crop condition, and who last saw the bed. <see cref="ImGui.BeginTooltip"/>/<c>EndTooltip</c>
+        /// rather than <c>SetTooltip</c> so the crop-condition line keeps the Good/Warn/Bad/Faint colour
+        /// it has always had — a single joined <c>SetTooltip</c> string would render everything in one
+        /// colour and quietly drop that distinction.</summary>
+        private static void DrawBedTooltip(Patch patch, int bedNumber, BedState state, BedRecord? record)
+        {
+            ImGui.BeginTooltip();
+            ImGui.PushTextWrapPos(400f);
+
+            ImGui.TextColored(HubStyle.Text, Loc.Format(Strings.Garden_BedTooltipHeading, Formats.Number(bedNumber)));
+
+            var stageText = state.Maturity switch
             {
-                ImGui.TextColored(HubStyle.Faint, Strings.Garden_NoTimingData);
-                return;
+                Maturity.MatureCandidate => Strings.Garden_StageMature,
+                Maturity.Growing => Loc.Format(Strings.Garden_StageGrowing, Formats.Number(state.Stage)),
+                _ => Strings.Common_Empty,
+            };
+            ImGui.TextColored(HubStyle.Text, stageText);
+
+            // Only ever known for a bed Gardener planted itself: nothing in the game's own read says
+            // what soil a bed went in with, so a bed planted by hand shows no soil rather than a guess.
+            if (record?.SoilItemId is { } soilItemId and not 0)
+                ImGui.TextColored(HubStyle.Text, ItemSheet.Name(soilItemId));
+
+            if (record is { } rec)
+            {
+                if (Growth.WiltsAt(rec) is { } wiltsAt)
+                    ImGui.TextColored(HubStyle.Text, Formats.LocalDateTime(wiltsAt.ToLocalTime()));
+
+                var window = Growth.HarvestWindow(rec);
+                if (window.Confidence != HarvestConfidence.Unknown)
+                {
+                    var confidenceText = HarvestConfidenceText(window);
+                    var when = window.Earliest is { } e && window.Latest is { } l
+                        ? Loc.Format(Strings.Garden_HarvestWindowRange, Formats.LocalDateTime(e.ToLocalTime()), Formats.LocalTime(l.ToLocalTime()))
+                        : Strings.Garden_HarvestWindowUnknown;
+                    // A hand-set estimate already reads as "estimated" via HarvestConfidenceText, so
+                    // this never doubles up with it: AnchorUncertainty is null exactly when the
+                    // estimate widget last wrote PlantedAt.
+                    var line = window.AnchorUncertainty is { } anchorUncertainty
+                        ? Loc.Format(Strings.Garden_HarvestWindowLineWithUncertainty, when, confidenceText, FormatUncertainty(anchorUncertainty))
+                        : Loc.Format(Strings.Garden_HarvestWindowLine, when, confidenceText);
+                    ImGui.TextColored(HubStyle.Text, line);
+                }
+
+                // The most recent TALK_* sentence chat has echoed for this bed (see CropChatState) —
+                // the only source for wilted and true harvest-readiness the bed menu itself never
+                // offers. An unobserved condition prints nothing, rather than implying healthy.
+                if (rec.LastObservedCropState is { } cropState && rec.LastObservedCropStateAt is { } observedAt)
+                {
+                    // Gardener's own one-word crop-condition summary, not GardenMenuText's TALK_*
+                    // sentence - the do-not-translate register does not apply here. An unclassified
+                    // MenuKey (the switch's default arm) falls back to the raw enum name, which does.
+                    var (text, color) = cropState switch
+                    {
+                        MenuKey.TalkVigorous => (Strings.Garden_CropVigorous, HubStyle.Good),
+                        MenuKey.TalkDepressed => (Strings.Garden_CropWilted, HubStyle.Warn),
+                        MenuKey.TalkRipe => (Strings.Garden_CropRipe, HubStyle.Good),
+                        MenuKey.TalkDead => (Strings.Garden_CropWithered, HubStyle.Bad),
+                        MenuKey.TalkNone => (Strings.Garden_CropEmpty, HubStyle.Faint),
+                        _ => (cropState.ToString(), HubStyle.Faint),
+                    };
+                    var agoHours = (DateTimeOffset.UtcNow - observedAt).TotalHours;
+                    ImGui.TextColored(color, Loc.Format(Strings.Garden_CropStateAge, text, Formats.Number(agoHours, "F0")));
+                }
+
+                if (rec.LastSeenByCharacter is { Length: > 0 } observer)
+                {
+                    var agoHours = (DateTimeOffset.UtcNow - rec.LastSeenAt).TotalHours;
+                    ImGui.TextColored(HubStyle.Text, Loc.Format(Strings.Garden_SeenBy, observer, Formats.Number(agoHours, "F0")));
+                }
             }
 
-            var confidenceText = HarvestConfidenceText(window);
-            var when = window.Earliest is { } e && window.Latest is { } l
-                ? Loc.Format(Strings.Garden_HarvestWindowRange, Formats.LocalDateTime(e.ToLocalTime()), Formats.LocalTime(l.ToLocalTime()))
-                : Strings.Garden_HarvestWindowUnknown;
-            // A hand-set estimate already reads as "estimated" above, so this never doubles up with
-            // it: AnchorUncertainty is null exactly when the estimate widget last wrote PlantedAt.
-            var line = window.AnchorUncertainty is { } anchorUncertainty
-                ? Loc.Format(Strings.Garden_HarvestWindowLineWithUncertainty, when, confidenceText, FormatUncertainty(anchorUncertainty))
-                : Loc.Format(Strings.Garden_HarvestWindowLine, when, confidenceText);
-            ImGui.TextUnformatted(line);
+            ImGui.PopTextWrapPos();
+            ImGui.EndTooltip();
         }
 
         /// <summary>Renders a duration the way its own magnitude deserves: seconds for a transition
@@ -1285,6 +1429,11 @@ namespace Gardener.Windows
                 record.PlantedAtUncertainty = null; // a hand-set guess replaces any transition anchor
                 GardenJournal.Upsert(record);
                 pendingEstimateHours.Remove(key);
+
+                // The only caller draws this inside a popup, and the estimate is a one-shot: leaving
+                // the popup open after the write reads as though nothing happened and invites a
+                // second click that sets the time again from a stale box.
+                ImGui.CloseCurrentPopup();
             }
         }
     }

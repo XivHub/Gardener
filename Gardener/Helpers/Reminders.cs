@@ -139,6 +139,23 @@ public static class Reminders
         return parts.Count > 0 ? string.Join(", ", parts) : Strings.Reminders_SummaryNothingDue;
     }
 
+    /// <summary>The same summary as <see cref="SummaryText"/>, filtered to one patch — the Garden
+    /// tab's per-patch header line, so a collapsed patch still answers "what needs doing" without
+    /// expanding it.</summary>
+    public static string SummaryTextFor(string patchKey)
+    {
+        var parts = new List<string>();
+        var dueToTend = DueToTend.Count(e => e.PatchKey == patchKey);
+        var aboutToWither = AboutToWither.Count(e => e.PatchKey == patchKey);
+        var readyToHarvest = ReadyToHarvest.Count(h => h.Entry.PatchKey == patchKey);
+        var timingUnknown = TimingUnknown.Count(e => e.PatchKey == patchKey);
+        if (dueToTend > 0) parts.Add(CountFragment(dueToTend, Strings.Reminders_SummaryToTend_One, Strings.Reminders_SummaryToTend_Other));
+        if (aboutToWither > 0) parts.Add(CountFragment(aboutToWither, Strings.Reminders_SummaryWither_One, Strings.Reminders_SummaryWither_Other));
+        if (readyToHarvest > 0) parts.Add(CountFragment(readyToHarvest, Strings.Reminders_SummaryReady_One, Strings.Reminders_SummaryReady_Other));
+        if (timingUnknown > 0) parts.Add(CountFragment(timingUnknown, Strings.Reminders_SummaryUnknown_One, Strings.Reminders_SummaryUnknown_Other));
+        return parts.Count > 0 ? string.Join(", ", parts) : Strings.Reminders_SummaryNothingDue;
+    }
+
     private static string CountFragment(int count, string oneTemplate, string otherTemplate) =>
         Loc.Format(count == 1 ? oneTemplate : otherTemplate, Formats.Number(count));
 

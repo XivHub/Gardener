@@ -370,11 +370,11 @@
   </data>
   <data name="Common_Unknown" xml:space="preserve">
     <value>unknown</value>
-    <comment>Generic standalone "unknown" fallback shared by MainWindow.DrawGardenTab (estate type / reachable-by), DrawWilt, and HarvestConfidenceText's default branch.</comment>
+    <comment>Generic standalone "unknown" fallback shared by MainWindow.DrawGardenTab (reachable-by), DrawWhenCell's fallback branch, and HarvestConfidenceText's default branch.</comment>
   </data>
   <data name="Common_Empty" xml:space="preserve">
     <value>empty</value>
-    <comment>MainWindow.DrawBedTable (no BedState recorded, or state.IsEmpty) and DrawSeedAndStage's Maturity.Empty branch: the bed holds nothing. Kept separate from Garden_CropEmpty, DrawCropState's own crop-condition word, even though the English spelling coincides.</comment>
+    <comment>MainWindow.DrawBedTable (no BedState recorded, or state.IsEmpty) and DrawBedTooltip's Maturity.Empty branch: the bed holds nothing. Kept separate from Garden_CropEmpty, DrawBedTooltip's own crop-condition word, even though the English spelling coincides.</comment>
   </data>
   <data name="Garden_TabLabel" xml:space="preserve">
     <value>Garden</value>
@@ -391,18 +391,6 @@
   <data name="Garden_HarvestLagNote" xml:space="preserve">
     <value>Harvest readiness is checked roughly once an hour, so a bed can stay unlisted for a while after it matures.</value>
     <comment>MainWindow.DrawGardenTab and DrawRemindersTab, shared note drawn above the bed table and above the Ready to harvest group.</comment>
-  </data>
-  <data name="Garden_PatchHeaderWithPlot" xml:space="preserve">
-    <value>{0} patch, plot {1}</value>
-    <comment>MainWindow.DrawGardenTab, patch header when the player's current plot is known. {0} is the PatchKind enum name (Deluxe/Oblong/Round; do-not-translate register - no EObj-to-Item mapping exists to resolve it to a furniture name). {1} is the 1-based plot number, an integer via Formats.Number.</comment>
-  </data>
-  <data name="Garden_PatchHeaderPlotUnknown" xml:space="preserve">
-    <value>{0} patch, plot unknown</value>
-    <comment>MainWindow.DrawGardenTab, patch header when PatchDiscovery could not determine the current plot. {0} is the PatchKind enum name (do-not-translate register).</comment>
-  </data>
-  <data name="Garden_EstateAccess" xml:space="preserve">
-    <value>Estate: {0}. Reachable by: {1}.</value>
-    <comment>MainWindow.DrawGardenTab, shown when the estate type or an accessible character is known. {0} is the EstateType enum name (a game housing concept, do-not-translate register) or Common_Unknown; {1} is TextList.And over the characters seen able to reach the house, or Common_Unknown.</comment>
   </data>
   <data name="Patch_EstateFreeCompany" xml:space="preserve">
     <value>Free Company estate</value>
@@ -444,17 +432,17 @@
     <value>Bed</value>
     <comment>MainWindow.DrawBedTable, the bed-number column header (kept with its "###col-bed" id suffix - a Resizable table's TableHeader widget keys off GetID(label), so a translated label must not read as a different column from the one the player already resized).</comment>
   </data>
-  <data name="Garden_ColSeedStage" xml:space="preserve">
-    <value>Seed / stage</value>
-    <comment>MainWindow.DrawBedTable column header (kept with its "###col-seedstage" id suffix, see Garden_ColBed).</comment>
+  <data name="Garden_ColCrop" xml:space="preserve">
+    <value>Crop</value>
+    <comment>MainWindow.DrawBedTable column header (kept with its "###col-crop" id suffix, see Garden_ColBed).</comment>
   </data>
-  <data name="Garden_ColWilt" xml:space="preserve">
-    <value>Wilt</value>
-    <comment>MainWindow.DrawBedTable column header (kept with its "###col-wilt" id suffix, see Garden_ColBed).</comment>
+  <data name="Garden_ColGrowth" xml:space="preserve">
+    <value>Growth</value>
+    <comment>MainWindow.DrawBedTable column header (kept with its "###col-growth" id suffix, see Garden_ColBed). The column itself carries no header text at the widget level beyond this label - StageIndicator draws four pips, a 1-4 growth meter, not a bed picture.</comment>
   </data>
-  <data name="Garden_ColHarvestWindow" xml:space="preserve">
-    <value>Harvest window</value>
-    <comment>MainWindow.DrawBedTable column header (kept with its "###col-harvestwindow" id suffix, see Garden_ColBed).</comment>
+  <data name="Garden_ColWhen" xml:space="preserve">
+    <value>When</value>
+    <comment>MainWindow.DrawBedTable column header (kept with its "###col-when" id suffix, see Garden_ColBed). Holds DrawWhenCell's one-sentence readiness summary; confidence, uncertainty and the exact window live in the Crop/Growth cell's tooltip instead.</comment>
   </data>
   <data name="Garden_NoDataForPatch" xml:space="preserve">
     <value>no data for this patch</value>
@@ -494,83 +482,75 @@
   </data>
   <data name="Garden_UnresolvedSeedRow" xml:space="preserve">
     <value>row {0}</value>
-    <comment>MainWindow.SeedName and DrawSeedAndStage fallback, reachable only when a GardeningSeed row has no resolvable produce item. {0} is the raw row id, an integer via Formats.Number.</comment>
+    <comment>MainWindow.SeedName fallback (the Crop column and DrawOrphans), reachable only when a GardeningSeed row has no resolvable produce item. {0} is the raw row id, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Garden_BedTooltipHeading" xml:space="preserve">
+    <value>Bed {0}</value>
+    <comment>MainWindow.DrawBedTooltip, the tooltip's first line. {0} is the bed number via Formats.Number.</comment>
   </data>
   <data name="Garden_StageMature" xml:space="preserve">
     <value>mature (4)</value>
-    <comment>MainWindow.DrawSeedAndStage, Maturity.MatureCandidate branch.</comment>
+    <comment>MainWindow.DrawBedTooltip, Maturity.MatureCandidate branch.</comment>
   </data>
   <data name="Garden_StageGrowing" xml:space="preserve">
     <value>growing ({0} of 4)</value>
-    <comment>MainWindow.DrawSeedAndStage, Maturity.Growing branch. {0} is the bed's current stage (1-3), an integer via Formats.Number.</comment>
+    <comment>MainWindow.DrawBedTooltip, Maturity.Growing branch. {0} is the bed's current stage (1-3), an integer via Formats.Number.</comment>
   </data>
   <data name="Garden_SeenBy" xml:space="preserve">
     <value>seen by {0}, {1}h ago</value>
-    <comment>MainWindow.DrawSeedAndStage, shown when a record carries LastSeenByCharacter. {0} is the observing character's name; {1} is hours elapsed, formatted "F0" via Formats.Number.</comment>
-  </data>
-  <data name="Garden_CropStateNeverObserved" xml:space="preserve">
-    <value>crop state never observed</value>
-    <comment>MainWindow.DrawCropState, shown when a bed record has no LastObservedCropState.</comment>
+    <comment>MainWindow.DrawBedTooltip, shown when a record carries LastSeenByCharacter. {0} is the observing character's name; {1} is hours elapsed, formatted "F0" via Formats.Number.</comment>
   </data>
   <data name="Garden_CropVigorous" xml:space="preserve">
     <value>vigorous</value>
-    <comment>MainWindow.DrawCropState, MenuKey.TalkVigorous branch. Gardener's own one-word crop-condition summary, not GardenMenuText's TALK_* sentence.</comment>
+    <comment>MainWindow.DrawBedTooltip, MenuKey.TalkVigorous branch. Gardener's own one-word crop-condition summary, not GardenMenuText's TALK_* sentence.</comment>
   </data>
   <data name="Garden_CropWilted" xml:space="preserve">
     <value>wilted</value>
-    <comment>MainWindow.DrawCropState, MenuKey.TalkDepressed branch. Gardener's own summary word.</comment>
+    <comment>MainWindow.DrawBedTooltip, MenuKey.TalkDepressed branch. Gardener's own summary word.</comment>
   </data>
   <data name="Garden_CropRipe" xml:space="preserve">
     <value>ripe</value>
-    <comment>MainWindow.DrawCropState, MenuKey.TalkRipe branch. Gardener's own summary word.</comment>
+    <comment>MainWindow.DrawBedTooltip, MenuKey.TalkRipe branch. Gardener's own summary word.</comment>
   </data>
   <data name="Garden_CropWithered" xml:space="preserve">
     <value>withered</value>
-    <comment>MainWindow.DrawCropState, MenuKey.TalkDead branch. Gardener's own summary word.</comment>
+    <comment>MainWindow.DrawBedTooltip, MenuKey.TalkDead branch. Gardener's own summary word.</comment>
   </data>
   <data name="Garden_CropEmpty" xml:space="preserve">
     <value>empty</value>
-    <comment>MainWindow.DrawCropState, MenuKey.TalkNone branch. Gardener's own summary word for the crop-condition chat classification, kept separate from Common_Empty (bed occupancy) even though the English word coincides.</comment>
+    <comment>MainWindow.DrawBedTooltip, MenuKey.TalkNone branch. Gardener's own summary word for the crop-condition chat classification, kept separate from Common_Empty (bed occupancy) even though the English word coincides.</comment>
   </data>
   <data name="Garden_CropStateAge" xml:space="preserve">
     <value>{0}, {1}h ago</value>
-    <comment>MainWindow.DrawCropState, appends how long ago the state was observed. {0} is one of the Garden_Crop* words above (or the raw MenuKey name for an unclassified state, do-not-translate); {1} is hours elapsed, formatted "F0" via Formats.Number.</comment>
-  </data>
-  <data name="Garden_PlantedAtUnknown" xml:space="preserve">
-    <value>planted-at unknown; set an estimate</value>
-    <comment>MainWindow.DrawHarvestWindow, shown when a bed record has no PlantedAt.</comment>
-  </data>
-  <data name="Garden_NoTimingData" xml:space="preserve">
-    <value>no timing data for this seed</value>
-    <comment>MainWindow.DrawHarvestWindow, shown when Growth.HarvestWindow's confidence is HarvestConfidence.Unknown.</comment>
+    <comment>MainWindow.DrawBedTooltip, appends how long ago the state was observed. {0} is one of the Garden_Crop* words above (or the raw MenuKey name for an unclassified state, do-not-translate); {1} is hours elapsed, formatted "F0" via Formats.Number.</comment>
   </data>
   <data name="Harvest_ConfidenceEstimated" xml:space="preserve">
     <value>estimated</value>
-    <comment>MainWindow.HarvestConfidenceText, HarvestConfidence.Estimated branch, shared by DrawHarvestWindow and DrawHarvestGroup.</comment>
+    <comment>MainWindow.HarvestConfidenceText, HarvestConfidence.Estimated branch, shared by DrawBedTooltip and DrawHarvestGroup.</comment>
   </data>
   <data name="Harvest_ConfidenceBundled" xml:space="preserve">
     <value>bundled</value>
-    <comment>MainWindow.HarvestConfidenceText, HarvestConfidence.Bundled branch, shared by DrawHarvestWindow and DrawHarvestGroup.</comment>
+    <comment>MainWindow.HarvestConfidenceText, HarvestConfidence.Bundled branch, shared by DrawBedTooltip and DrawHarvestGroup.</comment>
   </data>
   <data name="Harvest_ConfidenceObserved" xml:space="preserve">
     <value>observed, {0} sample(s)</value>
-    <comment>MainWindow.HarvestConfidenceText, HarvestConfidence.Calibrated branch, shared by DrawHarvestWindow and DrawHarvestGroup. {0} is HarvestWindow.SampleCount, an integer via Formats.Number.</comment>
+    <comment>MainWindow.HarvestConfidenceText, HarvestConfidence.Calibrated branch, shared by DrawBedTooltip and DrawHarvestGroup. {0} is HarvestWindow.SampleCount, an integer via Formats.Number.</comment>
   </data>
   <data name="Garden_HarvestWindowRange" xml:space="preserve">
     <value>{0} to {1}</value>
-    <comment>MainWindow.DrawHarvestWindow, the earliest-to-latest half of the harvest window line. {0} is the earliest local date/time via Formats.LocalDateTime; {1} is the latest local time via Formats.LocalTime.</comment>
+    <comment>MainWindow.DrawBedTooltip, the earliest-to-latest half of the harvest window line. {0} is the earliest local date/time via Formats.LocalDateTime; {1} is the latest local time via Formats.LocalTime.</comment>
   </data>
   <data name="Garden_HarvestWindowUnknown" xml:space="preserve">
     <value>?</value>
-    <comment>MainWindow.DrawHarvestWindow fallback when a resolved harvest window has neither an earliest nor a latest time.</comment>
+    <comment>MainWindow.DrawBedTooltip fallback when a resolved harvest window has neither an earliest nor a latest time.</comment>
   </data>
   <data name="Garden_HarvestWindowLine" xml:space="preserve">
     <value>{0} ({1})</value>
-    <comment>MainWindow.DrawHarvestWindow, the full cell text when the record carries no PlantedAtUncertainty. {0} is Garden_HarvestWindowRange or Garden_HarvestWindowUnknown; {1} is the shared HarvestConfidenceText.</comment>
+    <comment>MainWindow.DrawBedTooltip, the full tooltip line when the record carries no PlantedAtUncertainty. {0} is Garden_HarvestWindowRange or Garden_HarvestWindowUnknown; {1} is the shared HarvestConfidenceText.</comment>
   </data>
   <data name="Garden_HarvestWindowLineWithUncertainty" xml:space="preserve">
     <value>{0} ({1}, planted-at ±{2})</value>
-    <comment>MainWindow.DrawHarvestWindow, the full cell text when the record's PlantedAtUncertainty is set (a hand-observed transition, not a hand-set estimate). {0} is Garden_HarvestWindowRange or Garden_HarvestWindowUnknown; {1} is the shared HarvestConfidenceText; {2} is FormatUncertainty's own rendered duration ("3h" / "5m" / "10s").</comment>
+    <comment>MainWindow.DrawBedTooltip, the full tooltip line when the record's PlantedAtUncertainty is set (a hand-observed transition, not a hand-set estimate). {0} is Garden_HarvestWindowRange or Garden_HarvestWindowUnknown; {1} is the shared HarvestConfidenceText; {2} is FormatUncertainty's own rendered duration ("3h" / "5m" / "10s").</comment>
   </data>
   <data name="Garden_UncertaintySeconds" xml:space="preserve">
     <value>{0}s</value>
@@ -583,6 +563,46 @@
   <data name="Garden_UncertaintyHours" xml:space="preserve">
     <value>{0}h</value>
     <comment>MainWindow.FormatUncertainty, hour-or-more branch, feeding Garden_HarvestWindowLineWithUncertainty. {0} is the elapsed hours, formatted "F1" via Formats.Number.</comment>
+  </data>
+  <data name="Garden_WhenNotRecordedYet" xml:space="preserve">
+    <value>Not recorded yet.</value>
+    <comment>MainWindow.DrawWhenCell, branch 1: the bed has no BedRecord at all.</comment>
+  </data>
+  <data name="Garden_WhenWithered" xml:space="preserve">
+    <value>Withered.</value>
+    <comment>MainWindow.DrawWhenCell, branch 2: BedRecord.ObservedWithered is set.</comment>
+  </data>
+  <data name="Garden_WhenWiltedTendBefore" xml:space="preserve">
+    <value>Wilted; tend before {0}.</value>
+    <comment>MainWindow.DrawWhenCell, branch 3: Growth.WiltsAt has passed and Growth.WithersAt is still in the future. {0} is the wither time via Formats.LocalDateTime.</comment>
+  </data>
+  <data name="Garden_WhenWiltedTendNow" xml:space="preserve">
+    <value>Wilted; tend now.</value>
+    <comment>MainWindow.DrawWhenCell, branch 4: Growth.WiltsAt has passed and there is no future wither deadline to name.</comment>
+  </data>
+  <data name="Garden_WhenReadyNow" xml:space="preserve">
+    <value>Ready now.</value>
+    <comment>MainWindow.DrawWhenCell, branch 5: Growth.HarvestWindow's Earliest has already passed.</comment>
+  </data>
+  <data name="Garden_WhenMature" xml:space="preserve">
+    <value>Mature.</value>
+    <comment>MainWindow.DrawWhenCell, branch 6: Maturity.MatureCandidate with no timing data to back a harvest window (HarvestConfidence.Unknown).</comment>
+  </data>
+  <data name="Garden_WhenTendBy" xml:space="preserve">
+    <value>Tend by {0}.</value>
+    <comment>MainWindow.DrawWhenCell, branch 7: Growth.WiltsAt falls within Plugin.C.WiltWarningHours. {0} is the wilt time via Formats.LocalDateTime.</comment>
+  </data>
+  <data name="Garden_WhenReadyRange" xml:space="preserve">
+    <value>Ready {0} to {1}.</value>
+    <comment>MainWindow.DrawWhenCell, branch 8: the harvest window is known but not yet due. {0} is the earliest local date/time via Formats.LocalDateTime; {1} is the latest local time via Formats.LocalTime. Confidence and any anchor uncertainty are not in this cell - see the Garden_HarvestWindowLine* tooltip lines.</comment>
+  </data>
+  <data name="Garden_SetPlantingTimeButton" xml:space="preserve">
+    <value>Set planting time</value>
+    <comment>MainWindow.DrawWhenCell, branch 9: BedRecord.PlantedAt is null. Opens the "Set planting time##{patchKey}-{bedNumber}" popup holding DrawPlantedAtEstimate's existing hours-ago widgets.</comment>
+  </data>
+  <data name="Garden_PlantingTimePopupHeading" xml:space="preserve">
+    <value>When was this bed planted?</value>
+    <comment>MainWindow.DrawWhenCell's per-bed "set planting time" popup, the heading above DrawPlantedAtEstimate's hours-ago input.</comment>
   </data>
   <data name="Sweep_StatusRow" xml:space="preserve">
     <value>{0}: bed {1}, {2} left ({3})</value>
@@ -614,19 +634,35 @@
   </data>
   <data name="Sweep_BedOrderVerified" xml:space="preserve">
     <value>Bed order verified: {0}/{1}</value>
-    <comment>MainWindow.DrawSweepButtons. {0} is BedTargeting.VerifiedBedCount, {1} is the patch's own bed count, both integers via Formats.Number.</comment>
+    <comment>MainWindow.DrawPatchMetaLine, shown only while BedTargeting.VerifiedBedCount is below the patch's own bed count. {0} is BedTargeting.VerifiedBedCount, {1} is the patch's own bed count, both integers via Formats.Number.</comment>
   </data>
-  <data name="RemoveCrop_Header" xml:space="preserve">
-    <value>Remove a crop</value>
-    <comment>MainWindow.DrawRemoveCropButtons section header, shown above the per-bed Remove Crop buttons.</comment>
+  <data name="Garden_LastSeenLine" xml:space="preserve">
+    <value>Last seen by {0}, {1}h ago.</value>
+    <comment>MainWindow.DrawPatchMetaLine. {0} is TextList.And over the distinct LastSeenByCharacter values among the patch's occupied beds; {1} is hours since the oldest of those records' LastSeenAt, formatted "F0" via Formats.Number. The whole line is omitted when no occupied bed on the patch carries an observer.</comment>
   </data>
-  <data name="RemoveCrop_BedLine" xml:space="preserve">
-    <value>Bed {0}: {1}</value>
-    <comment>MainWindow.DrawRemoveCropButtons. {0} is the bed number via Formats.Number; {1} is the produce name, a client-language name.</comment>
+  <data name="Garden_UnknownPlantingTimeCount_One" xml:space="preserve">
+    <value>{0} bed has no planting time.</value>
+    <comment>MainWindow.DrawPatchMetaLine, singular (n == 1): count of this patch's BedRecords with PlantedAt null. {0} is the count via Formats.Number. Omitted entirely when the count is 0.</comment>
+  </data>
+  <data name="Garden_UnknownPlantingTimeCount_Other" xml:space="preserve">
+    <value>{0} beds have no planting time.</value>
+    <comment>MainWindow.DrawPatchMetaLine, plural (n != 1, including 0 - though the 0 case is never rendered, see the _One comment). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Garden_SetAllPlantingTimesButton" xml:space="preserve">
+    <value>Set them all</value>
+    <comment>MainWindow.DrawPatchMetaLine button, next to Garden_UnknownPlantingTimeCount_*, opening the "Set all planting times##{patch.Key}" popup.</comment>
+  </data>
+  <data name="Garden_SetAllPlantingTimesBody" xml:space="preserve">
+    <value>Sets every bed on this patch with no recorded planting time to planted this many hours ago:</value>
+    <comment>MainWindow.DrawSetAllPlantingTimesPopup, the body text above the hours InputInt. No slots.</comment>
   </data>
   <data name="RemoveCrop_ConfirmMessage" xml:space="preserve">
     <value>{0}: {1} in bed {2}? This can't be undone.</value>
-    <comment>MainWindow.DrawRemoveCropButtons confirm popup. {0} is GameWords.Action(MenuKey.Dispose), the game's own bed-menu verb; {1} is the produce name, a client-language name; {2} is the bed number via Formats.Number.</comment>
+    <comment>MainWindow.DrawRemoveCropButton confirm popup. {0} is GameWords.Action(MenuKey.Dispose), the game's own bed-menu verb; {1} is the produce name, a client-language name; {2} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Garden_RemoveButtonTooltip" xml:space="preserve">
+    <value>{0}: bed {1}, {2}.</value>
+    <comment>MainWindow.DrawRemoveCropButton hover tooltip. {0} is GameWords.Action(MenuKey.Dispose), the game's own bed-menu verb; {1} is the bed number via Formats.Number; {2} is the produce name, a client-language name.</comment>
   </data>
   <data name="Reminders_HouseFallback" xml:space="preserve">
     <value>House</value>

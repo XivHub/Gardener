@@ -297,15 +297,6 @@
   <data name="Garden_HarvestLagNote" xml:space="preserve">
     <value>La disponibilidad para cosechar se revisa aproximadamente cada hora, así que una parcela puede quedar fuera de la lista un rato después de madurar.</value>
   </data>
-  <data name="Garden_PatchHeaderWithPlot" xml:space="preserve">
-    <value>Huerto {0}, terreno {1}</value>
-  </data>
-  <data name="Garden_PatchHeaderPlotUnknown" xml:space="preserve">
-    <value>Huerto {0}, terreno desconocido</value>
-  </data>
-  <data name="Garden_EstateAccess" xml:space="preserve">
-    <value>Finca: {0}. Accesible por: {1}.</value>
-  </data>
   <data name="Patch_EstateFreeCompany" xml:space="preserve">
     <value>Casa de compañía libre</value>
   </data>
@@ -336,14 +327,14 @@
   <data name="Garden_ColBed" xml:space="preserve">
     <value>Parcela</value>
   </data>
-  <data name="Garden_ColSeedStage" xml:space="preserve">
-    <value>Semilla / etapa</value>
+  <data name="Garden_ColCrop" xml:space="preserve">
+    <value>Cultivo</value>
   </data>
-  <data name="Garden_ColWilt" xml:space="preserve">
-    <value>Marchitez</value>
+  <data name="Garden_ColGrowth" xml:space="preserve">
+    <value>Crecimiento</value>
   </data>
-  <data name="Garden_ColHarvestWindow" xml:space="preserve">
-    <value>Ventana de cosecha</value>
+  <data name="Garden_ColWhen" xml:space="preserve">
+    <value>Cuándo</value>
   </data>
   <data name="Garden_NoDataForPatch" xml:space="preserve">
     <value>sin datos para este huerto</value>
@@ -375,6 +366,9 @@
   <data name="Garden_UnresolvedSeedRow" xml:space="preserve">
     <value>fila {0}</value>
   </data>
+  <data name="Garden_BedTooltipHeading" xml:space="preserve">
+    <value>Parcela {0}</value>
+  </data>
   <data name="Garden_StageMature" xml:space="preserve">
     <value>madura (4)</value>
   </data>
@@ -383,9 +377,6 @@
   </data>
   <data name="Garden_SeenBy" xml:space="preserve">
     <value>visto por {0}, hace {1}h</value>
-  </data>
-  <data name="Garden_CropStateNeverObserved" xml:space="preserve">
-    <value>estado del cultivo nunca observado</value>
   </data>
   <data name="Garden_CropVigorous" xml:space="preserve">
     <value>vigoroso</value>
@@ -404,12 +395,6 @@
   </data>
   <data name="Garden_CropStateAge" xml:space="preserve">
     <value>{0}, hace {1}h</value>
-  </data>
-  <data name="Garden_PlantedAtUnknown" xml:space="preserve">
-    <value>hora de plantado desconocida; establece una estimación</value>
-  </data>
-  <data name="Garden_NoTimingData" xml:space="preserve">
-    <value>sin datos de tiempo para esta semilla</value>
   </data>
   <data name="Harvest_ConfidenceEstimated" xml:space="preserve">
     <value>estimado</value>
@@ -441,6 +426,36 @@
   <data name="Garden_UncertaintyHours" xml:space="preserve">
     <value>{0}h</value>
   </data>
+  <data name="Garden_WhenNotRecordedYet" xml:space="preserve">
+    <value>Todavía sin registrar.</value>
+  </data>
+  <data name="Garden_WhenWithered" xml:space="preserve">
+    <value>Seco.</value>
+  </data>
+  <data name="Garden_WhenWiltedTendBefore" xml:space="preserve">
+    <value>Marchito; cuídalo antes de las {0}.</value>
+  </data>
+  <data name="Garden_WhenWiltedTendNow" xml:space="preserve">
+    <value>Marchito; cuídalo ya.</value>
+  </data>
+  <data name="Garden_WhenReadyNow" xml:space="preserve">
+    <value>Lista para cosechar ahora.</value>
+  </data>
+  <data name="Garden_WhenMature" xml:space="preserve">
+    <value>Madura.</value>
+  </data>
+  <data name="Garden_WhenTendBy" xml:space="preserve">
+    <value>Cuídalo antes de las {0}.</value>
+  </data>
+  <data name="Garden_WhenReadyRange" xml:space="preserve">
+    <value>Lista de {0} a {1}.</value>
+  </data>
+  <data name="Garden_SetPlantingTimeButton" xml:space="preserve">
+    <value>Establecer hora de plantado</value>
+  </data>
+  <data name="Garden_PlantingTimePopupHeading" xml:space="preserve">
+    <value>¿Cuándo se plantó esta parcela?</value>
+  </data>
   <data name="Sweep_StatusRow" xml:space="preserve">
     <value>{0}: parcela {1}, quedan {2} ({3})</value>
   </data>
@@ -465,14 +480,26 @@
   <data name="Sweep_BedOrderVerified" xml:space="preserve">
     <value>Orden de parcelas verificado: {0}/{1}</value>
   </data>
-  <data name="RemoveCrop_Header" xml:space="preserve">
-    <value>Retirar un cultivo</value>
+  <data name="Garden_LastSeenLine" xml:space="preserve">
+    <value>Visto por última vez por {0}, hace {1}h.</value>
   </data>
-  <data name="RemoveCrop_BedLine" xml:space="preserve">
-    <value>Parcela {0}: {1}</value>
+  <data name="Garden_UnknownPlantingTimeCount_One" xml:space="preserve">
+    <value>{0} parcela no tiene hora de plantado.</value>
+  </data>
+  <data name="Garden_UnknownPlantingTimeCount_Other" xml:space="preserve">
+    <value>{0} parcelas no tienen hora de plantado.</value>
+  </data>
+  <data name="Garden_SetAllPlantingTimesButton" xml:space="preserve">
+    <value>Establecerlas todas</value>
+  </data>
+  <data name="Garden_SetAllPlantingTimesBody" xml:space="preserve">
+    <value>Establece cada parcela de este huerto sin hora de plantado registrada como plantada hace estas horas:</value>
   </data>
   <data name="RemoveCrop_ConfirmMessage" xml:space="preserve">
     <value>¿{0}: {1} en la parcela {2}? Esto no se puede deshacer.</value>
+  </data>
+  <data name="Garden_RemoveButtonTooltip" xml:space="preserve">
+    <value>{0}: parcela {1}, {2}.</value>
   </data>
   <data name="Reminders_HouseFallback" xml:space="preserve">
     <value>Casa</value>
