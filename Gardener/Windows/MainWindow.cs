@@ -1431,9 +1431,9 @@ namespace Gardener.Windows
                             RequestGardenTab = true;
                         }
                     }
-                    else
+                    else if (Reminders.ReachText(patchGroup.First().ReachableBy) is { } reach)
                     {
-                        ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, Reminders.ReachText(patchGroup.First().ReachableBy)));
+                        ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, reach));
                     }
 
                     ImGui.Unindent();
@@ -1447,10 +1447,10 @@ namespace Gardener.Windows
         private static void DrawReminderLine(Vector4 color, string text, IReadOnlyList<string>? reachableBy)
         {
             ImGui.TextColored(color, text);
-            if (reachableBy is null)
+            if (reachableBy is null || Reminders.ReachText(reachableBy) is not { } reach)
                 return;
             ImGui.SameLine();
-            ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, Reminders.ReachText(reachableBy)));
+            ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, reach));
         }
 
         /// <summary>Shared by <see cref="DrawWhenCell"/> and <see cref="DrawHarvestGroup"/> so the

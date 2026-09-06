@@ -43,6 +43,10 @@ public static class Reminders
     private static DateTimeOffset lastRecomputedAt = DateTimeOffset.MinValue;
     private static DateTimeOffset lastChatEchoAt = DateTimeOffset.MinValue;
 
+    /// <summary>The character logged in as of the last <see cref="Recompute"/>, so
+    /// <see cref="ReachText"/> can stay off the object table on the draw thread.</summary>
+    private static string? currentCharacter;
+
     public static IReadOnlyList<ReminderEntry> DueToTend { get; private set; } = Array.Empty<ReminderEntry>();
     public static IReadOnlyList<ReminderEntry> AboutToWither { get; private set; } = Array.Empty<ReminderEntry>();
     public static IReadOnlyList<HarvestReminderEntry> ReadyToHarvest { get; private set; } = Array.Empty<HarvestReminderEntry>();
@@ -69,9 +73,16 @@ public static class Reminders
         var timingUnknown = new List<ReminderEntry>();
 
         var wiltWarning = TimeSpan.FromHours(Plugin.C.WiltWarningHours);
+        currentCharacter = Plugin.ObjectTable.LocalPlayer?.Name.TextValue;
 
         foreach (var record in GardenJournal.AllRecords)
         {
+            // Storage freezes every timer and the crop cannot be reached at all, so a parked bed is
+            // on no list here. Growth already returns null for the three time-based ones; this is
+            // what keeps the raw stage-4 and missing-timestamp reads below from contradicting it.
+            if (record.Parked)
+                continue;
+
             var wiltsAt = Growth.WiltsAt(record);
             if (wiltsAt is { } wa && wa <= now + wiltWarning)
                 dueToTend.Add(BuildEntry(record, wa));
@@ -118,12 +129,18 @@ public static class Reminders
 
     /// <summary>The reachability text for one entry: who to switch to, or that no character has been
     /// seen able to reach this house yet. For an action that needs house permission — harvesting,
-    /// planting, fertilizing, removing — never for tending, which needs none.</summary>
-    public static string ReachText(IReadOnlyList<string> reachableBy) => reachableBy.Count switch
+    /// planting, fertilizing, removing — never for tending, which needs none. Null when the character
+    /// already logged in is one of them: naming the character the player is standing on is the one
+    /// answer that helps nobody, and callers render no note at all for it.</summary>
+    public static string? ReachText(IReadOnlyList<string> reachableBy)
     {
-        0 => Strings.Reminders_ReachNone,
-        _ => Loc.Format(Strings.Reminders_ReachSwitch, TextList.Or(reachableBy)),
-    };
+        if (currentCharacter is { Length: > 0 } here && reachableBy.Contains(here, StringComparer.Ordinal))
+            return null;
+
+        return reachableBy.Count > 0
+            ? Loc.Format(Strings.Reminders_ReachSwitch, TextList.Or(reachableBy))
+            : Strings.Reminders_ReachNone;
+    }
 
     /// <summary>The short summary both the DTR entry and the chat echo read, e.g. "3 to tend, 1
     /// ready" — built here once so the two surfaces never drift apart. The joining ", " itself stays a
@@ -135,7 +152,6 @@ public static class Reminders
         if (DueToTend.Count > 0) parts.Add(CountFragment(DueToTend.Count, Strings.Reminders_SummaryToTend_One, Strings.Reminders_SummaryToTend_Other));
         if (AboutToWither.Count > 0) parts.Add(CountFragment(AboutToWither.Count, Strings.Reminders_SummaryWither_One, Strings.Reminders_SummaryWither_Other));
         if (ReadyToHarvest.Count > 0) parts.Add(CountFragment(ReadyToHarvest.Count, Strings.Reminders_SummaryReady_One, Strings.Reminders_SummaryReady_Other));
-        if (TimingUnknown.Count > 0) parts.Add(CountFragment(TimingUnknown.Count, Strings.Reminders_SummaryUnknown_One, Strings.Reminders_SummaryUnknown_Other));
         return parts.Count > 0 ? string.Join(", ", parts) : Strings.Reminders_SummaryNothingDue;
     }
 
@@ -152,7 +168,6 @@ public static class Reminders
         if (dueToTend > 0) parts.Add(CountFragment(dueToTend, Strings.Reminders_SummaryToTend_One, Strings.Reminders_SummaryToTend_Other));
         if (aboutToWither > 0) parts.Add(CountFragment(aboutToWither, Strings.Reminders_SummaryWither_One, Strings.Reminders_SummaryWither_Other));
         if (readyToHarvest > 0) parts.Add(CountFragment(readyToHarvest, Strings.Reminders_SummaryReady_One, Strings.Reminders_SummaryReady_Other));
-        if (timingUnknown > 0) parts.Add(CountFragment(timingUnknown, Strings.Reminders_SummaryUnknown_One, Strings.Reminders_SummaryUnknown_Other));
         return parts.Count > 0 ? string.Join(", ", parts) : Strings.Reminders_SummaryNothingDue;
     }
 
@@ -167,7 +182,7 @@ public static class Reminders
             return;
         if (SchedulerMain.Running)
             return;
-        if (DueToTend.Count == 0 && AboutToWither.Count == 0 && ReadyToHarvest.Count == 0 && TimingUnknown.Count == 0)
+        if (DueToTend.Count == 0 && AboutToWither.Count == 0 && ReadyToHarvest.Count == 0)
             return;
         if (now - lastChatEchoAt < TimeSpan.FromMinutes(Plugin.C.ReminderIntervalMin))
             return;

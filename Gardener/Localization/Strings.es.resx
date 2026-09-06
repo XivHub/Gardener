@@ -1017,12 +1017,6 @@
   <data name="Reminders_SummaryReady_Other" xml:space="preserve">
     <value>{0} parcelas listas</value>
   </data>
-  <data name="Reminders_SummaryUnknown_One" xml:space="preserve">
-    <value>{0} parcela sin datos</value>
-  </data>
-  <data name="Reminders_SummaryUnknown_Other" xml:space="preserve">
-    <value>{0} parcelas sin datos</value>
-  </data>
   <data name="Reminders_SummaryNothingDue" xml:space="preserve">
     <value>nada pendiente</value>
   </data>
@@ -1039,13 +1033,16 @@
     <value>{0}, parcela {1}: a punto de secarse</value>
   </data>
   <data name="Dtr_TooltipReadyToHarvest" xml:space="preserve">
-    <value>{0}, parcela {1}: lista para cosechar, {2}</value>
+    <value>{0}, parcela {1}: lista para cosechar</value>
   </data>
   <data name="Dtr_TooltipMature" xml:space="preserve">
-    <value>{0}, parcela {1}: madura, {2}</value>
+    <value>{0}, parcela {1}: madura</value>
   </data>
-  <data name="Dtr_TooltipTimingUnknown" xml:space="preserve">
-    <value>{0}, parcela {1}: hora de plantado desconocida, {2}</value>
+  <data name="Dtr_TooltipTimingUnknownCount_One" xml:space="preserve">
+    <value>{0} parcela no tiene hora de plantado.</value>
+  </data>
+  <data name="Dtr_TooltipTimingUnknownCount_Other" xml:space="preserve">
+    <value>{0} parcelas no tienen hora de plantado.</value>
   </data>
   <data name="Guard_OccupiedQuestEvent" xml:space="preserve">
     <value>El jugador está ocupado en un evento de misión ({0}).</value>

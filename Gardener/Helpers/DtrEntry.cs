@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.Gui.Dtr;
 using Gardener.Localization;
@@ -33,8 +34,13 @@ public static class DtrEntry
         if (entry is null)
             return;
 
+        // Reminders.TimingUnknown is deliberately absent: a bed the plugin never watched being
+        // planted has no planting time and never will until the player sets one, so counting it here
+        // would leave the bar permanently lit over something no amount of gardening resolves. It is
+        // reported in the tooltip's trailing line, in the Reminders tab, and beside the Garden tab's
+        // own button that fixes it.
         var total = Reminders.DueToTend.Count + Reminders.AboutToWither.Count
-            + Reminders.ReadyToHarvest.Count + Reminders.TimingUnknown.Count;
+            + Reminders.ReadyToHarvest.Count;
         var shown = Plugin.C.DtrEnabled && total > 0;
         if (entry.Shown != shown)
             entry.Shown = shown;
@@ -55,17 +61,31 @@ public static class DtrEntry
 
     private static string BuildTooltip()
     {
-        // Tending and wither risk need no house permission at all, so unlike the harvest and
-        // unknown-timing lines below, these two never append a "switch to" note.
+        // Tending and wither risk need no house permission at all, so unlike the harvest lines below,
+        // these two never append a "switch to" note.
         var lines = Reminders.DueToTend.Select(e => Loc.Format(Strings.Dtr_TooltipDueToTend, e.SeedName, Formats.Number(e.BedNumber)))
             .Concat(Reminders.AboutToWither.Select(e => Loc.Format(Strings.Dtr_TooltipAboutToWither, e.SeedName, Formats.Number(e.BedNumber))))
-            .Concat(Reminders.ReadyToHarvest.Select(e => Loc.Format(
+            .Concat(Reminders.ReadyToHarvest.Select(e => WithReach(Loc.Format(
                 e.FromWindow ? Strings.Dtr_TooltipReadyToHarvest : Strings.Dtr_TooltipMature,
-                e.Entry.SeedName, Formats.Number(e.Entry.BedNumber), Reminders.ReachText(e.Entry.ReachableBy))))
-            .Concat(Reminders.TimingUnknown.Select(e => Loc.Format(Strings.Dtr_TooltipTimingUnknown, e.SeedName, Formats.Number(e.BedNumber), Reminders.ReachText(e.ReachableBy))))
+                e.Entry.SeedName, Formats.Number(e.Entry.BedNumber)), e.Entry.ReachableBy)))
             .Take(MaxTooltipEntries)
             .ToList();
 
+        // Outside the Take: one summary line, never one line per bed, so the beds that do need doing
+        // something about can never be displaced by the ones that only need a time typed in.
+        var unknown = Reminders.TimingUnknown.Count;
+        if (unknown > 0)
+            lines.Add(Loc.Format(
+                unknown == 1 ? Strings.Dtr_TooltipTimingUnknownCount_One : Strings.Dtr_TooltipTimingUnknownCount_Other,
+                Formats.Number(unknown)));
+
         return lines.Count > 0 ? string.Join("\n", lines) : Strings.Dtr_TooltipNothingDue;
     }
+
+    /// <summary>Appends the parenthesised "switch to &lt;name&gt;" note, or nothing at all when the
+    /// character already logged in can reach the house.</summary>
+    private static string WithReach(string line, IReadOnlyList<string> reachableBy) =>
+        Reminders.ReachText(reachableBy) is { } reach
+            ? $"{line} {Loc.Format(Strings.Reminders_ReachSuffix, reach)}"
+            : line;
 }

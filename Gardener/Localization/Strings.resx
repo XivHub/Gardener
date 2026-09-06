@@ -1352,14 +1352,6 @@
     <value>{0} ready</value>
     <comment>Helpers.Reminders.SummaryText, ReadyToHarvest count fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
   </data>
-  <data name="Reminders_SummaryUnknown_One" xml:space="preserve">
-    <value>{0} unknown</value>
-    <comment>Helpers.Reminders.SummaryText, TimingUnknown count fragment, singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch, but Spanish noun agreement differs by count even where English does not change (composition contract rule 5).</comment>
-  </data>
-  <data name="Reminders_SummaryUnknown_Other" xml:space="preserve">
-    <value>{0} unknown</value>
-    <comment>Helpers.Reminders.SummaryText, TimingUnknown count fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
-  </data>
   <data name="Reminders_SummaryNothingDue" xml:space="preserve">
     <value>nothing due</value>
     <comment>Helpers.Reminders.SummaryText, fallback when every due list is empty. No slots.</comment>
@@ -1381,16 +1373,20 @@
     <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.AboutToWither entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number. Needs no "switch to" note: wither risk needs no house permission.</comment>
   </data>
   <data name="Dtr_TooltipReadyToHarvest" xml:space="preserve">
-    <value>{0} bed {1}: ready to harvest, {2}</value>
-    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.ReadyToHarvest entry with FromWindow true (a passed harvest window backs the claim). {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is Reminders.ReachText's own already-localized phrase.</comment>
+    <value>{0} bed {1}: ready to harvest</value>
+    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.ReadyToHarvest entry with FromWindow true (a passed harvest window backs the claim). {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; the reach note, when one is needed at all, is appended by DtrEntry.WithReach rather than carried in a slot here.</comment>
   </data>
   <data name="Dtr_TooltipMature" xml:space="preserve">
-    <value>{0} bed {1}: mature, {2}</value>
-    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.ReadyToHarvest entry with FromWindow false (stage 4 alone, no backing window). {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is Reminders.ReachText's own already-localized phrase.</comment>
+    <value>{0} bed {1}: mature</value>
+    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.ReadyToHarvest entry with FromWindow false (stage 4 alone, no backing window). {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; the reach note, when one is needed at all, is appended by DtrEntry.WithReach rather than carried in a slot here.</comment>
   </data>
-  <data name="Dtr_TooltipTimingUnknown" xml:space="preserve">
-    <value>{0} bed {1}: planting time unknown, {2}</value>
-    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.TimingUnknown entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is Reminders.ReachText's own already-localized phrase.</comment>
+  <data name="Dtr_TooltipTimingUnknownCount_One" xml:space="preserve">
+    <value>{0} bed has no planting time.</value>
+    <comment>Helpers.DtrEntry.BuildTooltip trailing line, singular (n == 1): the Reminders.TimingUnknown count, said once rather than one line per bed. {0} is the count via Formats.Number. Omitted entirely when the count is 0.</comment>
+  </data>
+  <data name="Dtr_TooltipTimingUnknownCount_Other" xml:space="preserve">
+    <value>{0} beds have no planting time.</value>
+    <comment>Helpers.DtrEntry.BuildTooltip trailing line, plural (n != 1, including 0 - though the 0 case is never rendered, see the _One comment). {0} is the count via Formats.Number.</comment>
   </data>
   <data name="Guard_OccupiedQuestEvent" xml:space="preserve">
     <value>Player is occupied in a quest event ({0}).</value>
