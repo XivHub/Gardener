@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
+using ECommons.Automation.NeoTaskManager;
 using ECommons.UIHelpers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Gardener.Game;
 using Gardener.Localization;
+using Gardener.Scheduler.Tasks;
 
 namespace Gardener.Helpers;
 
@@ -11,10 +13,10 @@ namespace Gardener.Helpers;
 /// Closes whatever gardening UI the plugin itself opened when a run ends outside the normal
 /// <see cref="Scheduler.Tasks.Task_CloseMenu"/> path: a guard trip or the Stop button both end a run
 /// through <see cref="Scheduler.SchedulerMain.DisablePlugin"/>, which can land mid-interaction on the
-/// bed's own <c>SelectString</c>, the <c>HousingGardening</c> planting dialog, or an item's
-/// <c>ContextMenu</c> — <see cref="Scheduler.Tasks.Task_Fertilize"/>'s own path to fertilizing. Every
-/// check here is safe to call with nothing open: a surface that was never open is skipped without a
-/// log line, since only an actual close is worth telling the player about.
+/// crop's <c>Talk</c> box, the bed's own <c>SelectString</c>, the <c>HousingGardening</c> planting
+/// dialog, or an item's <c>ContextMenu</c> — <see cref="Scheduler.Tasks.Task_Fertilize"/>'s own path
+/// to fertilizing. Every check here is safe to call with nothing open: a surface that was never open
+/// is skipped without a log line, since only an actual close is worth telling the player about.
 /// </summary>
 public static class GardeningUiCleanup
 {
@@ -23,9 +25,30 @@ public static class GardeningUiCleanup
 
     public static unsafe void CloseAll()
     {
+        DismissTalkPrompt();
         CloseBedMenu();
         CloseAddonByName(PlantDialogAddonName);
         CloseAddonByName(ContextMenuAddonName);
+    }
+
+    /// <summary>The crop's <c>Talk</c> box, clicked through rather than closed: closing it would hide
+    /// the box while leaving the housing interaction running server-side, the same trap
+    /// <see cref="CloseBedMenu"/> avoids. Clicking it through instead lets the interaction continue
+    /// into the bed menu — which <see cref="CloseBedMenu"/> cannot quit, since it runs in this same
+    /// frame, before that menu exists — so the quit is queued for when the menu opens.</summary>
+    private static void DismissTalkPrompt()
+    {
+        if (!TalkPrompt.IsOpen)
+            return;
+
+        TalkPrompt.Advance();
+        ActivityLog.Notify(Strings.Cleanup_DismissedTalk, chat: false);
+
+        Plugin.TaskManager.Enqueue(
+            () => AddonFinder.SelectString.FirstOrDefault() is { IsAddonReady: true },
+            "Cleanup: wait for the bed menu behind the dialogue",
+            new TaskManagerConfiguration { TimeLimitMS = Plugin.C.MenuTimeoutMs, AbortOnTimeout = false });
+        Task_CloseMenu.Enqueue();
     }
 
     /// <summary>The bed's own <c>SelectString</c>, closed the way the game itself expects: selecting

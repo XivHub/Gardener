@@ -92,10 +92,15 @@ public static class Task_OpenBed
             {
                 // The wait step above already timed out silently (AbortOnTimeout: false); nothing
                 // ever opened. Terminal for this bed: complete the step rather than requesting a
-                // retry, matching every other terminal branch below.
-                ActivityLog.SkippedBed(bedNumber,
-                    Loc.Format(Strings.OpenBed_MenuNeverOpened, patch.Key, Formats.Number(bedNumber)),
-                    Strings.OpenBed_MenuNeverOpenedChat);
+                // retry, matching every other terminal branch below. The crop's Talk box still being
+                // up says which of the two failures this is: the menu is behind that box, and
+                // SchedulerMain.AdvanceTalkPrompt should have clicked it through frames ago.
+                var (message, chatReason) = TalkPrompt.IsOpen
+                    ? (Loc.Format(Strings.OpenBed_DialogueStillOpen, patch.Key, Formats.Number(bedNumber)),
+                        Strings.OpenBed_DialogueStillOpenChat)
+                    : (Loc.Format(Strings.OpenBed_MenuNeverOpened, patch.Key, Formats.Number(bedNumber)),
+                        Strings.OpenBed_MenuNeverOpenedChat);
+                ActivityLog.SkippedBed(bedNumber, message, chatReason);
                 SchedulerMain.SkippedCount++;
                 onGiveUp();
                 return true;

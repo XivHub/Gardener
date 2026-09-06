@@ -1209,6 +1209,12 @@
   <data name="OpenBed_MenuNeverOpenedChat" xml:space="preserve">
     <value>su menú nunca se abrió</value>
   </data>
+  <data name="OpenBed_DialogueStillOpen" xml:space="preserve">
+    <value>{0} parcela {1}: el cuadro de diálogo del cultivo seguía abierto cuando tocaba el menú de la parcela; se omite.</value>
+  </data>
+  <data name="OpenBed_DialogueStillOpenChat" xml:space="preserve">
+    <value>su cuadro de diálogo no se cerró</value>
+  </data>
   <data name="OpenBed_PromptUnparsed" xml:space="preserve">
     <value>{0} parcela {1}: el mensaje «{2}» no se pudo interpretar como números de parcela/huerto; se cierra sin actuar.</value>
   </data>
@@ -1418,6 +1424,9 @@
   </data>
   <data name="Cleanup_ClosedAddon" xml:space="preserve">
     <value>Detención: se cerró el {0} abierto.</value>
+  </data>
+  <data name="Cleanup_DismissedTalk" xml:space="preserve">
+    <value>Detención: se cerró el cuadro de diálogo del cultivo.</value>
   </data>
   <data name="Cleanup_AddonWouldNotClose" xml:space="preserve">
     <value>Detención: {0} estaba abierto pero no se pudo cerrar.</value>

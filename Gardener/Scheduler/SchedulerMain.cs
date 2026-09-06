@@ -73,6 +73,10 @@ public static class SchedulerMain
 
     private static GardenerState resumeState = GardenerState.OpeningBed;
 
+    // When a Talk box was last clicked through, so AdvanceTalkPrompt paces itself off the same dial as
+    // every other step rather than clicking every frame.
+    private static DateTimeOffset lastTalkAdvanceAt = DateTimeOffset.MinValue;
+
     static SchedulerMain()
     {
         CropChatState.Classified += OnCropChatClassified;
@@ -191,6 +195,10 @@ public static class SchedulerMain
         Plugin.Telemetry?.Snapshot(BuildSnapshot);
 
         AttributeManualObservation();
+
+        // Ahead of the Idle return: Task_RemoveCrop drives a bed interaction of its own without ever
+        // entering the state machine, and its dialogue needs clicking through just the same.
+        AdvanceTalkPrompt();
 
         if (State == GardenerState.Idle)
             return;
@@ -550,6 +558,36 @@ public static class SchedulerMain
             : patches.Count == 1 ? patches[0] : null;
 
         return patch is null ? null : (patch, bedPatch.Bed);
+    }
+
+    /// <summary>Clicks the bed's <c>Talk</c> box through while the plugin is driving a bed
+    /// interaction. The box carries the crop's condition sentence and sits in front of the bed's
+    /// <c>SelectString</c> until it is dismissed, so a client without a dialogue-skipping plugin would
+    /// otherwise wait out <see cref="Configuration.MenuTimeoutMs"/> on every bed and skip it as "the
+    /// bed menu never opened". Runs for the whole interaction rather than only inside
+    /// <see cref="Task_OpenBed"/>'s wait for the menu, since the box also follows an action the menu
+    /// offers. Every box open under those conditions is one the plugin opened: it only ever interacts
+    /// with a bed, and a sweep additionally stays put in one garden and pauses outright on a cutscene,
+    /// which <see cref="GardenerGuard.IsScreenReady"/> re-checks here for the interactions that run
+    /// outside a sweep. Paced by <see cref="Configuration.StepDelayMs"/> because the box needs exactly
+    /// one click and stays readable for a few frames after it, so an unpaced check would send a burst
+    /// of clicks into a box that is already closing.</summary>
+    private static void AdvanceTalkPrompt()
+    {
+        if (State == GardenerState.Idle && !Plugin.TaskManager.IsBusy)
+            return;
+
+        var now = DateTimeOffset.UtcNow;
+        if (now - lastTalkAdvanceAt < TimeSpan.FromMilliseconds(Plugin.C.StepDelayMs))
+            return;
+
+        if (!GardenerGuard.IsScreenReady() || !TalkPrompt.IsOpen)
+            return;
+
+        var text = TalkPrompt.Text;
+        lastTalkAdvanceAt = now;
+        TalkPrompt.Advance();
+        Plugin.Logger.Debug($"[Gardener] dismissed the bed dialogue: \"{text}\" => {GardenMenuText.Classify(text)}");
     }
 
     private static void EnterPause()

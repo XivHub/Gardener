@@ -1608,6 +1608,14 @@
     <value>its menu never opened</value>
     <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, chatReason counterpart of OpenBed_MenuNeverOpened. No slots.</comment>
   </data>
+  <data name="OpenBed_DialogueStillOpen" xml:space="preserve">
+    <value>{0} bed {1}: the crop's dialogue box was still open when the bed menu was due; skipping.</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, ActivityLog.SkippedBed's Log tab message when the wait-for-menu step timed out with the Talk box still up, meaning it was never clicked through. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="OpenBed_DialogueStillOpenChat" xml:space="preserve">
+    <value>its dialogue box would not close</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, chatReason counterpart of OpenBed_DialogueStillOpen. No slots.</comment>
+  </data>
   <data name="OpenBed_PromptUnparsed" xml:space="preserve">
     <value>{0} bed {1}: prompt "{2}" did not parse into bed/patch numbers; closing without acting.</value>
     <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, ActivityLog.SkippedBed's Log tab message when GardenMenuText.ParseBedPatch fails on the open menu's own prompt text. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the addon's own raw prompt string, a diagnostic dump that stays untranslated per the do-not-translate register.</comment>
@@ -1887,6 +1895,10 @@
   <data name="Cleanup_ClosedAddon" xml:space="preserve">
     <value>Stop: closed the open {0}.</value>
     <comment>Helpers.GardeningUiCleanup.CloseAddonByName, ActivityLog.Notify Log-tab-only message (chat: false) when a plain AtkUnitBase.Close succeeds. {0} is the addon's own name (PlantDialogAddonName "HousingGardening" or ContextMenuAddonName "ContextMenu"), a client addon name that stays untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="Cleanup_DismissedTalk" xml:space="preserve">
+    <value>Stop: dismissed the open crop dialogue.</value>
+    <comment>Helpers.GardeningUiCleanup.DismissTalkPrompt, ActivityLog.Notify Log-tab-only message (chat: false) when the crop's Talk box was still up and is clicked through so the bed menu behind it can be quit. No slots.</comment>
   </data>
   <data name="Cleanup_AddonWouldNotClose" xml:space="preserve">
     <value>Stop: {0} was open but would not close.</value>
