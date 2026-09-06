@@ -17,6 +17,15 @@ namespace Gardener.Localization
 
         public static CultureInfo Culture { get; private set; } = CultureInfo.InvariantCulture;
 
+        /// <summary>The culture absolute dates and clock times render through, which is the player's
+        /// own regional settings rather than the UI language: a date order and a 12- or 24-hour clock
+        /// are conventions of where someone is, not of what language they read, so an English UI on a
+        /// European machine shows 07/09/2026 03:00 where <see cref="CultureInfo.InvariantCulture"/>
+        /// would show 09/07/2026 3:00 AM. Captured the first time this class is touched, which is
+        /// <c>Plugin</c>'s own constructor, so a later plugin mutating the shared draw thread's
+        /// culture cannot move it.</summary>
+        public static CultureInfo DateCulture { get; } = CultureInfo.CurrentCulture;
+
         // One warning per bad template, not one per frame: a mistranslated slot index would
         // otherwise throw and get caught here every single ImGui draw call.
         private static readonly HashSet<string> warnedTemplates = new();

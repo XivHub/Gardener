@@ -1041,7 +1041,12 @@ namespace Gardener.Windows
                 ImGui.SameLine(ImGui.GetContentRegionMax().X - pairsWidth - ImGui.GetStyle().FramePadding.X * 2f);
                 ImGui.TextColored(HubStyle.Faint, pairsText);
 
-                if (ImGui.BeginTable($"##goalpair-{layout.Patch.Key}", 2, ImGuiTableFlags.Borders))
+                // Fit-to-content, and no host extension: every cell is a short bracketed bed label, so
+                // two equal stretched columns leave a band of empty table between them the width of
+                // the window.
+                const ImGuiTableFlags pairFlags = ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit |
+                                                  ImGuiTableFlags.NoHostExtendX;
+                if (ImGui.BeginTable($"##goalpair-{layout.Patch.Key}", 2, pairFlags))
                 {
                     ImGui.TableNextRow();
                     foreach (var step in layout.Plan.Steps.OrderBy(s => s.BedNumber))
@@ -1496,8 +1501,10 @@ namespace Gardener.Windows
 
         /// <summary>The bed table's "When" column: exactly one whole sentence, in branch order —
         /// withered and wilted take priority over ready, and ready takes priority over the harvest
-        /// range, so a bed that needs tending is never upstaged by a stale harvest estimate. Confidence,
-        /// uncertainty and the exact window live in <see cref="DrawBedTooltip"/> instead, not here.</summary>
+        /// estimate, so a bed that needs tending is never upstaged by a stale harvest estimate. Every
+        /// timed branch speaks a duration rather than a clock time, which is what a gardener acts on;
+        /// confidence, uncertainty and the exact earliest-to-latest window live in
+        /// <see cref="DrawBedTooltip"/> instead, not here.</summary>
         private static void DrawWhenCell(string patchKey, int bedNumber, BedState state, BedRecord? record)
         {
             if (record is not { } rec)
@@ -1518,7 +1525,7 @@ namespace Gardener.Windows
             {
                 if (Growth.WithersAt(rec) is { } withersAt && withersAt > now)
                     ImGui.TextColored(HubStyle.Bad,
-                        Loc.Format(Strings.Garden_WhenWiltedTendBefore, Formats.LocalDateTime(withersAt.ToLocalTime())));
+                        Loc.Format(Strings.Garden_WhenWiltedTendWithin, Phrases.Until(withersAt - now)));
                 else
                     ImGui.TextColored(HubStyle.Warn, Strings.Garden_WhenWiltedTendNow);
                 return;
@@ -1539,13 +1546,15 @@ namespace Gardener.Windows
 
             if (wiltsAt is { } upcomingWilt && upcomingWilt <= now + TimeSpan.FromHours(Plugin.C.WiltWarningHours))
             {
-                ImGui.TextColored(HubStyle.Warn, Loc.Format(Strings.Garden_WhenTendBy, Formats.LocalDateTime(upcomingWilt.ToLocalTime())));
+                ImGui.TextColored(HubStyle.Warn, Loc.Format(Strings.Garden_WhenTendWithin, Phrases.Until(upcomingWilt - now)));
                 return;
             }
 
-            if (window.Confidence != HarvestConfidence.Unknown && window.Earliest is { } e && window.Latest is { } l)
+            // Latest is still required, not merely unused: a window resolved with no latest edge is
+            // the same "unknown" the tooltip prints a "?" for, and it belongs in the later branches.
+            if (window.Confidence != HarvestConfidence.Unknown && window.Earliest is { } e && window.Latest is not null)
             {
-                ImGui.TextUnformatted(Loc.Format(Strings.Garden_WhenReadyRange, Formats.LocalDateTime(e.ToLocalTime()), Formats.LocalTime(l.ToLocalTime())));
+                ImGui.TextUnformatted(Loc.Format(Strings.Garden_WhenReadyIn, Phrases.AboutUntil(e - now)));
                 return;
             }
 

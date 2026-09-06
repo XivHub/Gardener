@@ -572,9 +572,9 @@
     <value>Withered.</value>
     <comment>MainWindow.DrawWhenCell, branch 2: BedRecord.ObservedWithered is set.</comment>
   </data>
-  <data name="Garden_WhenWiltedTendBefore" xml:space="preserve">
-    <value>Wilted; tend before {0}.</value>
-    <comment>MainWindow.DrawWhenCell, branch 3: Growth.WiltsAt has passed and Growth.WithersAt is still in the future. {0} is the wither time via Formats.LocalDateTime.</comment>
+  <data name="Garden_WhenWiltedTendWithin" xml:space="preserve">
+    <value>Wilted; tend within {0}.</value>
+    <comment>MainWindow.DrawWhenCell, branch 3: Growth.WiltsAt has passed and Growth.WithersAt is still in the future. {0} is how long is left before it withers, as Phrases.Until's own inert noun phrase - a deadline off the wilt cadence, so it carries no "about".</comment>
   </data>
   <data name="Garden_WhenWiltedTendNow" xml:space="preserve">
     <value>Wilted; tend now.</value>
@@ -588,13 +588,13 @@
     <value>Mature.</value>
     <comment>MainWindow.DrawWhenCell, branch 6: Maturity.MatureCandidate with no timing data to back a harvest window (HarvestConfidence.Unknown).</comment>
   </data>
-  <data name="Garden_WhenTendBy" xml:space="preserve">
-    <value>Tend by {0}.</value>
-    <comment>MainWindow.DrawWhenCell, branch 7: Growth.WiltsAt falls within Plugin.C.WiltWarningHours. {0} is the wilt time via Formats.LocalDateTime.</comment>
+  <data name="Garden_WhenTendWithin" xml:space="preserve">
+    <value>Tend within {0}.</value>
+    <comment>MainWindow.DrawWhenCell, branch 7: Growth.WiltsAt falls within Plugin.C.WiltWarningHours. {0} is how long is left before it wilts, as Phrases.Until's own inert noun phrase.</comment>
   </data>
-  <data name="Garden_WhenReadyRange" xml:space="preserve">
-    <value>Ready {0} to {1}.</value>
-    <comment>MainWindow.DrawWhenCell, branch 8: the harvest window is known but not yet due. {0} is the earliest local date/time via Formats.LocalDateTime; {1} is the latest local time via Formats.LocalTime. Confidence and any anchor uncertainty are not in this cell - see the Garden_HarvestWindowLine* tooltip lines.</comment>
+  <data name="Garden_WhenReadyIn" xml:space="preserve">
+    <value>Ready in {0}.</value>
+    <comment>MainWindow.DrawWhenCell, branch 8: the harvest window is known but not yet due. {0} is how long is left before the window's earliest edge, as Phrases.AboutUntil's own inert noun phrase - "about", since the window is a range and its planting anchor is often inferred. The exact earliest-to-latest times, the confidence and any anchor uncertainty are not in this cell - see the Garden_HarvestWindowLine* tooltip lines.</comment>
   </data>
   <data name="Garden_SetPlantingTimeButton" xml:space="preserve">
     <value>Set planting time</value>

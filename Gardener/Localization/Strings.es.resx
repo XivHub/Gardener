@@ -432,8 +432,8 @@
   <data name="Garden_WhenWithered" xml:space="preserve">
     <value>Seco.</value>
   </data>
-  <data name="Garden_WhenWiltedTendBefore" xml:space="preserve">
-    <value>Marchito; cuídalo antes de las {0}.</value>
+  <data name="Garden_WhenWiltedTendWithin" xml:space="preserve">
+    <value>Marchito; cuídalo dentro de {0}.</value>
   </data>
   <data name="Garden_WhenWiltedTendNow" xml:space="preserve">
     <value>Marchito; cuídalo ya.</value>
@@ -444,11 +444,11 @@
   <data name="Garden_WhenMature" xml:space="preserve">
     <value>Madura.</value>
   </data>
-  <data name="Garden_WhenTendBy" xml:space="preserve">
-    <value>Cuídalo antes de las {0}.</value>
+  <data name="Garden_WhenTendWithin" xml:space="preserve">
+    <value>Cuídalo dentro de {0}.</value>
   </data>
-  <data name="Garden_WhenReadyRange" xml:space="preserve">
-    <value>Lista de {0} a {1}.</value>
+  <data name="Garden_WhenReadyIn" xml:space="preserve">
+    <value>Lista en {0}.</value>
   </data>
   <data name="Garden_SetPlantingTimeButton" xml:space="preserve">
     <value>Establecer hora de plantado</value>

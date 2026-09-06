@@ -26,6 +26,25 @@ namespace Gardener.Localization
                 ? Loc.Format(Strings.Duration_Minutes_One, Formats.Number(minutes))
                 : Loc.Format(Strings.Duration_Minutes_Other, Formats.Number(minutes));
 
+        /// <summary>How long until a moment, as an inert noun phrase: whole minutes under an hour,
+        /// whole hours out to two days, then days to one decimal. A span that has already elapsed
+        /// reads as one minute rather than as negative time, since every caller has its own branch
+        /// for a deadline that has passed.</summary>
+        public static string Until(TimeSpan span)
+        {
+            if (span.TotalHours < 1)
+                return Minutes(Math.Max(1, (int)Math.Round(span.TotalMinutes)));
+
+            return span.TotalHours < 48
+                ? Hours(Math.Round(span.TotalHours))
+                : Days(Math.Round(span.TotalDays, 1));
+        }
+
+        /// <summary>"About" plus <see cref="Until"/>, for a span read off the harvest window rather
+        /// than the wilt cadence: that window is a range and its planting anchor is often inferred,
+        /// so the phrase must not read as a promise of a single moment.</summary>
+        public static string AboutUntil(TimeSpan span) => Loc.Format(Strings.Duration_About, Until(span));
+
         public static string AboutDays(double days) => Loc.Format(Strings.Duration_About, Days(days));
 
         public static string AboutHours(double hours) => Loc.Format(Strings.Duration_About, Hours(hours));
