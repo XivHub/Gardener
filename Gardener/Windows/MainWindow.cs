@@ -32,6 +32,10 @@ namespace Gardener.Windows
         // Whether the goal picker is open over the current goal rather than the step list — toggled
         // by "Pick something else" / a fresh goal choice / "Clear goal". Search text is separate so it
         // survives across draws without being tied to any one goal.
+        // Which goal step the tab has already auto-expanded, so the expand happens once when a step
+        // becomes current rather than every frame, which would defeat the player's own collapse.
+        private static int? autoExpandedGoalStep;
+
         private static bool goalPickerOpen;
         private static string goalPickerSearch = string.Empty;
 
@@ -499,6 +503,7 @@ namespace Gardener.Windows
             ImGui.SameLine();
             if (ImGui.Button(Strings.Goal_ClearGoalButton))
                 GardenJournal.GoalSeedRow = 0;
+                autoExpandedGoalStep = null;
 
             var heldGoalCount = held.GetValueOrDefault(goalRow);
             if (heldGoalCount > 0)
@@ -580,6 +585,7 @@ namespace Gardener.Windows
                     if (ImGui.Selectable($"{label}##goalpick-{row}", row == currentGoal))
                     {
                         GardenJournal.GoalSeedRow = row;
+                        autoExpandedGoalStep = null;
                         goalPickerOpen = false;
                     }
                 }
@@ -630,7 +636,10 @@ namespace Gardener.Windows
             foreach (var (row, _) in quickPicksCache)
             {
                 if (ImGui.Button($"{SeedItems.ProduceName(row)}##quickpick-{row}"))
+                {
                     GardenJournal.GoalSeedRow = row;
+                    autoExpandedGoalStep = null;
+                }
             }
         }
 
@@ -759,16 +768,21 @@ namespace Gardener.Windows
             var allDone = members.All(m => status.Steps[m.Index].Status == GoalStepStatus.Done);
 
             ImGui.PushID($"goalstep-{number}");
-            // The current step is always forced open — its detail and handoff live inside — since
-            // which step is current moves over time as the player makes progress, and ImGui's own
-            // FirstUseEver default would only ever expand whichever step happened to be current the
-            // very first time this header was drawn. Every other step defaults collapsed once and is
-            // then left to the player's own toggle, matching "steps after the current one render
-            // collapsed to their title" without fighting a manual expand to look something up.
-            if (isCurrent)
+            // A step expands once, on the frame it becomes the current one — its detail and handoff
+            // live inside, and which step is current moves as the player makes progress, so
+            // FirstUseEver alone would only ever expand whichever step was current the very first
+            // time this header drew. Forcing it every frame instead would take the toggle away: the
+            // header would reopen before the click that closed it had finished. So the expand fires
+            // on the transition and the player owns it from then on.
+            if (isCurrent && autoExpandedGoalStep != number)
+            {
                 ImGui.SetNextItemOpen(true, ImGuiCond.Always);
-            else
+                autoExpandedGoalStep = number;
+            }
+            else if (!isCurrent)
+            {
                 ImGui.SetNextItemOpen(false, ImGuiCond.FirstUseEver);
+            }
             // ###-suffixed against number rather than title text: title will be translated, and a
             // CollapsingHeader's open/collapsed state is keyed off its own label.
             var open = ImGui.CollapsingHeader(
