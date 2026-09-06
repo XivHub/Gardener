@@ -1069,8 +1069,8 @@
     <comment>MainWindow.DrawGoalStepBody, Faint heading over a CrossStep's GoalSectionKind.Care lines (tend cadence and final harvest yield). No slots.</comment>
   </data>
   <data name="Goal_CrossPlantLayout" xml:space="preserve">
-    <value>Plant {0} in half the beds around the ring, then plant {1} in the beds between them, so every {1} has a {0} neighbour on both sides.</value>
-    <comment>GoalRoute.BuildCrossStep, first body line, describing the alternating ring layout. {0} is the anchor seed item's own name (SeedItems.SeedItemName), reused for both its occurrences; {1} is the cross seed item's own name, likewise reused. Both are client-language names.</comment>
+    <value>Half the beds hold {0} and half hold {1}, alternating around the ring.</value>
+    <comment>GoalRoute.BuildCrossStep, first body line, stating the alternating ring layout Gardener lays out for the player - a description of the step, not an instruction, since the per-patch bed table and its Plant button below place every seed. {0} is the anchor seed item's own name (SeedItems.SeedItemName); {1} is the cross seed item's own name. Both are client-language names, each used once.</comment>
   </data>
   <data name="Goal_CrossSingleOutcome" xml:space="preserve">
     <value>Every one of these beds becomes {0}.</value>
@@ -1137,8 +1137,8 @@
     <comment>GoalRoute.BuildCrossStep, soil paragraph, branch where the cross and yield soil families are the same. {0} is the resolved soil item's real name (GardeningItems.SoilName), a client-language item name. SoilSources.Does' own whole sentence is appended as a separate body line, not concatenated here.</comment>
   </data>
   <data name="Goal_SoilTwoFamilies" xml:space="preserve">
-    <value>Soil: {0} in the beds you plant second, the ones that cross; {1} in the beds you plant first, which cross with nothing and are harvested for seed.</value>
-    <comment>GoalRoute.BuildCrossStep, soil paragraph, branch where the cross and yield soil families differ. {0} is the cross soil's real item name; {1} is the yield soil's real item name (both GardeningItems.SoilName), client-language item names. SoilSources.Does' own whole sentence(s) are appended as separate body lines, not concatenated here.</comment>
+    <value>Soil: {0} in the crossing beds, {1} in the beds that cross with nothing and come back as seed.</value>
+    <comment>GoalRoute.BuildCrossStep, soil paragraph, branch where the cross and yield soil families differ. Beds are named by their role rather than by planting order, since Task_Plant resolves each bed's soil itself. {0} is the cross soil's real item name; {1} is the yield soil's real item name (both GardeningItems.SoilName), client-language item names. SoilSources.Does' own whole sentence(s) are appended as separate body lines, not concatenated here.</comment>
   </data>
   <data name="Goal_SoilPerRound" xml:space="preserve">
     <value>This round needs {0} {1} and {2} {3}.</value>

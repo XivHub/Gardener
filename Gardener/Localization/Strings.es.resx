@@ -805,7 +805,7 @@
     <value>Cuidados</value>
   </data>
   <data name="Goal_CrossPlantLayout" xml:space="preserve">
-    <value>Planta {0} en la mitad de las parcelas del anillo, luego planta {1} en las parcelas que quedan entre ellas, de modo que cada {1} tenga un vecino {0} a cada lado.</value>
+    <value>La mitad de las parcelas llevan {0} y la otra mitad {1}, alternando alrededor del anillo.</value>
   </data>
   <data name="Goal_CrossSingleOutcome" xml:space="preserve">
     <value>Todas estas parcelas se convierten en {0}.</value>
@@ -856,7 +856,7 @@
     <value>Tierra: {0} en todas las parcelas.</value>
   </data>
   <data name="Goal_SoilTwoFamilies" xml:space="preserve">
-    <value>Tierra: {0} en las parcelas que plantas segundo, las que cruzan; {1} en las parcelas que plantas primero, que no cruzan con nada y se cosechan por su semilla.</value>
+    <value>Tierra: {0} en las parcelas que cruzan, {1} en las que no cruzan con nada y vuelven como semilla.</value>
   </data>
   <data name="Goal_SoilPerRound" xml:space="preserve">
     <value>Esta ronda necesita {0} {1} y {2} {3}.</value>
