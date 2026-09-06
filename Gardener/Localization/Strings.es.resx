@@ -1,9 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Cancelar</value>
   </data>
@@ -297,6 +305,33 @@
   </data>
   <data name="Garden_EstateAccess" xml:space="preserve">
     <value>Finca: {0}. Accesible por: {1}.</value>
+  </data>
+  <data name="Patch_EstateFreeCompany" xml:space="preserve">
+    <value>Casa de compañía libre</value>
+  </data>
+  <data name="Patch_EstatePrivate" xml:space="preserve">
+    <value>Casa privada</value>
+  </data>
+  <data name="Patch_EstateShared" xml:space="preserve">
+    <value>Casa compartida</value>
+  </data>
+  <data name="Patch_EstateUnknown" xml:space="preserve">
+    <value>Casa desconocida</value>
+  </data>
+  <data name="Patch_HeaderWithPlot" xml:space="preserve">
+    <value>{0}, terreno {1} - {2}, {3} parcelas</value>
+  </data>
+  <data name="Patch_HeaderWithPlotNumbered" xml:space="preserve">
+    <value>{0}, terreno {1}, huerto {2} - {3}, {4} parcelas</value>
+  </data>
+  <data name="Patch_HeaderNoPlot" xml:space="preserve">
+    <value>{0} - {1}, {2} parcelas</value>
+  </data>
+  <data name="Patch_HeaderNoPlotNumbered" xml:space="preserve">
+    <value>{0}, huerto {1} - {2}, {3} parcelas</value>
+  </data>
+  <data name="Patch_NotRecorded" xml:space="preserve">
+    <value>Este huerto todavía no se ha registrado.</value>
   </data>
   <data name="Garden_ColBed" xml:space="preserve">
     <value>Parcela</value>
@@ -1311,5 +1346,9 @@
   </data>
   <data name="ActivityLog_SkippedBeds_Other" xml:space="preserve">
     <value>Se omitieron {0} parcelas: {1}.</value>
+  </data>
+  <data name="Patch_HouseHeaderWithPlot" xml:space="preserve">
+    <value>{0}, terreno {1}</value>
+    <comment>PatchLabel.HouseHeader, la linea que agrupa por casa en la pestana Recordatorios. {0} es una palabra de PatchLabel.Estate, {1} es el numero de terreno que ve el jugador.</comment>
   </data>
 </root>

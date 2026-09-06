@@ -14,6 +14,7 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Gardener.Game;
+using Gardener.Journal;
 
 namespace Gardener.Helpers;
 
@@ -263,10 +264,25 @@ public static class DebugDump
             $"center=({patch.Center.X:F2},{patch.Center.Y:F2},{patch.Center.Z:F2}) rotation={patch.Rotation:F4} " +
             $"housingObjectId={patch.HousingObjectId} furnitureIndex={patch.FurnitureIndex} entityId=0x{patch.EntityId:X8}");
         sb.AppendLine($"  layout: {DescribeLayout(patch.Kind)}");
+        sb.AppendLine($"  journal: {DescribePatchRecord(patch.Key)}");
         // patch.Beds is sorted by EntityId (PatchDiscovery.Refresh); the bracketed index below is
         // that array position, not the game's own "Nth Bed" number.
         for (var i = 0; i < patch.Beds.Count; i++)
             AppendBed(sb, i, patch.Beds[i]);
+    }
+
+    /// <summary>The persisted <see cref="PatchRecord"/> for this patch key, if any — the raw key,
+    /// kind, plot and ordinal the UI's <see cref="Gardener.Windows.PatchLabel"/> is never allowed to
+    /// print, kept alive here as the one place they still do.</summary>
+    private static string DescribePatchRecord(string patchKey)
+    {
+        var record = GardenJournal.PatchInfo(patchKey);
+        if (record is null)
+            return "no PatchRecord (never seen since this field was added)";
+
+        var plotText = record.PlotIndex is { } p ? $"plot {p + 1} (index {p})" : "plot unknown";
+        return $"patchKey={record.PatchKey} houseKey={record.HouseKey} kind={record.Kind} " +
+               $"bedCount={record.BedCount} {plotText} ordinal={record.Ordinal} lastSeenAt={record.LastSeenAt:O}";
     }
 
     /// <summary>Bed-number adjacency, straight from <see cref="PatchKindExtensions.Neighbours"/> so the

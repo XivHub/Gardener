@@ -135,6 +135,12 @@ namespace Gardener
                     var characterName = ObjectTable.LocalPlayer?.Name.TextValue;
                     GardenJournal.RecordHouseAccess(house.KeyString(), house.OwnedEstateType, characterName);
 
+                    // LastDiagnostics.CurrentPlot, not a fresh GetCurrentPlot(): the PatchDiscovery.Tick()
+                    // rescan just above already resolved both the patch list and the plot for this same
+                    // read, so re-deriving the plot here could only ever agree or go stale between the two.
+                    foreach (var patch in PatchDiscovery.Patches)
+                        GardenJournal.RecordPatchSeen(patch, PatchDiscovery.LastDiagnostics.CurrentPlot);
+
                     // PatchDiscovery only lists patches on a plot this character owns, so only an
                     // owned house's absence is trustworthy enough to call a patch confirmed parked
                     // rather than merely not currently visible from here.

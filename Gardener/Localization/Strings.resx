@@ -1,45 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
-  <!--
-    English is the neutral culture and the fallback: a key present here but absent from
-    Strings.<lang>.resx returns this value under any UI language. Every entry must carry a
-    <comment> naming its call site, and, for an entry with a {n} slot, what each slot holds.
-
-    Do-not-translate register. None of the following is ever given a translation key; a
-    template names the substituted value with {n} and interpolates it verbatim instead:
-      - Item names of every kind: seeds, produce, soil, fertilizer.
-      - Place-name components inside item names (Thanalan, Shroud, La Noscean). Never composed
-        into a template on their own; the whole item name is resolved and passed in as one slot.
-      - SoilFamily and any other enum naming a game concept, unless resolved to a live item name.
-      - Patch kind names (Deluxe, Oblong, Round): there is no EObj-to-Item mapping to resolve
-        them through, so they stay literal, wrapped in a whole-sentence template.
-      - The plugin name "Gardener", the /gardener command and its subcommands.
-      - Anything sourced from GardenMenuText (the game's own bed-menu wording).
-      - ImGui popup identifiers ("Confirm tend##{key}", "Confirm plant goal step"). BeginPopup
-        never draws its name; these are identifiers, not copy.
-
-    Composition contract, binding on every entry added here:
-      1. A value is a whole sentence, or a whole standalone noun/adverbial phrase. Never a clause
-         fragment that another template embeds as a subject or a verb.
-      2. Only grammatically inert values may be substituted: integers, client-language item
-         names, game-sheet action verbs, patch-shape tokens, dates and times, durations already
-         rendered as complete noun phrases, and joined lists of those.
-      3. Anything that would inflect the host sentence is resolved by key selection, not
-         substitution — pick between several whole-sentence keys in C#, never build one sentence
-         whose subject or verb is itself a slot.
-      4. One idea per key. Prefer two short sentences over one long composed one.
-      5. Plural is n == 1 to a "_One" key, everything else to "_Other". Holds for 0, 1, 1.5 and 2
-         in both English and Spanish.
-      6. A Spanish template never places a gendered article or an agreeing adjective directly
-         before a substituted item name. Use "de {0}", a count-first construction ("{0} {1}"), or
-         a verb that takes no article.
-      7. Slots are numbered ({0}, {1}, ...) and a translator may reorder them freely.
-      8. Every format call goes through Loc.Format, never string.Format, never $"".
-  -->
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Cancel</value>
     <comment>Generic cancel button label, shared by every confirmation popup.</comment>
@@ -177,7 +149,7 @@
     <comment>ConfigWindow.DrawLanguageCombo, second combo entry. An endonym, deliberately not translated: reads the same in Strings.es.resx as here.</comment>
   </data>
   <data name="Config_Language_Spanish" xml:space="preserve">
-    <value>Espa&#241;ol</value>
+    <value>Español</value>
     <comment>ConfigWindow.DrawLanguageCombo, third combo entry. An endonym, deliberately not translated: reads the same in Strings.es.resx as here.</comment>
   </data>
   <data name="Config_Automation_Header" xml:space="preserve">
@@ -432,6 +404,42 @@
     <value>Estate: {0}. Reachable by: {1}.</value>
     <comment>MainWindow.DrawGardenTab, shown when the estate type or an accessible character is known. {0} is the EstateType enum name (a game housing concept, do-not-translate register) or Common_Unknown; {1} is TextList.And over the characters seen able to reach the house, or Common_Unknown.</comment>
   </data>
+  <data name="Patch_EstateFreeCompany" xml:space="preserve">
+    <value>Free Company estate</value>
+    <comment>PatchLabel.Estate, EstateType.FreeCompanyEstate branch. A standalone selected value, never composed with a slot of its own.</comment>
+  </data>
+  <data name="Patch_EstatePrivate" xml:space="preserve">
+    <value>Private estate</value>
+    <comment>PatchLabel.Estate, EstateType.PersonalEstate branch.</comment>
+  </data>
+  <data name="Patch_EstateShared" xml:space="preserve">
+    <value>Shared estate</value>
+    <comment>PatchLabel.Estate, EstateType.SharedEstate branch.</comment>
+  </data>
+  <data name="Patch_EstateUnknown" xml:space="preserve">
+    <value>Unknown estate</value>
+    <comment>PatchLabel.Estate fallback for a null EstateType: a house only ever seen through FC/permission access rather than ownership, or a house not yet recorded at all (see HouseRecord.EstateType's own doc).</comment>
+  </data>
+  <data name="Patch_HeaderWithPlot" xml:space="preserve">
+    <value>{0}, plot {1} - {2}, {3} beds</value>
+    <comment>PatchLabel.Compose (via Header and FromKey), single recorded patch at this house, with a known plot. {0} is one of the Patch_Estate* sentences above; {1} is the 1-based plot number via Formats.Number; {2} is the PatchKind enum name (Deluxe/Oblong/Round; do-not-translate register); {3} is the patch's bed count via Formats.Number.</comment>
+  </data>
+  <data name="Patch_HeaderWithPlotNumbered" xml:space="preserve">
+    <value>{0}, plot {1}, patch {2} - {3}, {4} beds</value>
+    <comment>PatchLabel.Compose, used once a house has more than one recorded patch, with a known plot. {0} is one of the Patch_Estate* sentences; {1} is the 1-based plot number via Formats.Number; {2} is the patch's 1-based per-house Ordinal via Formats.Number (which patch this is, never a lookup key); {3} is the PatchKind enum name (do-not-translate register); {4} is the bed count via Formats.Number.</comment>
+  </data>
+  <data name="Patch_HeaderNoPlot" xml:space="preserve">
+    <value>{0} - {1}, {2} beds</value>
+    <comment>PatchLabel.Compose, single recorded patch at this house, with no resolved plot number yet. {0} is one of the Patch_Estate* sentences; {1} is the PatchKind enum name (do-not-translate register); {2} is the bed count via Formats.Number.</comment>
+  </data>
+  <data name="Patch_HeaderNoPlotNumbered" xml:space="preserve">
+    <value>{0}, patch {1} - {2}, {3} beds</value>
+    <comment>PatchLabel.Compose, more than one recorded patch at this house, with no resolved plot number yet. {0} is one of the Patch_Estate* sentences; {1} is the patch's 1-based per-house Ordinal via Formats.Number; {2} is the PatchKind enum name (do-not-translate register); {3} is the bed count via Formats.Number.</comment>
+  </data>
+  <data name="Patch_NotRecorded" xml:space="preserve">
+    <value>This patch has not been recorded yet.</value>
+    <comment>PatchLabel.FromKey's last-resort fallback: neither a PatchRecord for the patch key nor a HouseRecord for its house exists yet, so nothing at all is known to name it by.</comment>
+  </data>
   <data name="Garden_ColBed" xml:space="preserve">
     <value>Bed</value>
     <comment>MainWindow.DrawBedTable, the bed-number column header (kept with its "###col-bed" id suffix - a Resizable table's TableHeader widget keys off GetID(label), so a translated label must not read as a different column from the one the player already resized).</comment>
@@ -561,7 +569,7 @@
     <comment>MainWindow.DrawHarvestWindow, the full cell text when the record carries no PlantedAtUncertainty. {0} is Garden_HarvestWindowRange or Garden_HarvestWindowUnknown; {1} is the shared HarvestConfidenceText.</comment>
   </data>
   <data name="Garden_HarvestWindowLineWithUncertainty" xml:space="preserve">
-    <value>{0} ({1}, planted-at &#177;{2})</value>
+    <value>{0} ({1}, planted-at ±{2})</value>
     <comment>MainWindow.DrawHarvestWindow, the full cell text when the record's PlantedAtUncertainty is set (a hand-observed transition, not a hand-set estimate). {0} is Garden_HarvestWindowRange or Garden_HarvestWindowUnknown; {1} is the shared HarvestConfidenceText; {2} is FormatUncertainty's own rendered duration ("3h" / "5m" / "10s").</comment>
   </data>
   <data name="Garden_UncertaintySeconds" xml:space="preserve">
@@ -1783,5 +1791,9 @@
   <data name="ActivityLog_SkippedBeds_Other" xml:space="preserve">
     <value>Skipped {0} beds: {1}.</value>
     <comment>Helpers.ActivityLog.FlushPendingSkip, plural branch (n != 1 pending beds sharing one chatReason, collapsed into a single chat line - see the class summary). {0} is the pending count, an integer via Formats.Number; {1} is the already-localized chatReason.</comment>
+  </data>
+  <data name="Patch_HouseHeaderWithPlot" xml:space="preserve">
+    <value>{0}, plot {1}</value>
+    <comment>PatchLabel.HouseHeader, the Reminders tab house grouping line. {0} is a keyed estate word from PatchLabel.Estate, {1} is the plot number the game shows the player (one-based).</comment>
   </data>
 </root>

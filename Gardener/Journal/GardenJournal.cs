@@ -20,6 +20,11 @@ internal sealed class JournalFile
     /// state, not a setting — it lives here rather than in <c>Configuration</c> — but a journal from
     /// before this field existed deserialises it to 0 for free, so <see cref="Version"/> stays 1.</summary>
     public uint GoalSeedRow { get; set; }
+
+    /// <summary>Persisted patch identity, one <see cref="PatchRecord"/> per patch key ever seen. Same
+    /// argument as <see cref="GoalSeedRow"/>: a journal from before this list existed deserialises it
+    /// to an empty list for free, so this does not bump <see cref="Version"/> either.</summary>
+    public List<PatchRecord> Patches { get; set; } = new();
 }
 
 /// <summary>
@@ -40,6 +45,7 @@ public static class GardenJournal
 
     private static readonly Dictionary<(string PatchKey, int BedNumber), BedRecord> records = new();
     private static readonly Dictionary<string, HouseRecord> houses = new();
+    private static readonly Dictionary<string, PatchRecord> patches = new();
 
     /// <summary>When each bed was last observed empty, in-session only — never persisted, since it
     /// exists solely to date the next planting this session sees and would otherwise be journal
@@ -194,6 +200,67 @@ public static class GardenJournal
             dirty = true;
         }
     }
+
+    /// <summary>
+    /// Records that <paramref name="patch"/> was just discovered live, at <paramref name="plotIndex"/>
+    /// (zero-based, or null when unresolved). First sighting creates a <see cref="PatchRecord"/> with
+    /// <see cref="PatchRecord.Ordinal"/> set to one past the highest ordinal already recorded for that
+    /// patch's house — every later sighting only refreshes <see cref="PatchRecord.PlotIndex"/> and
+    /// <see cref="PatchRecord.LastSeenAt"/>, and marks the journal dirty only when the plot actually
+    /// changed, since <see cref="LastSeenAt"/> alone changing on every call would otherwise defeat the
+    /// save debounce.
+    /// </summary>
+    public static void RecordPatchSeen(Patch patch, int? plotIndex)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        if (!patches.TryGetValue(patch.Key, out var record))
+        {
+            var houseKey = patch.Key.Split(':')[0];
+            var ordinal = 1;
+            foreach (var existing in patches.Values)
+            {
+                if (existing.HouseKey == houseKey && existing.Ordinal >= ordinal)
+                    ordinal = existing.Ordinal + 1;
+            }
+
+            patches[patch.Key] = new PatchRecord
+            {
+                PatchKey = patch.Key,
+                HouseKey = houseKey,
+                Kind = patch.Kind,
+                BedCount = patch.Kind.BedCount(),
+                PlotIndex = plotIndex,
+                Ordinal = ordinal,
+                LastSeenAt = now,
+            };
+            dirty = true;
+            return;
+        }
+
+        if (record.PlotIndex != plotIndex)
+        {
+            record.PlotIndex = plotIndex;
+            dirty = true;
+        }
+        record.LastSeenAt = now;
+    }
+
+    /// <summary>The persisted record for one patch key, or null when that patch has never been seen
+    /// live since this field was added.</summary>
+    public static PatchRecord? PatchInfo(string patchKey) =>
+        patches.TryGetValue(patchKey, out var record) ? record : null;
+
+    /// <summary>Every recorded patch belonging to <paramref name="houseKey"/>, in per-house
+    /// <see cref="PatchRecord.Ordinal"/> order.</summary>
+    public static IReadOnlyList<PatchRecord> PatchesForHouse(string houseKey) =>
+        patches.Values.Where(p => p.HouseKey == houseKey).OrderBy(p => p.Ordinal).ToList();
+
+    /// <summary>Every recorded patch's <see cref="PatchRecord.Kind"/>, across every house on the
+    /// account, ordered by patch key for a reproducible result — the away-from-garden capacity
+    /// fallback's only source when <see cref="Game.PatchDiscovery"/> itself has nothing live.</summary>
+    public static IReadOnlyList<PatchKind> KnownPatchKinds() =>
+        patches.Values.OrderBy(p => p.PatchKey, StringComparer.Ordinal).Select(p => p.Kind).ToList();
 
     /// <summary>
     /// Applies a passive <see cref="GardenMemory"/> read to the journal. Every transition below is the
@@ -462,6 +529,8 @@ public static class GardenJournal
                 records[(record.PatchKey, record.BedNumber)] = record;
             foreach (var house in file.Houses)
                 houses[house.HouseKey] = house;
+            foreach (var patch in file.Patches)
+                patches[patch.PatchKey] = patch;
             Calibration = file.Calibration;
             goalSeedRow = file.GoalSeedRow;
         }
@@ -486,6 +555,7 @@ public static class GardenJournal
                 Version = 1,
                 Records = records.Values.ToList(),
                 Houses = houses.Values.ToList(),
+                Patches = patches.Values.ToList(),
                 Calibration = Calibration,
                 GoalSeedRow = goalSeedRow,
             };
