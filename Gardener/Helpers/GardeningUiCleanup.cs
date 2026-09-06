@@ -3,6 +3,7 @@ using System.Linq;
 using ECommons.UIHelpers;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Gardener.Game;
+using Gardener.Localization;
 
 namespace Gardener.Helpers;
 
@@ -43,13 +44,13 @@ public static class GardeningUiCleanup
         var index = Array.FindIndex(entries, e => GardenMenuText.Classify(e.Text) == MenuKey.EndEvent);
         if (index < 0)
         {
-            ActivityLog.Warn_("Stop: the open bed menu has no Quit entry; closing it directly instead.", chat: false);
+            ActivityLog.Warn_(Loc.Format(Strings.Cleanup_NoQuitEntry, nameof(MenuKey.EndEvent)), chat: false);
             select.Base->Close(true);
             return;
         }
 
         entries[index].Select();
-        ActivityLog.Notify("Stop: closed the open bed menu.", chat: false);
+        ActivityLog.Notify(Strings.Cleanup_ClosedBedMenu, chat: false);
     }
 
     /// <summary>Generic dismiss for a surface with no menu entry of its own to select — the same
@@ -62,8 +63,8 @@ public static class GardeningUiCleanup
             return;
 
         if (addon->Close(true))
-            ActivityLog.Notify($"Stop: closed the open {name}.", chat: false);
+            ActivityLog.Notify(Loc.Format(Strings.Cleanup_ClosedAddon, name), chat: false);
         else
-            ActivityLog.Warn_($"Stop: {name} was open but would not close.", chat: false);
+            ActivityLog.Warn_(Loc.Format(Strings.Cleanup_AddonWouldNotClose, name), chat: false);
     }
 }

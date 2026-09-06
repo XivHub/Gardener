@@ -10,6 +10,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Gardener.Game;
 using Gardener.Helpers;
 using Gardener.Journal;
+using Gardener.Localization;
 using XivHubPluginKit.Inventory;
 
 namespace Gardener.Scheduler.Tasks;
@@ -31,7 +32,7 @@ public static class Task_Plant
     /// opens, by family preference.</summary>
     public static void Enqueue(ushort seedRow, SoilPreference soilPreference) =>
         Enqueue(seedRow, bag => (GardeningItems.BestSoil(soilPreference, bag),
-            GardeningItems.SoilUnavailable(soilPreference) ?? "No soil available."));
+            GardeningItems.SoilUnavailable(soilPreference) ?? Strings.Plant_NoSoilAvailableFallback));
 
     /// <summary>A crossbreed plan's caller: the plan already resolved a specific soil item at plan-build
     /// time and told the player which one it would use, so this re-verifies that exact item is still
@@ -42,7 +43,7 @@ public static class Task_Plant
         {
             var soil = GardeningItems.Soils.FirstOrDefault(s => s.ItemId == soilItemId);
             var held = soil is not null && bag.Any(slot => slot.ItemId == soilItemId);
-            var reason = $"{ItemSheet.Name(soilItemId)} from the plan is no longer in the bag.";
+            var reason = Loc.Format(Strings.Plant_PlanSoilGone, ItemSheet.Name(soilItemId));
             return (held ? soil : null, reason);
         });
 
@@ -66,8 +67,8 @@ public static class Task_Plant
             if (select is not { IsAddonReady: true })
             {
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: menu closed before it could be planted.",
-                    "the menu closed before it could be planted");
+                    Loc.Format(Strings.Plant_MenuClosed, patch.Key, Formats.Number(bedNumber)),
+                    Strings.Plant_MenuClosedChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -79,8 +80,8 @@ public static class Task_Plant
             {
                 var seen = string.Join(", ", entries.Select(e => GardenMenuText.Classify(e.Text)));
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: no Plant Seeds entry (offered: {seen}); skipping.",
-                    "planting wasn't offered for this bed");
+                    Loc.Format(Strings.Plant_NoPlantSeedsEntry, patch.Key, Formats.Number(bedNumber), GameWords.Action(MenuKey.SetSeed), seen),
+                    Strings.Plant_NoPlantSeedsEntryChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -102,8 +103,8 @@ public static class Task_Plant
             if (!addonSeen)
             {
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: {AddonName} never opened; skipping.",
-                    "the planting dialog never opened");
+                    Loc.Format(Strings.Plant_DialogNeverOpened, patch.Key, Formats.Number(bedNumber), AddonName),
+                    Strings.Plant_DialogNeverOpenedChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -115,7 +116,7 @@ public static class Task_Plant
             if (soil is null)
             {
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: {soilReason}",
+                    Loc.Format(Strings.Plant_SoilProblem, patch.Key, Formats.Number(bedNumber), soilReason),
                     soilReason.TrimEnd('.'));
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
@@ -127,8 +128,8 @@ public static class Task_Plant
             if (seedSlot is null)
             {
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: seed for row {seedRow} is no longer in the bag; skipping.",
-                    "that seed is no longer in your bags");
+                    Loc.Format(Strings.Plant_SeedGone, patch.Key, Formats.Number(bedNumber), Formats.Number(seedRow)),
+                    Strings.Plant_SeedGoneChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -142,8 +143,8 @@ public static class Task_Plant
                 // stale by the time this writes the agent.
                 var soilName = ItemSheet.Name(soil.ItemId);
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: {soilName} is no longer in the bag; skipping.",
-                    $"your {soilName} is gone");
+                    Loc.Format(Strings.Plant_SoilStaleGone, patch.Key, Formats.Number(bedNumber), soilName),
+                    Loc.Format(Strings.Plant_SoilStaleGoneChat, soilName));
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
                 return true;
@@ -159,8 +160,8 @@ public static class Task_Plant
                 if (agent == null)
                 {
                     ActivityLog.SkippedBed(bedNumber,
-                        $"{patch.Key} bed {bedNumber}: AgentHousingPlant unavailable; skipping.",
-                        "a game error while planting");
+                        Loc.Format(Strings.Plant_AgentUnavailable, patch.Key, Formats.Number(bedNumber)),
+                        Strings.Plant_AgentUnavailableChat);
                     SchedulerMain.SkippedCount++;
                     SchedulerMain.State = GardenerState.ClosingMenu;
                     return true;
@@ -228,9 +229,8 @@ public static class Task_Plant
             var confirmed = GardenMemory.Read(patch).Any(s => s.BedNumber == bedNumber && s.SeedRow == seedRow);
             if (!confirmed)
             {
-                ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: planting could not be confirmed by the next " +
-                                   "passive read; stopping the sweep.",
-                    chatMessage: $"Stopped: bed {bedNumber}'s planting couldn't be confirmed.");
+                ActivityLog.Warn_(Loc.Format(Strings.Plant_NotConfirmed, patch.Key, Formats.Number(bedNumber)),
+                    chatMessage: Loc.Format(Strings.Plant_NotConfirmedChat, Formats.Number(bedNumber)));
                 SchedulerMain.State = GardenerState.Error;
                 return true;
             }
@@ -238,8 +238,8 @@ public static class Task_Plant
             SchedulerMain.PlantedCount++;
             var produce = SeedItems.ProduceName(seedRow);
             var soilName = ItemSheet.Name(plantedSoilItemId);
-            ActivityLog.Good_($"{patch.Key} bed {bedNumber}: planted {produce} in {soilName}.",
-                chatMessage: $"Planted {produce} in bed {bedNumber}, {soilName}.");
+            ActivityLog.Good_(Loc.Format(Strings.Plant_Planted, patch.Key, Formats.Number(bedNumber), produce, soilName),
+                chatMessage: Loc.Format(Strings.Plant_PlantedChat, produce, Formats.Number(bedNumber), soilName));
             SchedulerMain.State = GardenerState.ClosingMenu;
             return true;
         }, $"Plant: record and confirm (bed {bedNumber})");

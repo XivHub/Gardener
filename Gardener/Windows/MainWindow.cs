@@ -73,7 +73,7 @@ namespace Gardener.Windows
                 DrawRemindersTab();
                 ImGui.EndTabItem();
             }
-            if (ImGui.BeginTabItem("Log###logTab"))
+            if (ImGui.BeginTabItem($"{Strings.Log_TabLabel}###logTab"))
             {
                 DrawLogTab();
                 ImGui.EndTabItem();
@@ -1001,7 +1001,7 @@ namespace Gardener.Windows
         private static void DrawLogTab()
         {
             foreach (var entry in ActivityLog.Entries)
-                ImGui.TextColored(entry.Color, $"[{entry.Time}] {entry.Message}");
+                ImGui.TextColored(entry.Color, Loc.Format(Strings.Log_EntryLine, entry.Time, entry.Message));
         }
 
         /// <summary>

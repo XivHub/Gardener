@@ -7,6 +7,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using Gardener.Game;
 using Gardener.Helpers;
 using Gardener.Journal;
+using Gardener.Localization;
 using Gardener.Scheduler.Tasks;
 using XivHubPluginKit.Inventory;
 
@@ -79,11 +80,15 @@ public static class SchedulerMain
 
     public static bool Running => State != GardenerState.Idle;
 
+    // The harvest pre-flight guard's own threshold, named rather than inlined twice: once in the
+    // check below, once in Scheduler_NeedFreeSlotsToHarvest's {0}.
+    private const int MinFreeSlotsToHarvest = 2;
+
     public static bool EnablePlugin(SweepKind kind, Patch patch)
     {
         if (State != GardenerState.Idle)
         {
-            ActivityLog.Warn_("Already running.");
+            ActivityLog.Warn_(Strings.Scheduler_AlreadyRunning);
             return false;
         }
 
@@ -92,28 +97,29 @@ public static class SchedulerMain
         // and fertilize guards below, rather than discovered bed by bed once the sweep has started.
         if (kind == SweepKind.Plan && PendingPlan is not { Steps.Count: > 0 })
         {
-            Plugin.ChatGui.PrintError("[Gardener] No plan to run.");
+            Plugin.ChatGui.PrintError(Loc.Format(Strings.Chat_Prefix, Strings.Scheduler_NoPlanToRun));
             return false;
         }
 
         if (GardenerGuard.BlockingReason() is { } reason)
         {
-            Plugin.ChatGui.PrintError($"[Gardener] {reason}");
+            Plugin.ChatGui.PrintError(Loc.Format(Strings.Chat_Prefix, reason));
             return false;
         }
 
         var position = Plugin.ObjectTable.LocalPlayer?.Position;
         if (position is not { } pos)
         {
-            Plugin.ChatGui.PrintError("[Gardener] Player position unavailable.");
+            Plugin.ChatGui.PrintError(Loc.Format(Strings.Chat_Prefix, Strings.Guard_PlayerPositionUnavailable));
             return false;
         }
 
         // Refuse to start a harvest sweep at all when there is nowhere to put the produce, rather
         // than discovering that mid-sweep on whichever bed happens to fill the bag.
-        if (kind == SweepKind.Harvest && InventoryScan.FreeSlotsInBag() < 2)
+        if (kind == SweepKind.Harvest && InventoryScan.FreeSlotsInBag() < MinFreeSlotsToHarvest)
         {
-            Plugin.ChatGui.PrintError("[Gardener] Need at least 2 free inventory slots to harvest.");
+            Plugin.ChatGui.PrintError(Loc.Format(Strings.Chat_Prefix,
+                Loc.Format(Strings.Scheduler_NeedFreeSlotsToHarvest, Formats.Number(MinFreeSlotsToHarvest))));
             return false;
         }
 
@@ -121,7 +127,7 @@ public static class SchedulerMain
         // opening every bed only to fail identically on each one.
         if (kind == SweepKind.Fertilize && !HasAnyFertilizer())
         {
-            Plugin.ChatGui.PrintError("[Gardener] No fertilizer in the bag.");
+            Plugin.ChatGui.PrintError(Loc.Format(Strings.Chat_Prefix, Strings.Scheduler_NoFertilizerInBag));
             return false;
         }
 
@@ -140,8 +146,9 @@ public static class SchedulerMain
         planStepsByBed.Clear();
 
         State = GardenerState.Scanning;
-        ActivityLog.Good_($"Started {kind} on {patch.Kind} patch.",
-            chatMessage: $"{kind} started on your {patch.Kind} patch.");
+        var verb = GameWords.Action(kind);
+        ActivityLog.Good_(Loc.Format(Strings.Scheduler_Started, verb, patch.Kind),
+            chatMessage: Loc.Format(Strings.Scheduler_StartedChat, verb, patch.Kind));
         return true;
     }
 
@@ -164,9 +171,9 @@ public static class SchedulerMain
         // planting dialog or item context menu still open from whatever step Abort() just cut off.
         GardeningUiCleanup.CloseAll();
         if (reason is not null)
-            ActivityLog.Warn_($"Stopped: {reason}");
+            ActivityLog.Warn_(Loc.Format(Strings.Scheduler_StoppedWithReason, reason));
         else
-            ActivityLog.Warn_("Stopped.", chat: false);
+            ActivityLog.Warn_(Strings.Scheduler_StoppedNoReason, chat: false);
         return true;
     }
 
@@ -189,13 +196,13 @@ public static class SchedulerMain
 
         if (!GardenerGuard.InHousingTerritory())
         {
-            DisablePlugin("you left the housing area.");
+            DisablePlugin(Strings.Scheduler_LeftHousingArea);
             return;
         }
 
         if (Plugin.C.StopIfPlayerMoves && GardenerGuard.PlayerMovedFrom(RunOrigin, Plugin.C.MoveAbortDistance))
         {
-            DisablePlugin("you moved away from the patch.");
+            DisablePlugin(Strings.Scheduler_MovedAwayFromPatch);
             return;
         }
 
@@ -269,8 +276,17 @@ public static class SchedulerMain
 
         if (Worklist.Count == 0)
         {
-            ActivityLog.Notify($"Nothing to {CurrentKind.ToString()!.ToLowerInvariant()} on {CurrentPatch!.Kind} patch.",
-                chatMessage: $"Nothing to {CurrentKind.ToString()!.ToLowerInvariant()} on your {CurrentPatch!.Kind} patch.");
+            // Key selection rather than lower-casing a shared verb string: CurrentKind is Tend,
+            // Harvest or Fertilize here (Plan already branched off above), and none of the three
+            // player-facing verbs is safe to case-fold in every language.
+            var (log, chat) = CurrentKind switch
+            {
+                SweepKind.Tend => (Strings.Scheduler_NothingToTend, Strings.Scheduler_NothingToTendChat),
+                SweepKind.Harvest => (Strings.Scheduler_NothingToHarvest, Strings.Scheduler_NothingToHarvestChat),
+                SweepKind.Fertilize => (Strings.Scheduler_NothingToFertilize, Strings.Scheduler_NothingToFertilizeChat),
+                _ => throw new ArgumentOutOfRangeException(nameof(CurrentKind), CurrentKind, "unhandled SweepKind in RunScanning"),
+            };
+            ActivityLog.Notify(Loc.Format(log, CurrentPatch!.Kind), chatMessage: Loc.Format(chat, CurrentPatch!.Kind));
             State = GardenerState.Done;
             return;
         }
@@ -299,8 +315,8 @@ public static class SchedulerMain
 
         if (Worklist.Count == 0)
         {
-            ActivityLog.Warn_("Nothing left to plant; every step in the plan no longer checks out.",
-                chatMessage: "Nothing left to plant; the plan no longer checks out.");
+            ActivityLog.Warn_(Strings.Scheduler_PlanNothingLeft,
+                chatMessage: Strings.Scheduler_PlanNothingLeftChat);
             State = GardenerState.Done;
             return;
         }
@@ -361,28 +377,52 @@ public static class SchedulerMain
     private static void RunDone()
     {
         var kind = CurrentKind;
-        var logSummary = kind switch
+        var skipped = CountFragment(SkippedCount, Strings.Scheduler_CountSkipped_One, Strings.Scheduler_CountSkipped_Other);
+        string logSummary, chatSummary;
+        switch (kind)
         {
-            SweepKind.Tend => $"Tend complete: {TendedCount} tended, {SkippedCount} skipped.",
-            SweepKind.Harvest => $"Harvest complete: {HarvestedCount} harvested, {NoHarvestOfferedCount} " +
-                                  $"stage-4 with no Harvest entry, {SkippedCount} skipped.",
-            SweepKind.Fertilize => $"Fertilize complete: {FertilizedCount} fertilized, {SkippedCount} skipped.",
-            SweepKind.Plan => $"Plan complete: {PlantedCount} planted, {SkippedCount} skipped.",
-            _ => "Sweep complete.",
-        };
-        // Chat drops the stage-4/no-harvest-entry detail above: that count is calibration evidence
-        // for GardenMemory, not something the player can act on.
-        var chatSummary = kind switch
-        {
-            SweepKind.Tend => $"Tend finished: {TendedCount} tended, {SkippedCount} skipped.",
-            SweepKind.Harvest => $"Harvest finished: {HarvestedCount} harvested, {SkippedCount} skipped.",
-            SweepKind.Fertilize => $"Fertilize finished: {FertilizedCount} fertilized, {SkippedCount} skipped.",
-            SweepKind.Plan => $"Plan finished: {PlantedCount} planted, {SkippedCount} skipped.",
-            _ => "Sweep finished.",
-        };
+            case SweepKind.Tend:
+            {
+                var tended = CountFragment(TendedCount, Strings.Scheduler_CountTended_One, Strings.Scheduler_CountTended_Other);
+                logSummary = Loc.Format(Strings.Scheduler_Complete, GameWords.Action(kind.Value), string.Join(", ", tended, skipped));
+                chatSummary = Loc.Format(Strings.Scheduler_Finished, GameWords.Action(kind.Value), string.Join(", ", tended, skipped));
+                break;
+            }
+            case SweepKind.Harvest:
+            {
+                var harvested = CountFragment(HarvestedCount, Strings.Scheduler_CountHarvested_One, Strings.Scheduler_CountHarvested_Other);
+                // Chat drops the stage-4/no-harvest-entry detail: that count is calibration evidence
+                // for GardenMemory, not something the player can act on.
+                var noHarvestEntry = CountFragment(NoHarvestOfferedCount, Strings.Scheduler_CountNoHarvestEntry_One, Strings.Scheduler_CountNoHarvestEntry_Other);
+                logSummary = Loc.Format(Strings.Scheduler_Complete, GameWords.Action(kind.Value), string.Join(", ", harvested, noHarvestEntry, skipped));
+                chatSummary = Loc.Format(Strings.Scheduler_Finished, GameWords.Action(kind.Value), string.Join(", ", harvested, skipped));
+                break;
+            }
+            case SweepKind.Fertilize:
+            {
+                var fertilized = CountFragment(FertilizedCount, Strings.Scheduler_CountFertilized_One, Strings.Scheduler_CountFertilized_Other);
+                logSummary = Loc.Format(Strings.Scheduler_Complete, GameWords.Action(kind.Value), string.Join(", ", fertilized, skipped));
+                chatSummary = Loc.Format(Strings.Scheduler_Finished, GameWords.Action(kind.Value), string.Join(", ", fertilized, skipped));
+                break;
+            }
+            case SweepKind.Plan:
+            {
+                var planted = CountFragment(PlantedCount, Strings.Scheduler_CountPlanted_One, Strings.Scheduler_CountPlanted_Other);
+                logSummary = Loc.Format(Strings.Scheduler_Complete, GameWords.Action(kind.Value), string.Join(", ", planted, skipped));
+                chatSummary = Loc.Format(Strings.Scheduler_Finished, GameWords.Action(kind.Value), string.Join(", ", planted, skipped));
+                break;
+            }
+            default:
+                logSummary = Strings.Scheduler_GenericComplete;
+                chatSummary = Strings.Scheduler_GenericFinished;
+                break;
+        }
         ActivityLog.Good_(logSummary, chatMessage: chatSummary);
         DisablePlugin();
     }
+
+    private static string CountFragment(int count, string oneTemplate, string otherTemplate) =>
+        Loc.Format(count == 1 ? oneTemplate : otherTemplate, Formats.Number(count));
 
     private static void RunError()
     {

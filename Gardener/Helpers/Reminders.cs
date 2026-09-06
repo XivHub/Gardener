@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Gardener.Game;
 using Gardener.Journal;
+using Gardener.Localization;
 using Gardener.Scheduler;
 
 namespace Gardener.Helpers;
@@ -104,7 +105,7 @@ public static class Reminders
             houseKey,
             record.PatchKey,
             record.BedNumber,
-            SeedName(record.SeedRow),
+            SeedItems.ProduceName(record.SeedRow),
             at,
             GardenJournal.CharactersWithAccess(houseKey));
     }
@@ -115,33 +116,31 @@ public static class Reminders
         return separator < 0 ? patchKey : patchKey[..separator];
     }
 
-    private static string SeedName(ushort row)
-    {
-        var produceItemId = SeedItems.ProduceItemForRow(row);
-        return produceItemId is { } id ? XivHubPluginKit.Inventory.ItemSheet.Name(id) : $"row {row}";
-    }
-
     /// <summary>The reachability text for one entry: who to switch to, or that no character has been
     /// seen able to reach this house yet. For an action that needs house permission — harvesting,
     /// planting, fertilizing, removing — never for tending, which needs none.</summary>
     public static string ReachText(IReadOnlyList<string> reachableBy) => reachableBy.Count switch
     {
-        0 => "no character seen here yet",
-        1 => $"switch to {reachableBy[0]}",
-        _ => $"switch to {string.Join(" or ", reachableBy)}",
+        0 => Strings.Reminders_ReachNone,
+        _ => Loc.Format(Strings.Reminders_ReachSwitch, TextList.Or(reachableBy)),
     };
 
     /// <summary>The short summary both the DTR entry and the chat echo read, e.g. "3 to tend, 1
-    /// ready" — built here once so the two surfaces never drift apart.</summary>
+    /// ready" — built here once so the two surfaces never drift apart. The joining ", " itself stays a
+    /// literal separator rather than a keyed value: each fragment it joins is already a whole,
+    /// grammatically inert noun phrase (composition contract rule 2).</summary>
     public static string SummaryText()
     {
         var parts = new List<string>();
-        if (DueToTend.Count > 0) parts.Add($"{DueToTend.Count} to tend");
-        if (AboutToWither.Count > 0) parts.Add($"{AboutToWither.Count} about to wither");
-        if (ReadyToHarvest.Count > 0) parts.Add($"{ReadyToHarvest.Count} ready");
-        if (TimingUnknown.Count > 0) parts.Add($"{TimingUnknown.Count} unknown");
-        return parts.Count > 0 ? string.Join(", ", parts) : "nothing due";
+        if (DueToTend.Count > 0) parts.Add(CountFragment(DueToTend.Count, Strings.Reminders_SummaryToTend_One, Strings.Reminders_SummaryToTend_Other));
+        if (AboutToWither.Count > 0) parts.Add(CountFragment(AboutToWither.Count, Strings.Reminders_SummaryWither_One, Strings.Reminders_SummaryWither_Other));
+        if (ReadyToHarvest.Count > 0) parts.Add(CountFragment(ReadyToHarvest.Count, Strings.Reminders_SummaryReady_One, Strings.Reminders_SummaryReady_Other));
+        if (TimingUnknown.Count > 0) parts.Add(CountFragment(TimingUnknown.Count, Strings.Reminders_SummaryUnknown_One, Strings.Reminders_SummaryUnknown_Other));
+        return parts.Count > 0 ? string.Join(", ", parts) : Strings.Reminders_SummaryNothingDue;
     }
+
+    private static string CountFragment(int count, string oneTemplate, string otherTemplate) =>
+        Loc.Format(count == 1 ? oneTemplate : otherTemplate, Formats.Number(count));
 
     /// <summary>Never while a sweep is running, so a chat echo never lands mid-narration of the
     /// scheduler's own activity log.</summary>
@@ -157,6 +156,6 @@ public static class Reminders
             return;
 
         lastChatEchoAt = now;
-        Plugin.ChatGui.Print($"[Gardener] {SummaryText()}");
+        Plugin.ChatGui.Print(Loc.Format(Strings.Chat_Prefix, SummaryText()));
     }
 }

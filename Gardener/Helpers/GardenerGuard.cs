@@ -4,6 +4,7 @@ using Dalamud.Game.ClientState.Conditions;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Gardener.Game;
+using Gardener.Localization;
 
 namespace Gardener.Helpers;
 
@@ -58,15 +59,15 @@ public static class GardenerGuard
     private static string? OccupiedBlockingReason()
     {
         if (Plugin.Condition[ConditionFlag.OccupiedInQuestEvent])
-            return "Player is occupied in a quest event (OccupiedInQuestEvent).";
+            return Loc.Format(Strings.Guard_OccupiedQuestEvent, nameof(ConditionFlag.OccupiedInQuestEvent));
         if (Plugin.Condition[ConditionFlag.OccupiedSummoningBell])
-            return "Player is occupied at a summoning bell (OccupiedSummoningBell).";
+            return Loc.Format(Strings.Guard_OccupiedSummoningBell, nameof(ConditionFlag.OccupiedSummoningBell));
         if (Plugin.Condition[ConditionFlag.Occupied33])
-            return "Player is occupied (Occupied33).";
+            return Loc.Format(Strings.Guard_OccupiedGeneric, nameof(ConditionFlag.Occupied33));
         if (Plugin.Condition[ConditionFlag.Occupied38])
-            return "Player is occupied (Occupied38).";
+            return Loc.Format(Strings.Guard_OccupiedGeneric, nameof(ConditionFlag.Occupied38));
         if (Plugin.Condition[ConditionFlag.Occupied39])
-            return "Player is occupied (Occupied39).";
+            return Loc.Format(Strings.Guard_OccupiedGeneric, nameof(ConditionFlag.Occupied39));
         return null;
     }
 
@@ -79,23 +80,24 @@ public static class GardenerGuard
     public static string? EnvironmentBlockingReason()
     {
         if (HouseKey.Current() is null)
-            return "Not standing in a housing territory.";
+            return Strings.Guard_NotInHousing;
 
         if (PatchDiscovery.Patches.Count == 0)
         {
             var plot = PatchDiscovery.LastDiagnostics.CurrentPlot;
             return plot is { } p
-                ? $"No patches discovered on plot {p + 1}."
-                : "No patches discovered here.";
+                ? Loc.Format(Strings.Guard_NoPatchesOnPlot, Formats.Number(p + 1))
+                : Strings.Guard_NoPatchesHere;
         }
 
         var position = Plugin.ObjectTable.LocalPlayer?.Position;
         if (position is not { } pos)
-            return "Player position unavailable.";
+            return Strings.Guard_PlayerPositionUnavailable;
 
         var nearest = PatchDiscovery.Patches.Min(p => Vector3.Distance(pos, p.Center));
         if (nearest > Plugin.C.BedReachDistance)
-            return $"Nearest patch is {nearest:F1}y away (limit {Plugin.C.BedReachDistance:F1}y).";
+            return Loc.Format(Strings.Guard_NearestPatchTooFar,
+                Formats.Number(nearest, "F1"), Formats.Number(Plugin.C.BedReachDistance, "F1"));
 
         return null;
     }
@@ -120,6 +122,6 @@ public static class GardenerGuard
 
         return housing->HasHousePermissions()
             ? null
-            : "This character may lack FC rank permissions here; gardening actions may silently fail.";
+            : Strings.Guard_FcPermissionsWarning;
     }
 }

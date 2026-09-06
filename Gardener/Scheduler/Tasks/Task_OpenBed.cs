@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Gardener.Game;
 using Gardener.Helpers;
+using Gardener.Localization;
 
 namespace Gardener.Scheduler.Tasks;
 
@@ -38,8 +39,8 @@ public static class Task_OpenBed
             if (predicted is not { } entityId)
             {
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: no predicted bed entity; skipping.",
-                    "the game hasn't located this bed yet");
+                    Loc.Format(Strings.OpenBed_NoPredictedEntity, patch.Key, Formats.Number(bedNumber)),
+                    Strings.OpenBed_NoPredictedEntityChat);
                 SchedulerMain.SkippedCount++;
                 onGiveUp();
                 return null;
@@ -49,8 +50,8 @@ public static class Task_OpenBed
             if (obj is null)
             {
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: bed entity 0x{entityId:X8} is no longer in the object table; skipping.",
-                    "the bed can't be found right now");
+                    Loc.Format(Strings.OpenBed_EntityGone, patch.Key, Formats.Number(bedNumber), entityId.ToString("X8")),
+                    Strings.OpenBed_EntityGoneChat);
                 SchedulerMain.SkippedCount++;
                 onGiveUp();
                 return null;
@@ -67,8 +68,8 @@ public static class Task_OpenBed
                 if (targetSystem == null)
                 {
                     ActivityLog.SkippedBed(bedNumber,
-                        $"{patch.Key} bed {bedNumber}: TargetSystem unavailable; skipping.",
-                        "a game error while targeting");
+                        Loc.Format(Strings.OpenBed_TargetSystemUnavailable, patch.Key, Formats.Number(bedNumber)),
+                        Strings.OpenBed_TargetSystemUnavailableChat);
                     SchedulerMain.SkippedCount++;
                     onGiveUp();
                     return null;
@@ -93,8 +94,8 @@ public static class Task_OpenBed
                 // ever opened. Terminal for this bed: complete the step rather than requesting a
                 // retry, matching every other terminal branch below.
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: bed menu never opened; skipping.",
-                    "its menu never opened");
+                    Loc.Format(Strings.OpenBed_MenuNeverOpened, patch.Key, Formats.Number(bedNumber)),
+                    Strings.OpenBed_MenuNeverOpenedChat);
                 SchedulerMain.SkippedCount++;
                 onGiveUp();
                 return true;
@@ -104,9 +105,8 @@ public static class Task_OpenBed
             if (bedPatch is not { } bp)
             {
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: prompt \"{select.Text}\" did not parse " +
-                    "into bed/patch numbers; closing without acting.",
-                    "its menu wasn't recognized");
+                    Loc.Format(Strings.OpenBed_PromptUnparsed, patch.Key, Formats.Number(bedNumber), select.Text),
+                    Strings.OpenBed_PromptUnparsedChat);
                 SchedulerMain.SkippedCount++;
                 Task_CloseMenu.Enqueue();
                 Plugin.TaskManager.Enqueue(() =>
@@ -130,9 +130,8 @@ public static class Task_OpenBed
             if (attempt >= MaxAttemptsPerBed)
             {
                 ActivityLog.SkippedBed(bedNumber,
-                    $"{patch.Key} bed {bedNumber}: gave up after {attempt} attempts " +
-                    "(the menu kept disagreeing with the map); skipping.",
-                    "its position kept disagreeing with the map");
+                    Loc.Format(Strings.OpenBed_GaveUpAfterAttempts, patch.Key, Formats.Number(bedNumber), Formats.Number(attempt)),
+                    Strings.OpenBed_GaveUpAfterAttemptsChat);
                 SchedulerMain.SkippedCount++;
                 Task_CloseMenu.Enqueue();
                 Plugin.TaskManager.Enqueue(() =>

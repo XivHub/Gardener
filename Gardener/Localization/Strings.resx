@@ -1204,4 +1204,584 @@
     <value>Bed {0} ({1}) no longer crosses the way the plan expected; skipped.</value>
     <comment>CrossPlanner.Verify, LayoutPlan.Warnings entry when a crossing bed's resolved neighbour no longer matches LayoutPlan.ExpectedTargets. {0} is the bed number, an integer via Formats.Number; {1} is the skipped step's produce name (SeedItems.ProduceName), a client-language name.</comment>
   </data>
+  <data name="Chat_Prefix" xml:space="preserve">
+    <value>[Gardener] {0}</value>
+    <comment>The one chat-prefix template every chat-emitting call routes through: Helpers/Reminders.cs's periodic due-list echo, every Helpers/ActivityLog.cs chat print, and every Scheduler/SchedulerMain.cs ChatGui.PrintError guard sentence. "Gardener" is the plugin's own name and stays literal per the do-not-translate register. {0} is the already-localized message being announced.</comment>
+  </data>
+  <data name="Reminders_ReachNone" xml:space="preserve">
+    <value>no character seen here yet</value>
+    <comment>Helpers.Reminders.ReachText, branch where no character on the account has been seen able to reach this house. A standalone parenthetical phrase, never a sentence's own subject or verb (composition contract rule 1).</comment>
+  </data>
+  <data name="Reminders_ReachSwitch" xml:space="preserve">
+    <value>switch to {0}</value>
+    <comment>Helpers.Reminders.ReachText, branch where at least one character can reach this house. {0} is the reachable character name(s), already joined by TextList.Or when there is more than one - both the single-name and joined-list case share this one template since the sentence shape does not change.</comment>
+  </data>
+  <data name="Reminders_SummaryToTend_One" xml:space="preserve">
+    <value>{0} to tend</value>
+    <comment>Helpers.Reminders.SummaryText, DueToTend count fragment, singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch, but Spanish noun agreement differs by count even where English does not change (composition contract rule 5).</comment>
+  </data>
+  <data name="Reminders_SummaryToTend_Other" xml:space="preserve">
+    <value>{0} to tend</value>
+    <comment>Helpers.Reminders.SummaryText, DueToTend count fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_SummaryWither_One" xml:space="preserve">
+    <value>{0} about to wither</value>
+    <comment>Helpers.Reminders.SummaryText, AboutToWither count fragment, singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch, but Spanish noun agreement differs by count even where English does not change (composition contract rule 5).</comment>
+  </data>
+  <data name="Reminders_SummaryWither_Other" xml:space="preserve">
+    <value>{0} about to wither</value>
+    <comment>Helpers.Reminders.SummaryText, AboutToWither count fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_SummaryReady_One" xml:space="preserve">
+    <value>{0} ready</value>
+    <comment>Helpers.Reminders.SummaryText, ReadyToHarvest count fragment, singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch, but Spanish noun agreement differs by count even where English does not change (composition contract rule 5).</comment>
+  </data>
+  <data name="Reminders_SummaryReady_Other" xml:space="preserve">
+    <value>{0} ready</value>
+    <comment>Helpers.Reminders.SummaryText, ReadyToHarvest count fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_SummaryUnknown_One" xml:space="preserve">
+    <value>{0} unknown</value>
+    <comment>Helpers.Reminders.SummaryText, TimingUnknown count fragment, singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch, but Spanish noun agreement differs by count even where English does not change (composition contract rule 5).</comment>
+  </data>
+  <data name="Reminders_SummaryUnknown_Other" xml:space="preserve">
+    <value>{0} unknown</value>
+    <comment>Helpers.Reminders.SummaryText, TimingUnknown count fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_SummaryNothingDue" xml:space="preserve">
+    <value>nothing due</value>
+    <comment>Helpers.Reminders.SummaryText, fallback when every due list is empty. No slots.</comment>
+  </data>
+  <data name="Dtr_BarText" xml:space="preserve">
+    <value>Gardener: {0}</value>
+    <comment>Helpers.DtrEntry.Tick, the DTR status-bar entry's own text (distinct from DtrBar.Get("Gardener")'s bar identifier, which stays literal). "Gardener" is the plugin's own name and stays literal per the do-not-translate register. {0} is Reminders.SummaryText()'s own already-localized sentence fragment.</comment>
+  </data>
+  <data name="Dtr_TooltipNothingDue" xml:space="preserve">
+    <value>Nothing due.</value>
+    <comment>Helpers.DtrEntry.BuildTooltip fallback when every due list is empty. No slots.</comment>
+  </data>
+  <data name="Dtr_TooltipDueToTend" xml:space="preserve">
+    <value>{0} bed {1}: due to tend</value>
+    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.DueToTend entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number. Needs no "switch to" note: tending needs no house permission.</comment>
+  </data>
+  <data name="Dtr_TooltipAboutToWither" xml:space="preserve">
+    <value>{0} bed {1}: about to wither</value>
+    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.AboutToWither entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number. Needs no "switch to" note: wither risk needs no house permission.</comment>
+  </data>
+  <data name="Dtr_TooltipReadyToHarvest" xml:space="preserve">
+    <value>{0} bed {1}: ready to harvest, {2}</value>
+    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.ReadyToHarvest entry with FromWindow true (a passed harvest window backs the claim). {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is Reminders.ReachText's own already-localized phrase.</comment>
+  </data>
+  <data name="Dtr_TooltipMature" xml:space="preserve">
+    <value>{0} bed {1}: mature, {2}</value>
+    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.ReadyToHarvest entry with FromWindow false (stage 4 alone, no backing window). {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is Reminders.ReachText's own already-localized phrase.</comment>
+  </data>
+  <data name="Dtr_TooltipTimingUnknown" xml:space="preserve">
+    <value>{0} bed {1}: planting time unknown, {2}</value>
+    <comment>Helpers.DtrEntry.BuildTooltip, one Reminders.TimingUnknown entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is Reminders.ReachText's own already-localized phrase.</comment>
+  </data>
+  <data name="Guard_OccupiedQuestEvent" xml:space="preserve">
+    <value>Player is occupied in a quest event ({0}).</value>
+    <comment>GardenerGuard.OccupiedBlockingReason, ConditionFlag.OccupiedInQuestEvent branch. {0} is the literal ConditionFlag name via nameof(), a diagnostic identifier that stays untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="Guard_OccupiedSummoningBell" xml:space="preserve">
+    <value>Player is occupied at a summoning bell ({0}).</value>
+    <comment>GardenerGuard.OccupiedBlockingReason, ConditionFlag.OccupiedSummoningBell branch. {0} is the literal ConditionFlag name via nameof(), a diagnostic identifier that stays untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="Guard_OccupiedGeneric" xml:space="preserve">
+    <value>Player is occupied ({0}).</value>
+    <comment>GardenerGuard.OccupiedBlockingReason, shared by the three flags with no more specific wording (Occupied33, Occupied38, Occupied39). {0} is the literal ConditionFlag name via nameof(), a diagnostic identifier that stays untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="Guard_NotInHousing" xml:space="preserve">
+    <value>Not standing in a housing territory.</value>
+    <comment>GardenerGuard.EnvironmentBlockingReason, branch where HouseKey.Current() is null. No slots.</comment>
+  </data>
+  <data name="Guard_NoPatchesOnPlot" xml:space="preserve">
+    <value>No patches discovered on plot {0}.</value>
+    <comment>GardenerGuard.EnvironmentBlockingReason, branch where the current plot is known but PatchDiscovery found nothing on it. {0} is the 1-based plot number, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Guard_NoPatchesHere" xml:space="preserve">
+    <value>No patches discovered here.</value>
+    <comment>GardenerGuard.EnvironmentBlockingReason, branch where PatchDiscovery found nothing and the current plot itself is unknown. No slots.</comment>
+  </data>
+  <data name="Guard_PlayerPositionUnavailable" xml:space="preserve">
+    <value>Player position unavailable.</value>
+    <comment>GardenerGuard.EnvironmentBlockingReason and Scheduler.SchedulerMain.EnablePlugin's own identical pre-run check share this one key. No slots.</comment>
+  </data>
+  <data name="Guard_NearestPatchTooFar" xml:space="preserve">
+    <value>Nearest patch is {0}y away (limit {1}y).</value>
+    <comment>GardenerGuard.EnvironmentBlockingReason, branch where every discovered patch is farther than Configuration.BedReachDistance. {0} is the distance to the nearest patch, a decimal via Formats.Number(value, "F1"); {1} is the configured reach limit, the same format.</comment>
+  </data>
+  <data name="Guard_FcPermissionsWarning" xml:space="preserve">
+    <value>This character may lack FC rank permissions here; gardening actions may silently fail.</value>
+    <comment>GardenerGuard.PermissionsWarning, shown only while standing on the character's own FC estate and HousingManager.HasHousePermissions() reports false. No slots.</comment>
+  </data>
+  <data name="Scheduler_NoPlanToRun" xml:space="preserve">
+    <value>No plan to run.</value>
+    <comment>Scheduler.SchedulerMain.EnablePlugin, SweepKind.Plan branch with no pending plan steps. Printed via Chat_Prefix. No slots.</comment>
+  </data>
+  <data name="Scheduler_NeedFreeSlotsToHarvest" xml:space="preserve">
+    <value>Need at least {0} free inventory slots to harvest.</value>
+    <comment>Scheduler.SchedulerMain.EnablePlugin, SweepKind.Harvest branch with too little free bag space. Printed via Chat_Prefix. {0} is SchedulerMain.MinFreeSlotsToHarvest, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Scheduler_NoFertilizerInBag" xml:space="preserve">
+    <value>No fertilizer in the bag.</value>
+    <comment>Scheduler.SchedulerMain.EnablePlugin, SweepKind.Fertilize branch with no fertilizer item held. Printed via Chat_Prefix. No slots.</comment>
+  </data>
+  <data name="Scheduler_AlreadyRunning" xml:space="preserve">
+    <value>Already running.</value>
+    <comment>Scheduler.SchedulerMain.EnablePlugin, ActivityLog.Warn_ when a sweep is requested while one is already in progress. No separate chatMessage, so this same sentence reaches both the Log tab and chat. No slots.</comment>
+  </data>
+  <data name="Scheduler_Started" xml:space="preserve">
+    <value>Started {0} on {1} patch.</value>
+    <comment>Scheduler.SchedulerMain.EnablePlugin, ActivityLog.Good_'s Log tab message when a sweep begins. {0} is GameWords.Action(kind), the game's own bed-menu verb for the sweep; {1} is the PatchKind enum name (Deluxe/Oblong/Round; do-not-translate register).</comment>
+  </data>
+  <data name="Scheduler_StartedChat" xml:space="preserve">
+    <value>{0} started on your {1} patch.</value>
+    <comment>Scheduler.SchedulerMain.EnablePlugin, ActivityLog.Good_'s chatMessage when a sweep begins. {0} is GameWords.Action(kind), the game's own bed-menu verb for the sweep; {1} is the PatchKind enum name (do-not-translate register).</comment>
+  </data>
+  <data name="Scheduler_NothingToTend" xml:space="preserve">
+    <value>Nothing to tend on {0} patch.</value>
+    <comment>Scheduler.SchedulerMain.RunScanning, Log tab message when SweepKind.Tend finds an empty worklist. {0} is the PatchKind enum name (do-not-translate register). A dedicated key rather than a lower-cased action verb, since lower-casing a translated or game-sourced verb string is not a safe operation in every language (composition contract rule 3).</comment>
+  </data>
+  <data name="Scheduler_NothingToTendChat" xml:space="preserve">
+    <value>Nothing to tend on your {0} patch.</value>
+    <comment>Scheduler.SchedulerMain.RunScanning, chatMessage counterpart of Scheduler_NothingToTend. {0} is the PatchKind enum name (do-not-translate register).</comment>
+  </data>
+  <data name="Scheduler_NothingToHarvest" xml:space="preserve">
+    <value>Nothing to harvest on {0} patch.</value>
+    <comment>Scheduler.SchedulerMain.RunScanning, Log tab message when SweepKind.Harvest finds an empty worklist. {0} is the PatchKind enum name (do-not-translate register).</comment>
+  </data>
+  <data name="Scheduler_NothingToHarvestChat" xml:space="preserve">
+    <value>Nothing to harvest on your {0} patch.</value>
+    <comment>Scheduler.SchedulerMain.RunScanning, chatMessage counterpart of Scheduler_NothingToHarvest. {0} is the PatchKind enum name (do-not-translate register).</comment>
+  </data>
+  <data name="Scheduler_NothingToFertilize" xml:space="preserve">
+    <value>Nothing to fertilize on {0} patch.</value>
+    <comment>Scheduler.SchedulerMain.RunScanning, Log tab message when SweepKind.Fertilize finds an empty worklist. {0} is the PatchKind enum name (do-not-translate register).</comment>
+  </data>
+  <data name="Scheduler_NothingToFertilizeChat" xml:space="preserve">
+    <value>Nothing to fertilize on your {0} patch.</value>
+    <comment>Scheduler.SchedulerMain.RunScanning, chatMessage counterpart of Scheduler_NothingToFertilize. {0} is the PatchKind enum name (do-not-translate register).</comment>
+  </data>
+  <data name="Scheduler_PlanNothingLeft" xml:space="preserve">
+    <value>Nothing left to plant; every step in the plan no longer checks out.</value>
+    <comment>Scheduler.SchedulerMain.RunScanningPlan, Log tab message when re-verifying the plan against a fresh GardenMemory.Read leaves no steps to run. No slots.</comment>
+  </data>
+  <data name="Scheduler_PlanNothingLeftChat" xml:space="preserve">
+    <value>Nothing left to plant; the plan no longer checks out.</value>
+    <comment>Scheduler.SchedulerMain.RunScanningPlan, chatMessage counterpart of Scheduler_PlanNothingLeft. No slots.</comment>
+  </data>
+  <data name="Scheduler_LeftHousingArea" xml:space="preserve">
+    <value>you left the housing area.</value>
+    <comment>Scheduler.SchedulerMain.Tick, DisablePlugin reason when GardenerGuard.InHousingTerritory turns false mid-sweep. A complete clause substituted whole into Scheduler_StoppedWithReason's {0}, never itself concatenated with another translated fragment.</comment>
+  </data>
+  <data name="Scheduler_MovedAwayFromPatch" xml:space="preserve">
+    <value>you moved away from the patch.</value>
+    <comment>Scheduler.SchedulerMain.Tick, DisablePlugin reason when GardenerGuard.PlayerMovedFrom trips Configuration.MoveAbortDistance. A complete clause substituted whole into Scheduler_StoppedWithReason's {0}, never itself concatenated with another translated fragment.</comment>
+  </data>
+  <data name="Scheduler_StoppedWithReason" xml:space="preserve">
+    <value>Stopped: {0}</value>
+    <comment>Scheduler.SchedulerMain.DisablePlugin, ActivityLog.Warn_ message when a reason is given. {0} is the already-localized, already-punctuated reason clause (Scheduler_LeftHousingArea, Scheduler_MovedAwayFromPatch, or a GardenerGuard.EnvironmentBlockingReason sentence); the template carries no trailing period of its own since {0} supplies it.</comment>
+  </data>
+  <data name="Scheduler_StoppedNoReason" xml:space="preserve">
+    <value>Stopped.</value>
+    <comment>Scheduler.SchedulerMain.DisablePlugin, ActivityLog.Warn_ message when no reason is given (a plain Stop-button click, logout, or plugin unload). Log tab only (chat: false). No slots.</comment>
+  </data>
+  <data name="Scheduler_Complete" xml:space="preserve">
+    <value>{0} complete: {1}.</value>
+    <comment>Scheduler.SchedulerMain.RunDone, Log tab summary for every sweep kind. {0} is GameWords.Action(kind), the game's own bed-menu verb; {1} is that kind's own count fragments (Scheduler_Count*), already localized and joined with ", ".</comment>
+  </data>
+  <data name="Scheduler_Finished" xml:space="preserve">
+    <value>{0} finished: {1}.</value>
+    <comment>Scheduler.SchedulerMain.RunDone, chatMessage counterpart of Scheduler_Complete. Chat drops any detail Scheduler_Complete's {1} carries that the player cannot act on (e.g. the stage-4/no-harvest-entry count), so its own {1} is a narrower set of count fragments for the Harvest branch specifically.</comment>
+  </data>
+  <data name="Scheduler_GenericComplete" xml:space="preserve">
+    <value>Sweep complete.</value>
+    <comment>Scheduler.SchedulerMain.RunDone fallback for a SweepKind with no case above (defensive; every current value is handled). No slots.</comment>
+  </data>
+  <data name="Scheduler_GenericFinished" xml:space="preserve">
+    <value>Sweep finished.</value>
+    <comment>Scheduler.SchedulerMain.RunDone chatMessage counterpart of Scheduler_GenericComplete. No slots.</comment>
+  </data>
+  <data name="Scheduler_CountTended_One" xml:space="preserve">
+    <value>{0} tended</value>
+    <comment>Scheduler.SchedulerMain.RunDone, TendedCount fragment, singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch; Spanish agreement differs by count even where English does not (composition contract rule 5).</comment>
+  </data>
+  <data name="Scheduler_CountTended_Other" xml:space="preserve">
+    <value>{0} tended</value>
+    <comment>Scheduler.SchedulerMain.RunDone, TendedCount fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Scheduler_CountSkipped_One" xml:space="preserve">
+    <value>{0} skipped</value>
+    <comment>Scheduler.SchedulerMain.RunDone, SkippedCount fragment (shared by every sweep kind), singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch; Spanish agreement differs by count even where English does not (composition contract rule 5).</comment>
+  </data>
+  <data name="Scheduler_CountSkipped_Other" xml:space="preserve">
+    <value>{0} skipped</value>
+    <comment>Scheduler.SchedulerMain.RunDone, SkippedCount fragment (shared by every sweep kind), plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Scheduler_CountHarvested_One" xml:space="preserve">
+    <value>{0} harvested</value>
+    <comment>Scheduler.SchedulerMain.RunDone, HarvestedCount fragment, singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch; Spanish agreement differs by count even where English does not (composition contract rule 5).</comment>
+  </data>
+  <data name="Scheduler_CountHarvested_Other" xml:space="preserve">
+    <value>{0} harvested</value>
+    <comment>Scheduler.SchedulerMain.RunDone, HarvestedCount fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Scheduler_CountNoHarvestEntry_One" xml:space="preserve">
+    <value>{0} stage-4 with no Harvest entry</value>
+    <comment>Scheduler.SchedulerMain.RunDone, NoHarvestOfferedCount fragment, Log tab only (calibration evidence for GardenMemory, dropped from chat), singular (n == 1). {0} is the count via Formats.Number. "Harvest" here is GardenMenuText's own MenuKey.Harvest wording and stays literal, matching the do-not-translate register entry for anything sourced from GardenMenuText.</comment>
+  </data>
+  <data name="Scheduler_CountNoHarvestEntry_Other" xml:space="preserve">
+    <value>{0} stage-4 with no Harvest entry</value>
+    <comment>Scheduler.SchedulerMain.RunDone, NoHarvestOfferedCount fragment, Log tab only, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Scheduler_CountFertilized_One" xml:space="preserve">
+    <value>{0} fertilized</value>
+    <comment>Scheduler.SchedulerMain.RunDone, FertilizedCount fragment, singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch; Spanish agreement differs by count even where English does not (composition contract rule 5).</comment>
+  </data>
+  <data name="Scheduler_CountFertilized_Other" xml:space="preserve">
+    <value>{0} fertilized</value>
+    <comment>Scheduler.SchedulerMain.RunDone, FertilizedCount fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Scheduler_CountPlanted_One" xml:space="preserve">
+    <value>{0} planted</value>
+    <comment>Scheduler.SchedulerMain.RunDone, PlantedCount fragment, singular (n == 1). {0} is the count via Formats.Number. English text is identical to the _Other branch; Spanish agreement differs by count even where English does not (composition contract rule 5).</comment>
+  </data>
+  <data name="Scheduler_CountPlanted_Other" xml:space="preserve">
+    <value>{0} planted</value>
+    <comment>Scheduler.SchedulerMain.RunDone, PlantedCount fragment, plural (n != 1, including 0). {0} is the count via Formats.Number.</comment>
+  </data>
+  <data name="Log_TabLabel" xml:space="preserve">
+    <value>Log</value>
+    <comment>MainWindow.Draw, the fourth tab bar label; ###logTab keeps the ImGui tab identity stable across a language switch (see Task 1.8).</comment>
+  </data>
+  <data name="Log_EntryLine" xml:space="preserve">
+    <value>[{0}] {1}</value>
+    <comment>MainWindow.DrawLogTab, one ActivityLog.Entries row. {0} is the entry's own HH:mm:ss timestamp (ActivityLog.Add, not run through Loc.Culture - a raw clock reading, not a calendar date); {1} is the entry's already-localized message.</comment>
+  </data>
+  <data name="OpenBed_NoPredictedEntity" xml:space="preserve">
+    <value>{0} bed {1}: no predicted bed entity; skipping.</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, ActivityLog.SkippedBed's Log tab message when BedTargeting.Predict has nothing for this bed. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="OpenBed_NoPredictedEntityChat" xml:space="preserve">
+    <value>the game hasn't located this bed yet</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, chatReason counterpart of OpenBed_NoPredictedEntity, folded into ActivityLog's own skipped-bed chat line (Chat_Prefix wraps a "Skipped bed N: {reason}" sentence built by ActivityLog itself). No slots.</comment>
+  </data>
+  <data name="OpenBed_EntityGone" xml:space="preserve">
+    <value>{0} bed {1}: bed entity 0x{2} is no longer in the object table; skipping.</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, ActivityLog.SkippedBed's Log tab message when the predicted entity id no longer resolves. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the entity id rendered as hex (entityId.ToString("X8")), a diagnostic identifier that stays untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="OpenBed_EntityGoneChat" xml:space="preserve">
+    <value>the bed can't be found right now</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, chatReason counterpart of OpenBed_EntityGone. No slots.</comment>
+  </data>
+  <data name="OpenBed_TargetSystemUnavailable" xml:space="preserve">
+    <value>{0} bed {1}: TargetSystem unavailable; skipping.</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, ActivityLog.SkippedBed's Log tab message when the client's static TargetSystem pointer is null. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number. "TargetSystem" is a ClientStructs symbol and stays literal.</comment>
+  </data>
+  <data name="OpenBed_TargetSystemUnavailableChat" xml:space="preserve">
+    <value>a game error while targeting</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, chatReason counterpart of OpenBed_TargetSystemUnavailable. No slots.</comment>
+  </data>
+  <data name="OpenBed_MenuNeverOpened" xml:space="preserve">
+    <value>{0} bed {1}: bed menu never opened; skipping.</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, ActivityLog.SkippedBed's Log tab message when the wait-for-menu step timed out. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="OpenBed_MenuNeverOpenedChat" xml:space="preserve">
+    <value>its menu never opened</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, chatReason counterpart of OpenBed_MenuNeverOpened. No slots.</comment>
+  </data>
+  <data name="OpenBed_PromptUnparsed" xml:space="preserve">
+    <value>{0} bed {1}: prompt "{2}" did not parse into bed/patch numbers; closing without acting.</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, ActivityLog.SkippedBed's Log tab message when GardenMenuText.ParseBedPatch fails on the open menu's own prompt text. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the addon's own raw prompt string, a diagnostic dump that stays untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="OpenBed_PromptUnparsedChat" xml:space="preserve">
+    <value>its menu wasn't recognized</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, chatReason counterpart of OpenBed_PromptUnparsed. No slots.</comment>
+  </data>
+  <data name="OpenBed_GaveUpAfterAttempts" xml:space="preserve">
+    <value>{0} bed {1}: gave up after {2} attempts (the menu kept disagreeing with the map); skipping.</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, ActivityLog.SkippedBed's Log tab message when MaxAttemptsPerBed is reached. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the attempt count via Formats.Number.</comment>
+  </data>
+  <data name="OpenBed_GaveUpAfterAttemptsChat" xml:space="preserve">
+    <value>its position kept disagreeing with the map</value>
+    <comment>Scheduler.Tasks.Task_OpenBed.Enqueue, chatReason counterpart of OpenBed_GaveUpAfterAttempts. No slots.</comment>
+  </data>
+  <data name="Tend_MenuClosed" xml:space="preserve">
+    <value>{0} bed {1}: menu closed before it could be tended.</value>
+    <comment>Scheduler.Tasks.Task_Tend.Enqueue, ActivityLog.SkippedBed's Log tab message when the bed's SelectString closed before the Care entry could be selected. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Tend_MenuClosedChat" xml:space="preserve">
+    <value>the menu closed before it could be tended</value>
+    <comment>Scheduler.Tasks.Task_Tend.Enqueue, chatReason counterpart of Tend_MenuClosed. No slots.</comment>
+  </data>
+  <data name="Tend_NoCareEntry" xml:space="preserve">
+    <value>{0} bed {1}: no {2} entry (offered: {3}); skipping.</value>
+    <comment>Scheduler.Tasks.Task_Tend.Enqueue, ActivityLog.SkippedBed's Log tab message when the bed's menu offers no MenuKey.Care entry. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is GameWords.Action(MenuKey.Care), the game's own bed-menu verb for the missing entry (do-not-translate register - sourced from GardenMenuText); {3} is the comma-joined MenuKey names the menu actually offered, untranslated diagnostic tokens.</comment>
+  </data>
+  <data name="Tend_NoCareEntryChat" xml:space="preserve">
+    <value>tending wasn't offered for this bed</value>
+    <comment>Scheduler.Tasks.Task_Tend.Enqueue, chatReason counterpart of Tend_NoCareEntry. No slots.</comment>
+  </data>
+  <data name="Tend_Tended" xml:space="preserve">
+    <value>{0} bed {1}: tended ({2}).</value>
+    <comment>Scheduler.Tasks.Task_Tend.Enqueue, ActivityLog.Good_'s Log tab message on success. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the seed's produce name, a client-language name.</comment>
+  </data>
+  <data name="Tend_TendedChat" xml:space="preserve">
+    <value>Tended bed {0} ({1}).</value>
+    <comment>Scheduler.Tasks.Task_Tend.Enqueue, chatMessage counterpart of Tend_Tended. {0} is the bed number via Formats.Number; {1} is the seed's produce name, a client-language name.</comment>
+  </data>
+  <data name="Harvest_MenuClosed" xml:space="preserve">
+    <value>{0} bed {1}: menu closed before it could be harvested.</value>
+    <comment>Scheduler.Tasks.Task_Harvest.Enqueue, ActivityLog.SkippedBed's Log tab message when the bed's SelectString closed before the Harvest entry could be selected. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Harvest_MenuClosedChat" xml:space="preserve">
+    <value>the menu closed before it could be harvested</value>
+    <comment>Scheduler.Tasks.Task_Harvest.Enqueue, chatReason counterpart of Harvest_MenuClosed. No slots.</comment>
+  </data>
+  <data name="Harvest_NoHarvestEntry" xml:space="preserve">
+    <value>{0} bed {1}: stage 4 but no {2} entry offered.</value>
+    <comment>Scheduler.Tasks.Task_Harvest.Enqueue, ActivityLog.SkippedBed's Log tab message when a MatureCandidate bed offers no MenuKey.Harvest entry - evidence stage 4 is a candidate, not proof of ripeness, not an error. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is GameWords.Action(MenuKey.Harvest), the game's own bed-menu verb for the missing entry (do-not-translate register - sourced from GardenMenuText).</comment>
+  </data>
+  <data name="Harvest_NoHarvestEntryChat" xml:space="preserve">
+    <value>it wasn't actually ready to harvest yet</value>
+    <comment>Scheduler.Tasks.Task_Harvest.Enqueue, chatReason counterpart of Harvest_NoHarvestEntry. No slots.</comment>
+  </data>
+  <data name="Harvest_Harvested" xml:space="preserve">
+    <value>{0} bed {1}: harvested ({2}).</value>
+    <comment>Scheduler.Tasks.Task_Harvest.Enqueue, ActivityLog.Good_'s Log tab message on success. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the seed's produce name, a client-language name.</comment>
+  </data>
+  <data name="Harvest_HarvestedChat" xml:space="preserve">
+    <value>Harvested bed {0} ({1}).</value>
+    <comment>Scheduler.Tasks.Task_Harvest.Enqueue, chatMessage counterpart of Harvest_Harvested. {0} is the bed number via Formats.Number; {1} is the seed's produce name, a client-language name.</comment>
+  </data>
+  <data name="Fertilize_MenuClosed" xml:space="preserve">
+    <value>{0} bed {1}: menu closed before it could be fertilized.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when the bed's SelectString closed before the SetFertilizer entry could be selected. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Fertilize_MenuClosedChat" xml:space="preserve">
+    <value>the menu closed before it could be fertilized</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_MenuClosed. No slots.</comment>
+  </data>
+  <data name="Fertilize_RecentlyFertilized" xml:space="preserve">
+    <value>{0} bed {1}: fertilized within the last {2}min; skipping.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when Configuration.FertilizeCooldownMin has not elapsed since the last fertilizing. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is Configuration.FertilizeCooldownMin, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Fertilize_RecentlyFertilizedChat" xml:space="preserve">
+    <value>already fertilized recently</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_RecentlyFertilized. No slots.</comment>
+  </data>
+  <data name="Fertilize_AlreadyMature" xml:space="preserve">
+    <value>{0} bed {1}: already mature; fertilizer would do nothing.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when Configuration.FertilizeOnlyGrowing is set and the bed is already Maturity.MatureCandidate. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Fertilize_AlreadyMatureChat" xml:space="preserve">
+    <value>it's already mature; fertilizer wouldn't help</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_AlreadyMature. No slots.</comment>
+  </data>
+  <data name="Fertilize_NoFertilizeEntry" xml:space="preserve">
+    <value>{0} bed {1}: no {2} entry (offered: {3}); skipping.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when the bed's menu offers no MenuKey.SetFertilizer entry. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is GameWords.Action(MenuKey.SetFertilizer), the game's own bed-menu verb for the missing entry (do-not-translate register); {3} is the comma-joined MenuKey names the menu actually offered, untranslated diagnostic tokens.</comment>
+  </data>
+  <data name="Fertilize_NoFertilizeEntryChat" xml:space="preserve">
+    <value>fertilizing wasn't offered for this bed</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_NoFertilizeEntry. No slots.</comment>
+  </data>
+  <data name="Fertilize_ModeNeverEngaged" xml:space="preserve">
+    <value>{0} bed {1}: fertilize mode never engaged; skipping.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when AgentHousingPlant.PlotType never reached FertilizePlotType. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Fertilize_ModeNeverEngagedChat" xml:space="preserve">
+    <value>fertilizing didn't start</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_ModeNeverEngaged. No slots.</comment>
+  </data>
+  <data name="Fertilize_NoLongerInBag" xml:space="preserve">
+    <value>{0} bed {1}: fertilizer is no longer in the bag; skipping.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when GardeningItems.BestFertilizer finds nothing in a fresh bag scan. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Fertilize_NoLongerInBagChat" xml:space="preserve">
+    <value>no fertilizer in your bags</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_NoLongerInBag. No slots.</comment>
+  </data>
+  <data name="Fertilize_AgentUnavailable" xml:space="preserve">
+    <value>{0} bed {1}: inventory context agent unavailable; skipping.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when AgentInventoryContext.Instance() or the Inventory agent is null. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Fertilize_AgentUnavailableChat" xml:space="preserve">
+    <value>a game error while opening the item menu</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_AgentUnavailable. No slots.</comment>
+  </data>
+  <data name="Fertilize_ContextMenuNotOpen" xml:space="preserve">
+    <value>{0} bed {1}: {2} is not open; skipping.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when the item's own ContextMenu addon never became ready. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is Task_Fertilize.ContextMenuAddonName ("ContextMenu"), a client addon name that stays untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="Fertilize_ContextMenuNotOpenChat" xml:space="preserve">
+    <value>the item menu didn't open</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_ContextMenuNotOpen. No slots.</comment>
+  </data>
+  <data name="Fertilize_NoFertilizeOnItem" xml:space="preserve">
+    <value>{0} bed {1}: no {2} entry on the item's context menu (offered: {3}); closing and skipping.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when the fertilizer item's own ContextMenu offers no GardenMenuText.IsFertilizeAction entry. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is GameWords.Action(MenuKey.SetFertilizer), reused here as the closest named label for the item context menu's own fertilize entry (do-not-translate register); {3} is the comma-joined MenuKey names the context menu actually offered, untranslated diagnostic tokens.</comment>
+  </data>
+  <data name="Fertilize_NoFertilizeOnItemChat" xml:space="preserve">
+    <value>fertilizing wasn't offered on the item</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_NoFertilizeOnItem. No slots.</comment>
+  </data>
+  <data name="Fertilize_EntryDisabledOnItem" xml:space="preserve">
+    <value>{0} bed {1}: the {2} entry was disabled on the item's context menu; closing and skipping.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when the fertilize entry exists on the item's ContextMenu but ISelectable.Select() returns false. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is GameWords.Action(MenuKey.SetFertilizer) (do-not-translate register).</comment>
+  </data>
+  <data name="Fertilize_EntryDisabledOnItemChat" xml:space="preserve">
+    <value>fertilizing was disabled on the item</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_EntryDisabledOnItem. No slots.</comment>
+  </data>
+  <data name="Fertilize_Fertilized" xml:space="preserve">
+    <value>{0} bed {1}: fertilized ({2}).</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.Good_'s Log tab message on success. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the seed's produce name, a client-language name.</comment>
+  </data>
+  <data name="Fertilize_FertilizedChat" xml:space="preserve">
+    <value>Fertilized bed {0} ({1}).</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatMessage counterpart of Fertilize_Fertilized. {0} is the bed number via Formats.Number; {1} is the seed's produce name, a client-language name.</comment>
+  </data>
+  <data name="Fertilize_ManagerUnavailable" xml:space="preserve">
+    <value>{0} bed {1}: RaptureAtkUnitManager unavailable; cannot list open addons.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.LogContextAddonsForDiagnosis, ActivityLog.Warn_ Log-tab-only message (chat: false) when the client's static addon-manager pointer is null. {0} is patchKey, an internal identifier token; {1} is the bed number via Formats.Number. "RaptureAtkUnitManager" is a ClientStructs symbol and stays literal.</comment>
+  </data>
+  <data name="Fertilize_NoContextAddonOpen" xml:space="preserve">
+    <value>{0} bed {1}: no addon with "Context" in its name is currently open.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.LogContextAddonsForDiagnosis, ActivityLog.Warn_ Log-tab-only message (chat: false) when no loaded addon's name contains the literal substring "Context". {0} is patchKey, an internal identifier token; {1} is the bed number via Formats.Number. The quoted "Context" names the exact substring the code searches addon names for and must stay exactly as written, in every language.</comment>
+  </data>
+  <data name="Fertilize_ContextAddonsFound" xml:space="preserve">
+    <value>{0} bed {1}: open Context-named addon(s): {2}.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.LogContextAddonsForDiagnosis, ActivityLog.Warn_ Log-tab-only message (chat: false) listing every loaded addon whose name contains "Context". {0} is patchKey, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the semicolon-joined addon name/visibility/entry-count dump, an untranslated diagnostic string. "Context-named" describes the same literal substring search as Fertilize_NoContextAddonOpen and must stay exactly as written.</comment>
+  </data>
+  <data name="Plant_NoSoilAvailableFallback" xml:space="preserve">
+    <value>No soil available.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue(seedRow, SoilPreference) fallback used only when GardeningItems.SoilUnavailable itself returns null. Feeds Plant_SoilProblem's {2}. No slots.</comment>
+  </data>
+  <data name="Plant_PlanSoilGone" xml:space="preserve">
+    <value>{0} from the plan is no longer in the bag.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue(seedRow, soilItemId), the crossbreed-plan caller's own soil-resolution reason when the plan's specific soil item is no longer held. {0} is the soil item's own name (ItemSheet.Name), a client-language name. Feeds Plant_SoilProblem's {2}.</comment>
+  </data>
+  <data name="Plant_MenuClosed" xml:space="preserve">
+    <value>{0} bed {1}: menu closed before it could be planted.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, ActivityLog.SkippedBed's Log tab message when the bed's SelectString closed before the SetSeed entry could be selected. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Plant_MenuClosedChat" xml:space="preserve">
+    <value>the menu closed before it could be planted</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, chatReason counterpart of Plant_MenuClosed. No slots.</comment>
+  </data>
+  <data name="Plant_NoPlantSeedsEntry" xml:space="preserve">
+    <value>{0} bed {1}: no {2} entry (offered: {3}); skipping.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, ActivityLog.SkippedBed's Log tab message when the bed's menu offers no MenuKey.SetSeed entry. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is GameWords.Action(MenuKey.SetSeed), the game's own bed-menu verb for the missing entry (do-not-translate register); {3} is the comma-joined MenuKey names the menu actually offered, untranslated diagnostic tokens.</comment>
+  </data>
+  <data name="Plant_NoPlantSeedsEntryChat" xml:space="preserve">
+    <value>planting wasn't offered for this bed</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, chatReason counterpart of Plant_NoPlantSeedsEntry. No slots.</comment>
+  </data>
+  <data name="Plant_DialogNeverOpened" xml:space="preserve">
+    <value>{0} bed {1}: {2} never opened; skipping.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, ActivityLog.SkippedBed's Log tab message when the HousingGardening addon's PostSetup listener never fired. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is Task_Plant.AddonName ("HousingGardening"), a client addon name that stays untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="Plant_DialogNeverOpenedChat" xml:space="preserve">
+    <value>the planting dialog never opened</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, chatReason counterpart of Plant_DialogNeverOpened. No slots.</comment>
+  </data>
+  <data name="Plant_SoilProblem" xml:space="preserve">
+    <value>{0} bed {1}: {2}</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, ActivityLog.SkippedBed's Log tab message when resolveSoil finds nothing to plant with. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the already-localized, already-punctuated soil reason (Plant_NoSoilAvailableFallback, Plant_PlanSoilGone, or a GardeningItems.SoilUnavailable sentence); the template carries no trailing period of its own since {2} supplies it.</comment>
+  </data>
+  <data name="Plant_SeedGone" xml:space="preserve">
+    <value>{0} bed {1}: seed for row {2} is no longer in the bag; skipping.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, ActivityLog.SkippedBed's Log tab message when SeedItems.SeedItemForRow's item is no longer held. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the internal seed sheet row id, an integer via Formats.Number - a diagnostic token, not a produce name.</comment>
+  </data>
+  <data name="Plant_SeedGoneChat" xml:space="preserve">
+    <value>that seed is no longer in your bags</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, chatReason counterpart of Plant_SeedGone. No slots.</comment>
+  </data>
+  <data name="Plant_SoilStaleGone" xml:space="preserve">
+    <value>{0} bed {1}: {2} is no longer in the bag; skipping.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, ActivityLog.SkippedBed's Log tab message when the soil slot resolved moments earlier is stale by the time the agent is written. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the soil item's own name (ItemSheet.Name), a client-language name.</comment>
+  </data>
+  <data name="Plant_SoilStaleGoneChat" xml:space="preserve">
+    <value>your {0} is gone</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, chatReason counterpart of Plant_SoilStaleGone. {0} is the soil item's own name (ItemSheet.Name), a client-language name.</comment>
+  </data>
+  <data name="Plant_AgentUnavailable" xml:space="preserve">
+    <value>{0} bed {1}: AgentHousingPlant unavailable; skipping.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, ActivityLog.SkippedBed's Log tab message when the client's static HousingPlant agent pointer is null. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number. "AgentHousingPlant" is a ClientStructs symbol and stays literal.</comment>
+  </data>
+  <data name="Plant_AgentUnavailableChat" xml:space="preserve">
+    <value>a game error while planting</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, chatReason counterpart of Plant_AgentUnavailable. No slots.</comment>
+  </data>
+  <data name="Plant_NotConfirmed" xml:space="preserve">
+    <value>{0} bed {1}: planting could not be confirmed by the next passive read; stopping the sweep.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, ActivityLog.Warn_'s Log tab message when GardenMemory.Read does not show the expected seed row after planting. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Plant_NotConfirmedChat" xml:space="preserve">
+    <value>Stopped: bed {0}'s planting couldn't be confirmed.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, chatMessage counterpart of Plant_NotConfirmed. {0} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Plant_Planted" xml:space="preserve">
+    <value>{0} bed {1}: planted {2} in {3}.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, ActivityLog.Good_'s Log tab message on success. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the seed's produce name; {3} is the planted soil's own name (ItemSheet.Name) - both client-language names.</comment>
+  </data>
+  <data name="Plant_PlantedChat" xml:space="preserve">
+    <value>Planted {0} in bed {1}, {2}.</value>
+    <comment>Scheduler.Tasks.Task_Plant.Enqueue, chatMessage counterpart of Plant_Planted. {0} is the seed's produce name; {2} is the planted soil's own name (ItemSheet.Name) - both client-language names; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="RemoveCrop_SweepRunning" xml:space="preserve">
+    <value>Can't remove a crop while a sweep is running.</value>
+    <comment>Scheduler.Tasks.Task_RemoveCrop.TryEnqueue, ActivityLog.Warn_ when a sweep is already running. No separate chatMessage, so this same sentence reaches both the Log tab and chat. No slots.</comment>
+  </data>
+  <data name="RemoveCrop_MenuClosed" xml:space="preserve">
+    <value>{0} bed {1}: menu closed before the crop could be removed.</value>
+    <comment>Scheduler.Tasks.Task_RemoveCrop.TryEnqueue, ActivityLog.Warn_ when the bed's SelectString closed before the Dispose entry could be selected. No separate chatMessage, so this same sentence reaches both surfaces. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="RemoveCrop_NoEntry" xml:space="preserve">
+    <value>{0} bed {1}: no {2} entry (offered: {3}).</value>
+    <comment>Scheduler.Tasks.Task_RemoveCrop.TryEnqueue, ActivityLog.Warn_ when the bed's menu offers no MenuKey.Dispose entry. No separate chatMessage, so this same sentence reaches both surfaces. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is GameWords.Action(MenuKey.Dispose), the game's own bed-menu verb for the missing entry (do-not-translate register); {3} is the comma-joined MenuKey names the menu actually offered, untranslated diagnostic tokens.</comment>
+  </data>
+  <data name="RemoveCrop_WrongConfirmation" xml:space="preserve">
+    <value>{0} bed {1}: the open confirmation was not {2}'s own ("{3}"); leaving it untouched.</value>
+    <comment>Scheduler.Tasks.Task_RemoveCrop.TryEnqueue, ActivityLog.Warn_ when the open SelectYesno's own text does not classify as MenuKey.AskDispose. No separate chatMessage, so this same sentence reaches both surfaces. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is GameWords.Action(MenuKey.Dispose) (do-not-translate register); {3} is the confirmation addon's own raw text, an untranslated diagnostic dump.</comment>
+  </data>
+  <data name="RemoveCrop_StillOccupied" xml:space="preserve">
+    <value>{0} bed {1}: still occupied after {2}; the removal may not have gone through.</value>
+    <comment>Scheduler.Tasks.Task_RemoveCrop.TryEnqueue, ActivityLog.Warn_ when GardenMemory.Read still shows the bed occupied after the confirm step. No separate chatMessage, so this same sentence reaches both surfaces. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is GameWords.Action(MenuKey.Dispose) (do-not-translate register).</comment>
+  </data>
+  <data name="RemoveCrop_Removed" xml:space="preserve">
+    <value>{0} bed {1}: removed {2}.</value>
+    <comment>Scheduler.Tasks.Task_RemoveCrop.TryEnqueue, ActivityLog.Good_'s Log tab message on success. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the removed crop's produce name, a client-language name.</comment>
+  </data>
+  <data name="RemoveCrop_RemovedChat" xml:space="preserve">
+    <value>Removed {0} from bed {1}.</value>
+    <comment>Scheduler.Tasks.Task_RemoveCrop.TryEnqueue, chatMessage counterpart of RemoveCrop_Removed. {0} is the removed crop's produce name, a client-language name; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Cleanup_NoQuitEntry" xml:space="preserve">
+    <value>Stop: the open bed menu has no {0} entry; closing it directly instead.</value>
+    <comment>Helpers.GardeningUiCleanup.CloseBedMenu, ActivityLog.Warn_ Log-tab-only message (chat: false) when the bed's SelectString offers no MenuKey.EndEvent entry to close through properly. {0} is nameof(MenuKey.EndEvent), a diagnostic identifier that stays untranslated per the do-not-translate register (not routed through GameWords.Action, which has no mapping for this housekeeping key).</comment>
+  </data>
+  <data name="Cleanup_ClosedBedMenu" xml:space="preserve">
+    <value>Stop: closed the open bed menu.</value>
+    <comment>Helpers.GardeningUiCleanup.CloseBedMenu, ActivityLog.Notify Log-tab-only message (chat: false) on the normal EndEvent close path. No slots.</comment>
+  </data>
+  <data name="Cleanup_ClosedAddon" xml:space="preserve">
+    <value>Stop: closed the open {0}.</value>
+    <comment>Helpers.GardeningUiCleanup.CloseAddonByName, ActivityLog.Notify Log-tab-only message (chat: false) when a plain AtkUnitBase.Close succeeds. {0} is the addon's own name (PlantDialogAddonName "HousingGardening" or ContextMenuAddonName "ContextMenu"), a client addon name that stays untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="Cleanup_AddonWouldNotClose" xml:space="preserve">
+    <value>Stop: {0} was open but would not close.</value>
+    <comment>Helpers.GardeningUiCleanup.CloseAddonByName, ActivityLog.Warn_ Log-tab-only message (chat: false) when AtkUnitBase.Close returns false. {0} is the addon's own name, untranslated per the do-not-translate register.</comment>
+  </data>
+  <data name="ActivityLog_SkippedBeds_One" xml:space="preserve">
+    <value>Skipped bed {0}: {1}.</value>
+    <comment>Helpers.ActivityLog.FlushPendingSkip, singular branch (exactly one bed pending). {0} is that one bed's own number, an integer via Formats.Number (not a count - the n == 1 case names the specific bed rather than saying "1 bed"); {1} is the already-localized chatReason shared by every SkippedBed call in this run.</comment>
+  </data>
+  <data name="ActivityLog_SkippedBeds_Other" xml:space="preserve">
+    <value>Skipped {0} beds: {1}.</value>
+    <comment>Helpers.ActivityLog.FlushPendingSkip, plural branch (n != 1 pending beds sharing one chatReason, collapsed into a single chat line - see the class summary). {0} is the pending count, an integer via Formats.Number; {1} is the already-localized chatReason.</comment>
+  </data>
 </root>

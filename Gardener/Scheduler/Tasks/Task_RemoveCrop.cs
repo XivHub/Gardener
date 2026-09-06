@@ -5,6 +5,7 @@ using ECommons.UIHelpers;
 using Gardener.Game;
 using Gardener.Helpers;
 using Gardener.Journal;
+using Gardener.Localization;
 
 namespace Gardener.Scheduler.Tasks;
 
@@ -26,7 +27,7 @@ public static class Task_RemoveCrop
     {
         if (SchedulerMain.Running)
         {
-            ActivityLog.Warn_("Can't remove a crop while a sweep is running.");
+            ActivityLog.Warn_(Strings.RemoveCrop_SweepRunning);
             return false;
         }
 
@@ -46,7 +47,7 @@ public static class Task_RemoveCrop
                 var select = AddonFinder.SelectString.FirstOrDefault();
                 if (select is not { IsAddonReady: true })
                 {
-                    ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: menu closed before the crop could be removed.");
+                    ActivityLog.Warn_(Loc.Format(Strings.RemoveCrop_MenuClosed, patch.Key, Formats.Number(bedNumber)));
                     return true;
                 }
 
@@ -55,7 +56,7 @@ public static class Task_RemoveCrop
                 if (index < 0)
                 {
                     var seen = string.Join(", ", entries.Select(e => GardenMenuText.Classify(e.Text)));
-                    ActivityLog.Warn_($"{patch.Key} bed {bedNumber}: no Remove Crop entry (offered: {seen}).");
+                    ActivityLog.Warn_(Loc.Format(Strings.RemoveCrop_NoEntry, patch.Key, Formats.Number(bedNumber), GameWords.Action(MenuKey.Dispose), seen));
                     return true;
                 }
 
@@ -71,9 +72,8 @@ public static class Task_RemoveCrop
 
                 if (GardenMenuText.Classify(yesno.Text) != MenuKey.AskDispose)
                 {
-                    ActivityLog.Warn_(
-                        $"{patch.Key} bed {bedNumber}: the open confirmation was not Remove Crop's own " +
-                        $"(\"{yesno.Text}\"); leaving it untouched.");
+                    ActivityLog.Warn_(Loc.Format(Strings.RemoveCrop_WrongConfirmation,
+                        patch.Key, Formats.Number(bedNumber), GameWords.Action(MenuKey.Dispose), yesno.Text));
                     return true;
                 }
 
@@ -93,14 +93,14 @@ public static class Task_RemoveCrop
                 var stillThere = GardenMemory.Read(patch).Any(s => s.BedNumber == bedNumber && !s.IsEmpty);
                 if (stillThere)
                 {
-                    ActivityLog.Warn_(
-                        $"{patch.Key} bed {bedNumber}: still occupied after Remove Crop; the removal may not have gone through.");
+                    ActivityLog.Warn_(Loc.Format(Strings.RemoveCrop_StillOccupied,
+                        patch.Key, Formats.Number(bedNumber), GameWords.Action(MenuKey.Dispose)));
                 }
                 else
                 {
                     GardenJournal.Remove(patch.Key, bedNumber);
-                    ActivityLog.Good_($"{patch.Key} bed {bedNumber}: removed {seedName}.",
-                        chatMessage: $"Removed {seedName} from bed {bedNumber}.");
+                    ActivityLog.Good_(Loc.Format(Strings.RemoveCrop_Removed, patch.Key, Formats.Number(bedNumber), seedName),
+                        chatMessage: Loc.Format(Strings.RemoveCrop_RemovedChat, seedName, Formats.Number(bedNumber)));
                 }
                 return true;
             }, $"RemoveCrop: record (bed {bedNumber})");

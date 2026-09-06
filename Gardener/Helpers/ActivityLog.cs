@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Gardener.Localization;
 using XivHubPluginKit.UI;
 
 namespace Gardener.Helpers;
@@ -51,7 +52,7 @@ public static class ActivityLog
         if (chat && Plugin.C.NarrateSweepActions)
         {
             FlushPendingSkip();
-            Plugin.ChatGui.Print($"[Gardener] {chatMessage ?? message}");
+            Plugin.ChatGui.Print(Loc.Format(Strings.Chat_Prefix, chatMessage ?? message));
         }
     }
 
@@ -61,7 +62,7 @@ public static class ActivityLog
         if (chat && Plugin.C.NarrateSweepActions)
         {
             FlushPendingSkip();
-            Plugin.ChatGui.Print($"[Gardener] {chatMessage ?? message}");
+            Plugin.ChatGui.Print(Loc.Format(Strings.Chat_Prefix, chatMessage ?? message));
         }
     }
 
@@ -71,7 +72,7 @@ public static class ActivityLog
         if (chat && Plugin.C.NarrateSweepActions)
         {
             FlushPendingSkip();
-            Plugin.ChatGui.PrintError($"[Gardener] {chatMessage ?? message}");
+            Plugin.ChatGui.PrintError(Loc.Format(Strings.Chat_Prefix, chatMessage ?? message));
         }
     }
 
@@ -105,9 +106,9 @@ public static class ActivityLog
             return;
 
         var line = pendingSkipCount == 1
-            ? $"Skipped bed {pendingSkipFirstBed}: {reason}."
-            : $"Skipped {pendingSkipCount} beds: {reason}.";
-        Plugin.ChatGui.PrintError($"[Gardener] {line}");
+            ? Loc.Format(Strings.ActivityLog_SkippedBeds_One, Formats.Number(pendingSkipFirstBed), reason)
+            : Loc.Format(Strings.ActivityLog_SkippedBeds_Other, Formats.Number(pendingSkipCount), reason);
+        Plugin.ChatGui.PrintError(Loc.Format(Strings.Chat_Prefix, line));
 
         pendingSkipChatReason = null;
         pendingSkipCount = 0;
