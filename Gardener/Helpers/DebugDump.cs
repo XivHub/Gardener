@@ -289,7 +289,7 @@ public static class DebugDump
     /// dump can never drift from what a crossbreed walk would actually use.</summary>
     private static string DescribeLayout(PatchKind kind)
     {
-        if (kind != PatchKind.Deluxe)
+        if (!kind.HasConfirmedLayout())
             return "not confirmed; Oblong and Round have no adjacency model";
 
         var perBed = Enumerable.Range(1, kind.BedCount())

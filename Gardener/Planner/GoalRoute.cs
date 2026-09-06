@@ -10,8 +10,10 @@ namespace Gardener.Planner;
 /// Finds the cheapest route to a target seed and turns it into the ordered, worded steps the Goal tab
 /// renders. "Cheapest" means fewest expected bed-hours, not fewest crosses: two routes to the same seed
 /// can both be two generations deep and differ by a third in bed time, which a shortest-chain search
-/// cannot tell apart. Pure over its three arguments — no live scan and no config read; display language
-/// only (<see cref="Localization.Loc.Culture"/>) — so it is exercised without the game.
+/// cannot tell apart. Pure over its four arguments, including <see cref="GardenCapacity"/> — no live
+/// scan of the garden and no config read; display language only (<see cref="Localization.Loc.Culture"/>)
+/// — so it is exercised without the game. Capacity arrives already resolved by the caller; nothing in
+/// this file reads the player's real patches, the journal, or the plugin's live configuration.
 /// </summary>
 public static class GoalRoute
 {
@@ -38,15 +40,9 @@ public static class GoalRoute
     // render time still resolve the soil actually held.
     private const int AssumedSoilGrade = 3;
 
-    // Deluxe is the only patch shape with a confirmed bed layout (see FACTS.md), so every crossing
-    // step in a route is sized against its capacity: PlanFillStep already refuses to lay a fill out on
-    // an Oblong or Round patch, and the handoff bounds this down to whatever the real patch and the
-    // player's real seed count allow.
-    private static readonly int AssumedPatchBeds = PatchKind.Deluxe.BedCount();
-    private static readonly int AssumedPatchPairs = AssumedPatchBeds / 2;
-
     public static GoalPlan? Solve(
-        uint goalRow, IReadOnlyDictionary<uint, int> held, SoilPreference crossSoil, SoilPreference yieldSoil)
+        uint goalRow, IReadOnlyDictionary<uint, int> held, SoilPreference crossSoil, SoilPreference yieldSoil,
+        GardenCapacity capacity)
     {
         if (SeedTable.Gatherable(goalRow) == true)
             return null; // nothing to plan: the tab shows "you do not need to crossbreed this" instead
@@ -144,7 +140,7 @@ public static class GoalRoute
             }
 
             attemptsNeeded[target] = totalAttempts;
-            roundsNeeded[target] = Math.Max(1, (int)Math.Ceiling(totalAttempts / (double)AssumedPatchPairs));
+            roundsNeeded[target] = Math.Max(1, (int)Math.Ceiling(totalAttempts / (double)capacity.Pairs));
 
             foreach (var parent in new[] { first, second })
             {
@@ -155,13 +151,15 @@ public static class GoalRoute
                 // surplus. A parent whose own harvest gives seed back only needs enough to start the
                 // first round; one that gives nothing back is a fresh purchase every round.
                 var parentYield = SeedYieldAtAssumedGrade(parent);
-                var contribution = parentYield is > 0 ? AssumedPatchPairs : AssumedPatchPairs * roundsNeeded[target];
+                var contribution = parentYield is > 0 ? capacity.Pairs : capacity.Pairs * roundsNeeded[target];
                 obtainNeed[parent] = obtainNeed.GetValueOrDefault(parent) + contribution;
             }
         }
 
         var warnings = new List<string>();
         AddDataGapWarnings(warnings, leafOrder.Concat(order));
+        if (capacity.UnusablePatchCount > 0)
+            warnings.Add(Loc.Format(Strings.Goal_CapacityIgnoresUnconfirmed, Formats.Number(capacity.UnusablePatchCount)));
 
         var steps = new List<GoalStep>();
         var explainedFamilies = new HashSet<SoilFamily>();
@@ -181,7 +179,7 @@ public static class GoalRoute
             steps.Add(BuildCrossStep(
                 stepNumber++, first, second, target, outcomes, crossSoil, family, yieldFamily, isFinal,
                 attemptsNeeded[target], roundsNeeded[target], ownDemand, SeedYieldAtAssumedGrade(target),
-                consumerKind, namedConsumer, explainedFamilies));
+                consumerKind, namedConsumer, explainedFamilies, capacity));
         }
 
         // A step that needs more than one round waits through the extra grow cycles sequentially, on
@@ -321,7 +319,7 @@ public static class GoalRoute
     private static CrossStep BuildCrossStep(
         int number, uint first, uint second, uint target, uint[] outcomes, SoilPreference soilPreference,
         SoilFamily family, SoilFamily yieldFamily, bool isFinal, int attempts, int rounds, int ownDemand, int? yieldAtGrade,
-        ConsumerKind consumerKind, uint? namedConsumer, HashSet<SoilFamily> explainedFamilies)
+        ConsumerKind consumerKind, uint? namedConsumer, HashSet<SoilFamily> explainedFamilies, GardenCapacity capacity)
     {
         var targetName = SeedItems.ProduceName(target);
         var body = new List<string>
@@ -348,13 +346,14 @@ public static class GoalRoute
             body.Add(Strings.Goal_CrossCoinToss);
         }
 
-        // The arithmetic behind the bed count: a full patch plants AssumedPatchPairs pairs a round, and
-        // either that covers what the rest of the route draws from this seed or it has to repeat.
+        // The arithmetic behind the bed count: a full patch's worth of capacity.Pairs pairs plants a
+        // round, and either that covers what the rest of the route draws from this seed or it has to
+        // repeat.
         if (isFinal)
         {
             if (rounds > 1)
             {
-                body.Add(Loc.Format(Strings.Goal_CrossFinalRoundsPerRound, Formats.Number(AssumedPatchPairs)));
+                body.Add(Loc.Format(Strings.Goal_CrossFinalRoundsPerRound, Formats.Number(capacity.Pairs)));
                 body.Add(Loc.Format(Strings.Goal_CrossFinalRoundsPlan,
                     Formats.Number(attempts), Formats.Number(rounds), Formats.Number(roundDays * rounds)));
             }
@@ -362,7 +361,7 @@ public static class GoalRoute
         else if (yieldAtGrade is { } y)
         {
             body.Add(DemandSentence(consumerKind, namedConsumer, ownDemand, targetName));
-            body.Add(YieldRoundsSentence(rounds, y, targetName, roundDays));
+            body.Add(YieldRoundsSentence(rounds, y, targetName, roundDays, capacity.Beds));
         }
         else
         {
@@ -392,7 +391,12 @@ public static class GoalRoute
                 body.Add(SoilSources.Does(yieldFamily, yieldSoilName));
         }
 
-        body.Add(Loc.Format(Strings.Goal_BedsCount, Formats.Number(AssumedPatchBeds), Formats.Number(AssumedPatchPairs)));
+        body.Add(capacity.Assumed
+            ? Loc.Format(Strings.Goal_BedsCountAssumed, Formats.Number(capacity.Beds), Formats.Number(capacity.Pairs))
+            : capacity.PatchCount == 1
+                ? Loc.Format(Strings.Goal_BedsCountOnePatch, Formats.Number(capacity.Beds), Formats.Number(capacity.Pairs))
+                : Loc.Format(Strings.Goal_BedsCountManyPatches,
+                    Formats.Number(capacity.Beds), Formats.Number(capacity.PatchCount), Formats.Number(capacity.Pairs)));
         body.Add(Loc.Format(Strings.Goal_ReadyAfterPlant,
             targetGrowHours > 48 ? Phrases.AboutDays(Math.Round(targetGrowHours / 24.0)) : Phrases.AboutHours(Math.Round((double)targetGrowHours))));
 
@@ -424,7 +428,7 @@ public static class GoalRoute
             notes.Add(Loc.Format(Strings.Goal_NoteWiltDisputed, targetName));
 
         return new CrossStep(number, Loc.Format(Strings.Goal_CrossStepTitle, targetName), body.ToArray(), notes.ToArray(),
-            first, second, target, outcomes, AssumedPatchBeds, soilPreference, ownDemand);
+            first, second, target, outcomes, capacity.Beds, soilPreference, ownDemand);
     }
 
     /// <summary>Sentence one of the arithmetic paragraph: who wants <paramref name="ownDemand"/> of
@@ -448,18 +452,18 @@ public static class GoalRoute
     /// attempts. Crossed on rounds &lt;= 1 and seed-yield plural (<paramref name="y"/> == 1), four
     /// keys total, each phrased "a bed of {0}" so no gendered article precedes the item name
     /// (composition contract rule 6).</summary>
-    private static string YieldRoundsSentence(int rounds, int y, string targetName, int roundDays)
+    private static string YieldRoundsSentence(int rounds, int y, string targetName, int roundDays, int beds)
     {
         if (rounds <= 1)
             return y == 1
-                ? Loc.Format(Strings.Goal_YieldCoversOne_One, targetName, Formats.Number(AssumedPatchBeds))
-                : Loc.Format(Strings.Goal_YieldCoversOne_Other, targetName, Formats.Number(y), Formats.Number(AssumedPatchBeds));
+                ? Loc.Format(Strings.Goal_YieldCoversOne_One, targetName, Formats.Number(beds))
+                : Loc.Format(Strings.Goal_YieldCoversOne_Other, targetName, Formats.Number(y), Formats.Number(beds));
 
         return y == 1
             ? Loc.Format(Strings.Goal_YieldNeedsRounds_One, targetName, Formats.Number(rounds),
-                Formats.Number(AssumedPatchBeds), Formats.Number(roundDays * rounds))
+                Formats.Number(beds), Formats.Number(roundDays * rounds))
             : Loc.Format(Strings.Goal_YieldNeedsRounds_Other, targetName, Formats.Number(y), Formats.Number(rounds),
-                Formats.Number(AssumedPatchBeds), Formats.Number(roundDays * rounds));
+                Formats.Number(beds), Formats.Number(roundDays * rounds));
     }
 
     private static void AppendFinalWiltAndHarvest(List<string> body, uint target)

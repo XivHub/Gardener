@@ -93,7 +93,7 @@ public static class CrossPlanner
             return plan;
         }
 
-        if (patch.Kind != PatchKind.Deluxe)
+        if (!patch.Kind.HasConfirmedLayout())
         {
             // PatchKind names stay literal (do-not-translate register: no EObj-to-item mapping resolves
             // Deluxe/Oblong/Round to the client's own furniture name), wrapped in a whole-sentence template.

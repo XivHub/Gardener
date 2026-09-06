@@ -747,6 +747,9 @@
   <data name="Goal_WarningMissingCrossData" xml:space="preserve">
     <value>{0} falta en los datos de cruce; esta ruta puede estar incompleta.</value>
   </data>
+  <data name="Goal_CapacityIgnoresUnconfirmed" xml:space="preserve">
+    <value>Huertos con una distribución de parcelas sin confirmar: {0}. Esta ruta no planta en ellos.</value>
+  </data>
   <data name="Goal_ObtainTitle" xml:space="preserve">
     <value>Consigue las semillas iniciales</value>
   </data>
@@ -825,8 +828,14 @@
   <data name="Goal_SoilTwoFamilies" xml:space="preserve">
     <value>Tierra: {0} en las parcelas que plantas segundo, las que cruzan; {1} en las parcelas que plantas primero, que no cruzan con nada y se cosechan por su semilla.</value>
   </data>
-  <data name="Goal_BedsCount" xml:space="preserve">
+  <data name="Goal_BedsCountOnePatch" xml:space="preserve">
     <value>Parcelas: {0} ({1} pares).</value>
+  </data>
+  <data name="Goal_BedsCountManyPatches" xml:space="preserve">
+    <value>Parcelas: {0} en {1} huertos ({2} pares).</value>
+  </data>
+  <data name="Goal_BedsCountAssumed" xml:space="preserve">
+    <value>Parcelas: {0} ({1} pares), suponiendo un único huerto Deluxe; todavía no se ha registrado ningún huerto.</value>
   </data>
   <data name="Goal_ReadyAfterPlant" xml:space="preserve">
     <value>Listas {0} después de plantar.</value>

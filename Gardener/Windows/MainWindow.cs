@@ -37,12 +37,14 @@ namespace Gardener.Windows
 
         // GoalRoute.Solve's own fixpoint relaxation is cheap but not free, and both the current goal
         // and the "quickest from what you hold" empty-state picks call it; cached by reference against
-        // SeedInventory.Counts()' own once-a-second cache so neither reruns every frame.
+        // SeedInventory.Counts()' own once-a-second cache, plus the goal row, the soil settings and the
+        // resolved GardenCapacity, so neither reruns every frame nor goes stale when the player walks
+        // from a one-patch house to a two-patch one.
         private static IReadOnlyDictionary<uint, int>? goalPlanHeldCache;
-        private static uint goalPlanRowCache;
-        private static (SoilPreference Cross, SoilPreference Yield) goalPlanSoilCache;
+        private static (uint Row, SoilPreference Cross, SoilPreference Yield, GardenCapacity Capacity) goalPlanKeyCache;
         private static GoalPlan? goalPlanCache;
         private static IReadOnlyDictionary<uint, int>? quickPicksHeldCache;
+        private static GardenCapacity quickPicksCapacityCache;
         private static List<(uint Row, GoalPlan Plan)> quickPicksCache = new();
 
         public MainWindow(Configuration configuration) : base("Gardener###GardenerMain")
@@ -499,19 +501,21 @@ namespace Gardener.Windows
         }
 
         /// <summary><see cref="GoalRoute.Solve"/> runs a fixpoint relaxation over the whole cross
-        /// table; cached by (goal row, held-dictionary reference) so it reruns only when the goal
-        /// changes or <see cref="SeedInventory.Counts"/> actually recomputes (at most once a second),
-        /// never every frame the tab happens to be open.</summary>
+        /// table; cached by (goal row, soil preferences, resolved <see cref="GardenCapacity"/>) plus a
+        /// held-dictionary reference check, so it reruns only when the goal changes,
+        /// <see cref="SeedInventory.Counts"/> actually recomputes (at most once a second), or the
+        /// player's capacity itself changes — never every frame the tab happens to be open, and never
+        /// stale after walking from a one-patch house to a two-patch one.</summary>
         private static GoalPlan? GetOrSolveGoalPlan(uint goalRow, IReadOnlyDictionary<uint, int> held)
         {
-            var soil = (Plugin.C.SoilForCross, Plugin.C.SoilForYield);
-            if (goalRow == goalPlanRowCache && ReferenceEquals(held, goalPlanHeldCache) && soil == goalPlanSoilCache)
+            var capacity = PatchCapacity.Current();
+            var key = (Row: goalRow, Cross: Plugin.C.SoilForCross, Yield: Plugin.C.SoilForYield, Capacity: capacity);
+            if (key == goalPlanKeyCache && ReferenceEquals(held, goalPlanHeldCache))
                 return goalPlanCache;
 
-            var plan = GoalRoute.Solve(goalRow, held, soil.SoilForCross, soil.SoilForYield);
-            goalPlanRowCache = goalRow;
+            var plan = GoalRoute.Solve(goalRow, held, key.Cross, key.Yield, capacity);
+            goalPlanKeyCache = key;
             goalPlanHeldCache = held;
-            goalPlanSoilCache = soil;
             goalPlanCache = plan;
             return plan;
         }
@@ -576,21 +580,24 @@ namespace Gardener.Windows
         /// <see cref="GoalPlan.BestCaseDuration"/> — "quickest" is what the header promises, and
         /// duration is the number that actually answers it. Cached the same way
         /// <see cref="GetOrSolveGoalPlan"/> is, since it runs <see cref="GoalRoute.Solve"/> once per
-        /// crossable target.</summary>
+        /// crossable target, invalidated on either the held-dictionary reference or the resolved
+        /// <see cref="GardenCapacity"/> changing.</summary>
         private static void DrawQuickPicks(IReadOnlyDictionary<uint, int> held)
         {
-            if (!ReferenceEquals(held, quickPicksHeldCache))
+            var capacity = PatchCapacity.Current();
+            if (!ReferenceEquals(held, quickPicksHeldCache) || capacity != quickPicksCapacityCache)
             {
                 var found = new List<(uint Row, GoalPlan Plan)>();
                 foreach (var row in SeedTable.CrossableTargets)
                 {
                     if (SeedTable.Gatherable(row) == true)
                         continue;
-                    if (GoalRoute.Solve(row, held, Plugin.C.SoilForCross, Plugin.C.SoilForYield) is { } plan)
+                    if (GoalRoute.Solve(row, held, Plugin.C.SoilForCross, Plugin.C.SoilForYield, capacity) is { } plan)
                         found.Add((row, plan));
                 }
                 quickPicksCache = found.OrderBy(f => f.Plan.BestCaseDuration).Take(3).ToList();
                 quickPicksHeldCache = held;
+                quickPicksCapacityCache = capacity;
             }
 
             if (quickPicksCache.Count == 0)

@@ -992,6 +992,10 @@
     <value>{0} is missing from the cross data; this route may be incomplete.</value>
     <comment>GoalRoute.AddDataGapWarnings, RowsAbsentFromCrossData branch, appended to GoalPlan.Warnings. {0} is the produce name (SeedItems.ProduceName), a client-language name.</comment>
   </data>
+  <data name="Goal_CapacityIgnoresUnconfirmed" xml:space="preserve">
+    <value>Patches with an unconfirmed layout: {0}. This route does not plant on them.</value>
+    <comment>GoalRoute.Solve, appended to GoalPlan.Warnings when GardenCapacity.UnusablePatchCount > 0. {0} is that count, an integer via Formats.Number. Phrased as a label plus a separate sentence so no verb has to agree with the count (composition contract rule 5 would otherwise need an _One/_Other split the plan does not call for).</comment>
+  </data>
   <data name="Goal_ObtainTitle" xml:space="preserve">
     <value>Get the starting seeds</value>
     <comment>GoalRoute.AddObtainSteps, the shared ObtainStep.Title every leaf seed's step reports (the whole route's shopping list is one step, not one per seed).</comment>
@@ -1050,7 +1054,7 @@
   </data>
   <data name="Goal_CrossFinalRoundsPerRound" xml:space="preserve">
     <value>One round plants {0} pairs.</value>
-    <comment>GoalRoute.BuildCrossStep, final-step multi-round branch, first sentence. {0} is AssumedPatchPairs, an integer via Formats.Number.</comment>
+    <comment>GoalRoute.BuildCrossStep, final-step multi-round branch, first sentence. {0} is GardenCapacity.Pairs, an integer via Formats.Number.</comment>
   </data>
   <data name="Goal_CrossFinalRoundsPlan" xml:space="preserve">
     <value>This cross wants about {0} attempts, so plan on {1} rounds, about {2} days total.</value>
@@ -1070,19 +1074,19 @@
   </data>
   <data name="Goal_YieldCoversOne_One" xml:space="preserve">
     <value>A bed of {0} returns 1 seed, so one round of {1} beds covers it.</value>
-    <comment>GoalRoute.YieldRoundsSentence, rounds &lt;= 1 and seed yield == 1. {0} is the target produce name (SeedItems.ProduceName), a client-language name - phrased "a bed of {0}" per composition contract rule 6 so no gendered article precedes it; {1} is AssumedPatchBeds, an integer via Formats.Number.</comment>
+    <comment>GoalRoute.YieldRoundsSentence, rounds &lt;= 1 and seed yield == 1. {0} is the target produce name (SeedItems.ProduceName), a client-language name - phrased "a bed of {0}" per composition contract rule 6 so no gendered article precedes it; {1} is GardenCapacity.Beds, an integer via Formats.Number.</comment>
   </data>
   <data name="Goal_YieldCoversOne_Other" xml:space="preserve">
     <value>A bed of {0} returns {1} seeds, so one round of {2} beds covers it.</value>
-    <comment>GoalRoute.YieldRoundsSentence, rounds &lt;= 1 and seed yield != 1 (including 0). {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the seed yield count; {2} is AssumedPatchBeds. Both {1} and {2} are integers via Formats.Number.</comment>
+    <comment>GoalRoute.YieldRoundsSentence, rounds &lt;= 1 and seed yield != 1 (including 0). {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the seed yield count; {2} is GardenCapacity.Beds. Both {1} and {2} are integers via Formats.Number.</comment>
   </data>
   <data name="Goal_YieldNeedsRounds_One" xml:space="preserve">
     <value>A bed of {0} returns 1 seed, so this needs {1} rounds of {2} beds, about {3} days total.</value>
-    <comment>GoalRoute.YieldRoundsSentence, rounds &gt; 1 and seed yield == 1. {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the rounds needed; {2} is AssumedPatchBeds; {3} is the total days (roundDays * rounds). {1}-{3} are integers via Formats.Number.</comment>
+    <comment>GoalRoute.YieldRoundsSentence, rounds &gt; 1 and seed yield == 1. {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the rounds needed; {2} is GardenCapacity.Beds; {3} is the total days (roundDays * rounds). {1}-{3} are integers via Formats.Number.</comment>
   </data>
   <data name="Goal_YieldNeedsRounds_Other" xml:space="preserve">
     <value>A bed of {0} returns {1} seeds, so this needs {2} rounds of {3} beds, about {4} days total.</value>
-    <comment>GoalRoute.YieldRoundsSentence, rounds &gt; 1 and seed yield != 1 (including 0). {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the seed yield count; {2} is the rounds needed; {3} is AssumedPatchBeds; {4} is the total days (roundDays * rounds). {1}-{4} are integers via Formats.Number.</comment>
+    <comment>GoalRoute.YieldRoundsSentence, rounds &gt; 1 and seed yield != 1 (including 0). {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the seed yield count; {2} is the rounds needed; {3} is GardenCapacity.Beds; {4} is the total days (roundDays * rounds). {1}-{4} are integers via Formats.Number.</comment>
   </data>
   <data name="Goal_YieldUnknown" xml:space="preserve">
     <value>{0}'s seed yield isn't recorded, so Gardener could not work out how many rounds that takes; watch your seed count and plant another round if you come up short.</value>
@@ -1096,9 +1100,17 @@
     <value>Soil: {0} in the beds you plant second, the ones that cross; {1} in the beds you plant first, which cross with nothing and are harvested for seed.</value>
     <comment>GoalRoute.BuildCrossStep, soil paragraph, branch where the cross and yield soil families differ. {0} is the cross soil's real item name; {1} is the yield soil's real item name (both GardeningItems.SoilName), client-language item names. SoilSources.Does' own whole sentence(s) are appended as separate body lines, not concatenated here.</comment>
   </data>
-  <data name="Goal_BedsCount" xml:space="preserve">
+  <data name="Goal_BedsCountOnePatch" xml:space="preserve">
     <value>Beds: {0} ({1} pairs).</value>
-    <comment>GoalRoute.BuildCrossStep, beds line. {0} is AssumedPatchBeds; {1} is AssumedPatchPairs. Both integers via Formats.Number.</comment>
+    <comment>GoalRoute.BuildCrossStep, beds line, GardenCapacity.PatchCount == 1 and not Assumed. {0} is capacity.Beds; {1} is capacity.Pairs. Both integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_BedsCountManyPatches" xml:space="preserve">
+    <value>Beds: {0} across {1} patches ({2} pairs).</value>
+    <comment>GoalRoute.BuildCrossStep, beds line, GardenCapacity.PatchCount > 1. {0} is capacity.Beds; {1} is capacity.PatchCount; {2} is capacity.Pairs. All three integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_BedsCountAssumed" xml:space="preserve">
+    <value>Beds: {0} ({1} pairs), assuming a single Deluxe patch; no patch has been recorded yet.</value>
+    <comment>GoalRoute.BuildCrossStep, beds line, GardenCapacity.Assumed (away from the garden with an empty journal). {0} is capacity.Beds; {1} is capacity.Pairs, both integers via Formats.Number. Must say the count is a guess, not a measurement.</comment>
   </data>
   <data name="Goal_ReadyAfterPlant" xml:space="preserve">
     <value>Ready {0} after you plant.</value>

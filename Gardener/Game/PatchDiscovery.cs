@@ -45,6 +45,13 @@ public static class PatchKindExtensions
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "unhandled PatchKind"),
     };
 
+    /// <summary>Whether this shape's bed layout has ever been confirmed (see FACTS.md): only Deluxe,
+    /// by the official strategy guide's own diagram and the community's independent 4x4 setup guide.
+    /// The single predicate behind the adjacency refusal below, <c>CrossPlanner.PlanFillStep</c>'s
+    /// refusal and <see cref="Planner.GardenCapacity"/>'s usable-patch count, so none of the three can
+    /// drift from the others.</summary>
+    public static bool HasConfirmedLayout(this PatchKind kind) => kind == PatchKind.Deluxe;
+
     // The diagram's own grid coordinates for beds 1-8 (row 0 is the top edge, column 0 is the left
     // edge). The centre cell (1,1) never appears here: it is the patch, not a bed.
     private static readonly (int Row, int Col)[] DeluxeRingGrid =
@@ -67,7 +74,7 @@ public static class PatchKindExtensions
     /// </summary>
     public static IReadOnlyList<int> Neighbours(this PatchKind kind, int bedNumber)
     {
-        if (kind != PatchKind.Deluxe)
+        if (!kind.HasConfirmedLayout())
             throw new NotSupportedException(
                 $"{kind} bed layout is not confirmed; there is no adjacency model for it.");
         if (bedNumber < 1 || bedNumber > DeluxeRingGrid.Length)
