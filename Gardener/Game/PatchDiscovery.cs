@@ -276,14 +276,25 @@ public static class PatchDiscovery
         var currentPlot = CurrentPlotOrNull();
         var ownsCurrentPlot = houseKey.Owned;
 
+        // The furniture array is the current house's own, not the ward's: it and the DataMap the bed
+        // states are read from are both members of one HousingObjectManager, and DataMap[patch's
+        // HousingFurnitureIndex] resolving to that patch's own beds is proven in game — which it could
+        // not be if the array spanned sixty plots. So standing on a numbered plot is the whole test,
+        // and every patch the array reports belongs to it.
+        //
+        // Nearest map marker is NOT that test and must not become one again: a marker sits at the
+        // plot's placard, not its centre, so a patch deep in a subdivision yard can be 47y from its own
+        // marker and 28y from the neighbouring plot's, and attributing it by distance hands it to the
+        // wrong plot. The attribution is still recorded below, for the dump only.
+        var onOwnNumberedPlot = ownsCurrentPlot && currentPlot is not null;
+
         var kept = new List<Patch>();
         var attributions = new List<PatchAttribution>();
         foreach (var patch in builtPatches)
         {
             var (plotIndex, distance) = AttributeToPlot(patch.Center);
-            var isKept = ownsCurrentPlot && currentPlot is { } cp && plotIndex == cp;
-            attributions.Add(new PatchAttribution(patch, plotIndex, distance, isKept));
-            if (isKept)
+            attributions.Add(new PatchAttribution(patch, plotIndex, distance, onOwnNumberedPlot));
+            if (onOwnNumberedPlot)
                 kept.Add(patch);
         }
 
