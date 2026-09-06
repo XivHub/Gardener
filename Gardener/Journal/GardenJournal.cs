@@ -259,8 +259,25 @@ public static class GardenJournal
     /// <summary>Every recorded patch's <see cref="PatchRecord.Kind"/>, across every house on the
     /// account, ordered by patch key for a reproducible result — the away-from-garden capacity
     /// fallback's only source when <see cref="Game.PatchDiscovery"/> itself has nothing live.</summary>
-    public static IReadOnlyList<PatchKind> KnownPatchKinds() =>
-        patches.Values.OrderBy(p => p.PatchKey, StringComparer.Ordinal).Select(p => p.Kind).ToList();
+    /// <summary>The patch shapes of the house seen most recently, for sizing a route while the player
+    /// is away from every garden. Scoped to one house on purpose: a step plants into the patches at
+    /// the house being stood in, so summing an FC estate and a private one would promise a round no
+    /// single visit can plant.</summary>
+    public static IReadOnlyList<PatchKind> KnownPatchKinds()
+    {
+        var lastHouse = patches.Values
+            .OrderByDescending(p => p.LastSeenAt)
+            .Select(p => p.HouseKey)
+            .FirstOrDefault();
+
+        return lastHouse is null
+            ? Array.Empty<PatchKind>()
+            : patches.Values
+                .Where(p => p.HouseKey == lastHouse)
+                .OrderBy(p => p.PatchKey, StringComparer.Ordinal)
+                .Select(p => p.Kind)
+                .ToList();
+    }
 
     /// <summary>
     /// Applies a passive <see cref="GardenMemory"/> read to the journal. Every transition below is the

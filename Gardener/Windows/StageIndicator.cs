@@ -40,10 +40,16 @@ public static class StageIndicator
     /// nothing at all — an empty bed's growth cell stays blank rather than showing four hollow dots.</summary>
     public static void Draw(int stage, Vector4 color)
     {
-        if (stage <= 0)
-            return;
-
         var (radius, spacing) = Metrics();
+
+        // Still submits an item when there is nothing to draw: the caller tests IsItemHovered right
+        // after this, and skipping the Dummy would leave that test reading the previous cell.
+        if (stage <= 0)
+        {
+            ImGui.Dummy(new Vector2(Width(), radius * 2f));
+            return;
+        }
+
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var filled = Math.Clamp(stage, 0, PipCount);

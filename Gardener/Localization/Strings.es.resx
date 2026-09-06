@@ -730,10 +730,10 @@
     <value>{0} pares aquí</value>
   </data>
   <data name="Goal_SoilHeld" xml:space="preserve">
-    <value>Tienes {0} y {1}.</value>
+    <value>Tienes {0} {1} y {2} {3}.</value>
   </data>
   <data name="Goal_SoilHeldSame" xml:space="preserve">
-    <value>Tienes {0}.</value>
+    <value>Tienes {0} {1}.</value>
   </data>
   <data name="Goal_CannotFitStep" xml:space="preserve">
     <value>Gardener no puede encajar este paso en las parcelas libres de este huerto.</value>
@@ -1433,7 +1433,7 @@
     <comment>PatchLabel.HouseHeader, la linea que agrupa por casa en la pestana Recordatorios. {0} es una palabra de PatchLabel.Estate, {1} es el numero de terreno que ve el jugador.</comment>
   </data>
   <data name="Goal_ObtainSoilNoteSame" xml:space="preserve">
-    <value>Mas adelante en esta ruta tambien necesitaras {0}.</value>
+    <value>Más adelante en esta ruta también necesitarás {0}.</value>
     <comment>GoalRoute.AddObtainSteps, primer paso de obtencion, cuando las dos preferencias de tierra resuelven al mismo objeto. {0} es el nombre del objeto en el idioma del cliente.</comment>
   </data>
 </root>

@@ -300,7 +300,13 @@ public static class CrossPlanner
             var memory = memoryFor(patch);
             var plan = PlanFillStep(target, remainingBeds, patch, memory, stock);
             if (plan.Steps.Count == 0)
+            {
+                // The patch is about to disappear from the split; carry its own reason up, or the
+                // player is left wondering why only one of their gardens is listed.
+                if (plan.Warnings.Count > 0)
+                    warnings.Add(plan.Warnings[0]);
                 continue;
+            }
 
             layouts.Add(new PatchLayout(patch, plan, plan.ExpectedTargets.Count));
             remainingBeds -= plan.Steps.Count;
@@ -376,6 +382,13 @@ public static class CrossPlanner
 
         plan.Steps.Clear();
         plan.Steps.AddRange(kept);
+
+        // ExpectedTargets is keyed by cross bed and is what PatchLayout counts pairs from, so a bed
+        // dropped above has to lose its entry too or the plan reports pairs it will not plant.
+        var keptBeds = kept.Select(s => s.BedNumber).ToHashSet();
+        foreach (var bed in plan.ExpectedTargets.Keys.Where(b => !keptBeds.Contains(b)).ToList())
+            plan.ExpectedTargets.Remove(bed);
+
         return allValid;
     }
 

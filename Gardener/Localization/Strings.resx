@@ -969,12 +969,12 @@
     <comment>MainWindow.DrawGoalCurrentStepDetail, right-aligned Faint line on one PatchLayout's own header row - how many pairs (PatchLayout.Pairs) that patch's own slice of the split plants. {0} is the count, an integer via Formats.Number, 0 or 2 or more.</comment>
   </data>
   <data name="Goal_SoilHeld" xml:space="preserve">
-    <value>You hold {0} and {1}.</value>
-    <comment>MainWindow.DrawGoalSoilHeldLine, drawn beneath the whole per-patch split, branch where the cross and yield soil preferences resolved to two different real items (Bags.Scan at render time, never GoalRoute.Solve). Good when both counts cover one round's own demand (crossStep.Beds / 2 pairs of each), Warn otherwise. {0} is the held count of the cross soil; {1} is the held count of the yield soil, both integers via Formats.Number. Names are not repeated here since Goal_SoilPerRound/Goal_SoilTwoFamilies just named both.</comment>
+    <value>You hold {0} {1} and {2} {3}.</value>
+    <comment>MainWindow.DrawGoalSoilHeldLine, compared against one round's need. {0}/{2} are counts, {1}/{3} are the client-language names of the soil items BestSoil actually resolved, which may be a different grade from the one the step's own sentence quotes. Counts lead the name so no article precedes an item name.</comment>
   </data>
   <data name="Goal_SoilHeldSame" xml:space="preserve">
-    <value>You hold {0}.</value>
-    <comment>MainWindow.DrawGoalSoilHeldLine, drawn beneath the whole per-patch split, branch where the cross and yield soil preferences resolved to the same real item id - reporting one combined held count rather than the same number twice. Good when it covers one round's own combined demand, Warn otherwise. {0} is the held count, an integer via Formats.Number.</comment>
+    <value>You hold {0} {1}.</value>
+    <comment>MainWindow.DrawGoalSoilHeldLine when both preferences resolve to one item. {0} is the count, {1} the client-language item name BestSoil resolved.</comment>
   </data>
   <data name="Goal_CannotFitStep" xml:space="preserve">
     <value>Gardener cannot fit this step into the free beds on this patch.</value>

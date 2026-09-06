@@ -409,7 +409,13 @@ namespace Gardener.Windows
             var harvestLabel = Loc.Format(Strings.Sweep_AllButton, GameWords.Action(SweepKind.Harvest));
             var fertilizeLabel = Loc.Format(Strings.Sweep_AllButton, GameWords.Action(SweepKind.Fertilize));
 
-            using (HubStyle.Primary())
+            // The theme's gold marks the single most important action in the window, so it goes to the
+            // tend sweep of the first patch that actually has beds due — never to every patch at once.
+            var leadsTending = Reminders.DueToTend
+                .Select(e => e.PatchKey)
+                .FirstOrDefault(k => PatchDiscovery.Patches.Any(p => p.Key == k)) == patch.Key;
+
+            using (leadsTending ? HubStyle.Primary() : null)
             {
                 if (ImGui.Button($"{tendLabel}##tend-{patch.Key}"))
                 {
@@ -1053,6 +1059,10 @@ namespace Gardener.Windows
         /// the two preferences resolved to the same real item, for the same reason
         /// <see cref="GoalRoute"/>'s own per-round sentence does: naming one item twice in a row reads
         /// like two different demands instead of one.</summary>
+        /// <summary>What the bag actually holds against what one round takes. Names the items it
+        /// counted: the step's own sentence quotes the route's assumed grade, while BestSoil resolves
+        /// whatever grade the player really has, so a bare pair of numbers reads as covering a
+        /// requirement it may not meet.</summary>
         private static void DrawGoalSoilHeldLine(CrossStep crossStep, IReadOnlyList<SlotView> bag, SoilItem crossSoilItem, SoilItem yieldSoilItem)
         {
             var pairs = crossStep.Beds / 2;
@@ -1063,7 +1073,8 @@ namespace Gardener.Windows
                 var need = pairs * 2;
                 var heldCount = stock.Count(crossSoilItem.ItemId);
                 ImGui.TextColored(heldCount >= need ? HubStyle.Good : HubStyle.Warn,
-                    Loc.Format(Strings.Goal_SoilHeldSame, Formats.Number(heldCount)));
+                    Loc.Format(Strings.Goal_SoilHeldSame, Formats.Number(heldCount),
+                        ItemSheet.Name(crossSoilItem.ItemId)));
             }
             else
             {
@@ -1071,7 +1082,9 @@ namespace Gardener.Windows
                 var yieldHeld = stock.Count(yieldSoilItem.ItemId);
                 var covers = crossHeld >= pairs && yieldHeld >= pairs;
                 ImGui.TextColored(covers ? HubStyle.Good : HubStyle.Warn,
-                    Loc.Format(Strings.Goal_SoilHeld, Formats.Number(crossHeld), Formats.Number(yieldHeld)));
+                    Loc.Format(Strings.Goal_SoilHeld,
+                        Formats.Number(crossHeld), ItemSheet.Name(crossSoilItem.ItemId),
+                        Formats.Number(yieldHeld), ItemSheet.Name(yieldSoilItem.ItemId)));
             }
         }
 
@@ -1421,7 +1434,7 @@ namespace Gardener.Windows
             ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, Reminders.ReachText(reachableBy)));
         }
 
-        /// <summary>Shared by <see cref="DrawHarvestWindow"/> and <see cref="DrawHarvestGroup"/> so the
+        /// <summary>Shared by <see cref="DrawWhenCell"/> and <see cref="DrawHarvestGroup"/> so the
         /// four confidence words carry exactly one key set.</summary>
         private static string HarvestConfidenceText(HarvestWindow window) => window.Confidence switch
         {
