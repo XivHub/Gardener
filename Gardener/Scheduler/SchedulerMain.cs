@@ -467,21 +467,32 @@ public static class SchedulerMain
         }
 
         // The two open questions the chat sentences settle, each read straight off the live DataMap
-        // value alongside the sentence rather than guessed: whether Value3/Value4 ever carry a wilt
-        // flag (TalkDepressed with both still 0 is the negative result that closes that search — a
-        // non-zero byte here is already caught and snapshotted by GardenMemory's own anomaly latch),
-        // and whether stage 4 (Maturity.MatureCandidate) means harvestable (settled by the Stage4 and
+        // value alongside the sentence rather than guessed: which value carries a wilt flag, and
+        // whether stage 4 (Maturity.MatureCandidate) means harvestable (settled by the Stage4 and
         // HarvestOffered calibration series converging over time, not by any one observation — the
         // MatureCandidate naming stays until they do).
-        foreach (var state in GardenMemory.Read(patch))
+        //
+        // A TALK_DEPRESSED line is the only moment a bed's condition is known from outside the
+        // values, so the whole patch is snapshotted there rather than only the values a guess
+        // already nominated: the siblings read in the same poll are the healthy control the named
+        // bed has to differ from. All three of Value3, Value4 and Value5 reading 0 on the named bed
+        // is evidence against those three, not against DataMap, since the flag may sit outside the
+        // value sets entirely.
+        var states = GardenMemory.Read(patch);
+        foreach (var state in states)
         {
             if (state.BedNumber != bedNumber)
                 continue;
 
-            if (line.Key == MenuKey.TalkDepressed && state.Value3 == 0 && state.Value4 == 0)
-                Plugin.Logger.Information(
-                    $"[Gardener] {patch.Key} bed {bedNumber}: TALK_DEPRESSED with Value3=0 Value4=0; " +
-                    "DataMap carries no wilt flag here.");
+            if (line.Key == MenuKey.TalkDepressed)
+            {
+                GardenMemory.WriteConditionSnapshot(patch, bedNumber, "depressed", states);
+                if (state.Value3 == 0 && state.Value4 == 0 && state.Value5 == 0)
+                    Plugin.Logger.Information(
+                        $"[Gardener] {patch.Key} bed {bedNumber}: TALK_DEPRESSED with Value3=0 " +
+                        "Value4=0 Value5=0; no value set carries the wilt flag on this bed. " +
+                        "See the wilt-depressed-*.txt snapshot for the whole patch.");
+            }
 
             if (line.Key == MenuKey.TalkRipe)
                 Plugin.Logger.Information(

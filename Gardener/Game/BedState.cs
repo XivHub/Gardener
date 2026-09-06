@@ -27,6 +27,7 @@ public readonly record struct BedState(
     byte Stage,
     byte Value3,
     byte Value4,
+    byte Value5,
     DateTimeOffset ReadAt)
 {
     public bool IsEmpty => SeedRow == 0;

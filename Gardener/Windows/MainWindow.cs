@@ -726,7 +726,7 @@ namespace Gardener.Windows
                 else
                 {
                     beds = records
-                        .Select(r => new BedState(r.PatchKey, r.BedNumber, r.SeedRow, r.LastSeenStage, 0, 0, r.LastSeenAt))
+                        .Select(r => new BedState(r.PatchKey, r.BedNumber, r.SeedRow, r.LastSeenStage, 0, 0, 0, r.LastSeenAt))
                         .ToList();
                     observedAt = records.Max(r => r.LastSeenAt);
                     ImGui.TextColored(HubStyle.Faint, Strings.Goal_NotAtGarden);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace Gardener.Game;
@@ -22,9 +23,13 @@ public static class GardenMemory
     // real outdoor seed row falsifies the assumed encoding.
     private static bool badValueLatchFired;
 
-    // The one open structural question: whether Value3/Value4 ever carry the wilt state. Every bed
-    // observed so far reads 0 on both.
+    // The one open structural question: whether any value past the seed row and stage carries the
+    // wilt state. Every bed observed so far reads 0 on all three of Value3, Value4 and Value5.
     private static bool wiltLatchFired;
+
+    // One condition snapshot per bed per session: a wilted bed is re-read every poll for as long as
+    // it stays wilted, and the second file through would say what the first already did.
+    private static readonly HashSet<string> conditionSnapshotsTaken = new();
 
     /// <summary>
     /// The passive read for one patch, for bed numbers <c>1..patch.Kind.BedCount()</c>.
@@ -83,16 +88,17 @@ public static class GardenMemory
                     "falsifies the assumed stage/seed-row encoding");
             }
 
-            if ((vs.Value3 != 0 || vs.Value4 != 0) && !wiltLatchFired)
+            if ((vs.Value3 != 0 || vs.Value4 != 0 || vs.Value5 != 0) && !wiltLatchFired)
             {
                 wiltLatchFired = true;
                 Plugin.Logger.Warning(
                     $"[GardenMemory] {patch.Key} bed {i + 1} reads V3={vs.Value3} V4={vs.Value4} " +
-                    "(both were 0 on every bed observed so far); see the wilt-*.txt snapshot");
-                WriteWiltSnapshot(patch, i + 1, seedRow, stage, vs.Value3, vs.Value4);
+                    $"V5={vs.Value5} (all three were 0 on every bed observed so far); " +
+                    "see the wilt-*.txt snapshot");
+                WriteWiltSnapshot(patch, i + 1, seedRow, stage, vs.Value3, vs.Value4, vs.Value5);
             }
 
-            result.Add(new BedState(patch.Key, i + 1, seedRow, stage, vs.Value3, vs.Value4, readAt));
+            result.Add(new BedState(patch.Key, i + 1, seedRow, stage, vs.Value3, vs.Value4, vs.Value5, readAt));
         }
 
         return result;
@@ -109,23 +115,55 @@ public static class GardenMemory
 
     /// <summary>Captures the evidence for the wilt candidate the first time it ever fires, so it
     /// doesn't require the player to be running <c>/gardener dump</c> at that exact moment.</summary>
-    private static void WriteWiltSnapshot(Patch patch, int bedNumber, ushort seedRow, byte stage, byte value3, byte value4)
+    private static void WriteWiltSnapshot(Patch patch, int bedNumber, ushort seedRow, byte stage, byte value3, byte value4, byte value5)
+    {
+        Write($"wilt-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.txt",
+            $"patch={patch.Key} bed={bedNumber} seedRow={seedRow} seedName={SeedName(seedRow)} " +
+            $"stage={stage} value3={value3} value4={value4} value5={value5}\n");
+    }
+
+    /// <summary>
+    /// Every bed in one patch, with all five of its <c>DataMap</c> values, written at the one moment
+    /// the game itself named a bed's condition — a <c>TALK_*</c> line attributed to
+    /// <paramref name="bedNumber"/>. The other beds are the control group: same patch, same read,
+    /// a condition the line did not claim. Whichever value carries wilt has to differ between the
+    /// named bed and at least one sibling here, and if none of the five does then wilt is not in
+    /// <c>ValueSets</c> at all and the search moves to the rest of the entry.
+    /// </summary>
+    public static void WriteConditionSnapshot(Patch patch, int bedNumber, string condition, IReadOnlyList<BedState> states)
+    {
+        if (!conditionSnapshotsTaken.Add($"{patch.Key}|{bedNumber}|{condition}"))
+            return;
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"condition={condition} patch={patch.Key} namedBed={bedNumber} kind={patch.Kind} at={DateTimeOffset.Now:O}");
+        foreach (var s in states)
+            sb.AppendLine(
+                $"  bed={s.BedNumber}{(s.BedNumber == bedNumber ? " <- named by the line" : "")} " +
+                $"seedRow={s.SeedRow} seedName={SeedName(s.SeedRow)} stage={s.Stage} " +
+                $"value3={s.Value3} value4={s.Value4} value5={s.Value5}");
+
+        Write($"wilt-{condition}-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.txt", sb.ToString());
+    }
+
+    private static string SeedName(ushort seedRow) =>
+        seedRow != 0 && SeedItems.SeedItemForRow(seedRow) is { } itemId
+            ? XivHubPluginKit.Inventory.ItemSheet.Name(itemId)
+            : "unknown";
+
+    /// <summary>Writes one snapshot beside the config, so the evidence survives without the player
+    /// running <c>/gardener dump</c> at that exact moment.</summary>
+    private static void Write(string fileName, string body)
     {
         try
         {
             var dir = Plugin.PluginInterface.GetPluginConfigDirectory();
             Directory.CreateDirectory(dir);
-            var path = Path.Combine(dir, $"wilt-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.txt");
-            var seedName = seedRow != 0 && SeedItems.SeedItemForRow(seedRow) is { } itemId
-                ? XivHubPluginKit.Inventory.ItemSheet.Name(itemId)
-                : "unknown";
-            File.WriteAllText(path,
-                $"patch={patch.Key} bed={bedNumber} seedRow={seedRow} seedName={seedName} " +
-                $"stage={stage} value3={value3} value4={value4}\n");
+            File.WriteAllText(Path.Combine(dir, fileName), body);
         }
         catch (Exception ex)
         {
-            Plugin.Logger.Warning(ex, "[GardenMemory] failed to write wilt snapshot");
+            Plugin.Logger.Warning(ex, "[GardenMemory] failed to write snapshot");
         }
     }
 }
