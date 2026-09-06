@@ -150,6 +150,12 @@ public static class PatchDiscovery
     // whole yard from wherever the player is standing in it.
     private const float DiagnosticRadius = 30f;
 
+    // How close the player has to be for a patch to count as theirs regardless of which placard is
+    // nearest. Sized between the two figures measured in game: a patch attributed to the wrong plot
+    // still sat within the 30y diagnostic radius of the player standing at it, while the nearest
+    // patch belonging to a neighbour was 37y away.
+    private const float PlayerPlotRadius = 30f;
+
     // HousingManager.GetCurrentPlot() sentinels for standing in an apartment building rather than
     // on a numbered land plot.
     private const sbyte ApartmentMainDivisionPlot = -128;
@@ -276,16 +282,18 @@ public static class PatchDiscovery
         var currentPlot = CurrentPlotOrNull();
         var ownsCurrentPlot = houseKey.Owned;
 
-        // The furniture array is the current house's own, not the ward's: it and the DataMap the bed
-        // states are read from are both members of one HousingObjectManager, and DataMap[patch's
-        // HousingFurnitureIndex] resolving to that patch's own beds is proven in game — which it could
-        // not be if the array spanned sixty plots. So standing on a numbered plot is the whole test,
-        // and every patch the array reports belongs to it.
+        // The furniture array spans the neighbouring plots too, so a patch has to be attributed before
+        // it is kept, and neither available signal is sufficient alone.
         //
-        // Nearest map marker is NOT that test and must not become one again: a marker sits at the
-        // plot's placard, not its centre, so a patch deep in a subdivision yard can be 47y from its own
-        // marker and 28y from the neighbouring plot's, and attributing it by distance hands it to the
-        // wrong plot. The attribution is still recorded below, for the dump only.
+        // Nearest plot marker is the primary test and is usually unambiguous: on a ward plot each
+        // patch sits 11-18y from its own placard and the plots either side attribute elsewhere. But a
+        // marker stands at the placard, not the centre of the plot, so on a deep plot a patch can end
+        // up 47y from its own marker and 28y from the neighbour's and be handed to the wrong plot.
+        //
+        // Standing next to the patch settles that case: a bed has to be within BedReachDistance to be
+        // used at all, so a patch inside PlayerPlotRadius of the player is one the player is at,
+        // whatever the placards say. A neighbour's patch is far enough away — the nearest foreign
+        // patch measured on a real plot was 37y — that this does not readmit one.
         var onOwnNumberedPlot = ownsCurrentPlot && currentPlot is not null;
 
         var kept = new List<Patch>();
@@ -293,8 +301,13 @@ public static class PatchDiscovery
         foreach (var patch in builtPatches)
         {
             var (plotIndex, distance) = AttributeToPlot(patch.Center);
-            attributions.Add(new PatchAttribution(patch, plotIndex, distance, onOwnNumberedPlot));
-            if (onOwnNumberedPlot)
+            var attributedHere = currentPlot is { } cp && plotIndex == cp;
+            var underfoot = playerPosition is { } pp &&
+                            Vector3.Distance(patch.Center, pp) <= PlayerPlotRadius;
+
+            var isKept = onOwnNumberedPlot && (attributedHere || underfoot);
+            attributions.Add(new PatchAttribution(patch, plotIndex, distance, isKept));
+            if (isKept)
                 kept.Add(patch);
         }
 
