@@ -227,7 +227,11 @@ namespace Gardener
             // text for this to pick up rather than writing it directly.
             DebugDump.DrainClipboard();
 
-            HubStyle.Push();
+            // Roughly 68 style pushes and their pops, every frame, for however long the game runs:
+            // worth skipping entirely when neither window is on screen. Pop is a no-op when nothing
+            // was pushed, so it stays unconditional and the try/finally keeps its guarantee.
+            if (mainWindow.IsOpen || configWindow.IsOpen)
+                HubStyle.Push();
             try { WindowSystem.Draw(); }
             finally { HubStyle.Pop(); }
         }

@@ -47,6 +47,14 @@ public static class Reminders
     /// <see cref="ReachText"/> can stay off the object table on the draw thread.</summary>
     private static string? currentCharacter;
 
+    /// <summary><see cref="SummaryTextFor"/>'s answer for every patch that has one, built once per
+    /// recompute rather than scanned per patch per frame.</summary>
+    private static Dictionary<string, string> summaryByPatch = new(StringComparer.Ordinal);
+
+    /// <summary>When <see cref="Recompute"/> last ran. A per-frame consumer that rebuilds a string
+    /// from these lists gates on this rather than on the string it would have built.</summary>
+    public static DateTimeOffset LastRecomputedAt => lastRecomputedAt;
+
     public static IReadOnlyList<ReminderEntry> DueToTend { get; private set; } = Array.Empty<ReminderEntry>();
     public static IReadOnlyList<ReminderEntry> AboutToWither { get; private set; } = Array.Empty<ReminderEntry>();
     public static IReadOnlyList<HarvestReminderEntry> ReadyToHarvest { get; private set; } = Array.Empty<HarvestReminderEntry>();
@@ -107,11 +115,49 @@ public static class Reminders
         AboutToWither = aboutToWither;
         ReadyToHarvest = readyToHarvest;
         TimingUnknown = timingUnknown;
+        summaryByPatch = BuildPatchSummaries(dueToTend, aboutToWither, readyToHarvest);
+    }
+
+    /// <summary>One <see cref="SummaryTextFor"/> answer per patch that has anything due. A patch
+    /// absent from the result has nothing due, which is the same thing the fallback says.</summary>
+    private static Dictionary<string, string> BuildPatchSummaries(
+        List<ReminderEntry> dueToTend,
+        List<ReminderEntry> aboutToWither,
+        List<HarvestReminderEntry> readyToHarvest)
+    {
+        var counts = new Dictionary<string, (int Tend, int Wither, int Ready)>(StringComparer.Ordinal);
+
+        foreach (var entry in dueToTend)
+        {
+            var c = counts.GetValueOrDefault(entry.PatchKey);
+            counts[entry.PatchKey] = c with { Tend = c.Tend + 1 };
+        }
+        foreach (var entry in aboutToWither)
+        {
+            var c = counts.GetValueOrDefault(entry.PatchKey);
+            counts[entry.PatchKey] = c with { Wither = c.Wither + 1 };
+        }
+        foreach (var harvest in readyToHarvest)
+        {
+            var c = counts.GetValueOrDefault(harvest.Entry.PatchKey);
+            counts[harvest.Entry.PatchKey] = c with { Ready = c.Ready + 1 };
+        }
+
+        var summaries = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (patchKey, c) in counts)
+        {
+            var parts = new List<string>(3);
+            if (c.Tend > 0) parts.Add(CountFragment(c.Tend, Strings.Reminders_SummaryToTend_One, Strings.Reminders_SummaryToTend_Other));
+            if (c.Wither > 0) parts.Add(CountFragment(c.Wither, Strings.Reminders_SummaryWither_One, Strings.Reminders_SummaryWither_Other));
+            if (c.Ready > 0) parts.Add(CountFragment(c.Ready, Strings.Reminders_SummaryReady_One, Strings.Reminders_SummaryReady_Other));
+            summaries[patchKey] = string.Join(", ", parts);
+        }
+        return summaries;
     }
 
     private static ReminderEntry BuildEntry(BedRecord record, DateTimeOffset at)
     {
-        var houseKey = HouseKeyOf(record.PatchKey);
+        var houseKey = GardenJournal.HouseKeyOf(record.PatchKey);
         return new ReminderEntry(
             houseKey,
             record.PatchKey,
@@ -119,12 +165,6 @@ public static class Reminders
             SeedItems.ProduceName(record.SeedRow),
             at,
             GardenJournal.CharactersWithAccess(houseKey));
-    }
-
-    private static string HouseKeyOf(string patchKey)
-    {
-        var separator = patchKey.IndexOf(':');
-        return separator < 0 ? patchKey : patchKey[..separator];
     }
 
     /// <summary>The reachability text for one entry: who to switch to, or that no character has been
@@ -157,19 +197,10 @@ public static class Reminders
 
     /// <summary>The same summary as <see cref="SummaryText"/>, filtered to one patch — the Garden
     /// tab's per-patch header line, so a collapsed patch still answers "what needs doing" without
-    /// expanding it.</summary>
-    public static string SummaryTextFor(string patchKey)
-    {
-        var parts = new List<string>();
-        var dueToTend = DueToTend.Count(e => e.PatchKey == patchKey);
-        var aboutToWither = AboutToWither.Count(e => e.PatchKey == patchKey);
-        var readyToHarvest = ReadyToHarvest.Count(h => h.Entry.PatchKey == patchKey);
-        var timingUnknown = TimingUnknown.Count(e => e.PatchKey == patchKey);
-        if (dueToTend > 0) parts.Add(CountFragment(dueToTend, Strings.Reminders_SummaryToTend_One, Strings.Reminders_SummaryToTend_Other));
-        if (aboutToWither > 0) parts.Add(CountFragment(aboutToWither, Strings.Reminders_SummaryWither_One, Strings.Reminders_SummaryWither_Other));
-        if (readyToHarvest > 0) parts.Add(CountFragment(readyToHarvest, Strings.Reminders_SummaryReady_One, Strings.Reminders_SummaryReady_Other));
-        return parts.Count > 0 ? string.Join(", ", parts) : Strings.Reminders_SummaryNothingDue;
-    }
+    /// expanding it. A lookup, never a scan: this is called once per patch per frame and its answer
+    /// can only change when <see cref="Recompute"/> runs.</summary>
+    public static string SummaryTextFor(string patchKey) =>
+        summaryByPatch.TryGetValue(patchKey, out var summary) ? summary : Strings.Reminders_SummaryNothingDue;
 
     private static string CountFragment(int count, string oneTemplate, string otherTemplate) =>
         Loc.Format(count == 1 ? oneTemplate : otherTemplate, Formats.Number(count));

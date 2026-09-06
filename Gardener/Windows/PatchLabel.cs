@@ -26,9 +26,9 @@ public static class PatchLabel
     /// house — a single-patch house never shows a meaningless "patch 1".</summary>
     public static string Header(Patch patch, int? plotIndex)
     {
-        var houseKey = patch.Key.Split(':')[0];
+        var houseKey = GardenJournal.HouseKeyOf(patch.Key);
         var estateText = Estate(GardenJournal.EstateTypeFor(houseKey));
-        var numbered = GardenJournal.PatchesForHouse(houseKey).Count > 1;
+        var numbered = GardenJournal.PatchCountForHouse(houseKey) > 1;
         var ordinal = GardenJournal.PatchInfo(patch.Key)?.Ordinal ?? 1;
         return Compose(estateText, plotIndex, numbered, ordinal, patch.Kind, patch.Kind.BedCount());
     }
@@ -44,7 +44,7 @@ public static class PatchLabel
         if (GardenJournal.PatchInfo(patchKey) is { } record)
         {
             var estateText = Estate(GardenJournal.EstateTypeFor(record.HouseKey));
-            var numbered = GardenJournal.PatchesForHouse(record.HouseKey).Count > 1;
+            var numbered = GardenJournal.PatchCountForHouse(record.HouseKey) > 1;
             return Compose(estateText, record.PlotIndex, numbered, record.Ordinal, record.Kind, record.BedCount);
         }
 

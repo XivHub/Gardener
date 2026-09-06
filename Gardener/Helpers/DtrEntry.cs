@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.Gui.Dtr;
@@ -16,6 +17,7 @@ public static class DtrEntry
 
     private static IDtrBarEntry? entry;
     private static string lastText = string.Empty;
+    private static DateTimeOffset lastBuiltFrom = DateTimeOffset.MinValue;
 
     public static void Init()
     {
@@ -45,8 +47,12 @@ public static class DtrEntry
         if (entry.Shown != shown)
             entry.Shown = shown;
 
-        if (!shown)
+        // Gated on the recompute, never on the built string: Reminders moves at 1 Hz and the text is
+        // a dozen short-lived allocations, so comparing the result would mean rebuilding it every
+        // frame to discover it had not changed.
+        if (!shown || Reminders.LastRecomputedAt == lastBuiltFrom)
             return;
+        lastBuiltFrom = Reminders.LastRecomputedAt;
 
         var text = Loc.Format(Strings.Dtr_BarText, Reminders.SummaryText());
         if (text == lastText)

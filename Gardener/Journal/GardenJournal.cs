@@ -110,6 +110,29 @@ public static class GardenJournal
     /// world, the plugin is not currently standing in.</summary>
     public static IReadOnlyList<BedRecord> AllRecords => records.Values.ToList();
 
+    /// <summary>Every record belonging to one patch. A filtered pass rather than
+    /// <see cref="AllRecords"/> plus a <c>Where</c>: the Garden tab asks per patch per frame, and
+    /// <see cref="AllRecords"/> copies every record on the account to answer it.</summary>
+    public static IReadOnlyList<BedRecord> ForPatch(string patchKey)
+    {
+        var forPatch = new List<BedRecord>();
+        foreach (var record in records.Values)
+        {
+            if (string.Equals(record.PatchKey, patchKey, StringComparison.Ordinal))
+                forPatch.Add(record);
+        }
+        return forPatch;
+    }
+
+    /// <summary>The house half of a patch key. The key is <c>&lt;houseKey&gt;:&lt;patch&gt;</c>, so this
+    /// is a slice, never a <see cref="string.Split(char[])"/> that allocates an array and every
+    /// segment to reach the first one.</summary>
+    public static string HouseKeyOf(string patchKey)
+    {
+        var separator = patchKey.IndexOf(':');
+        return separator < 0 ? patchKey : patchKey[..separator];
+    }
+
     /// <summary>Records whose <see cref="BedRecord.PatchKey"/> is not among the patches currently
     /// discovered live — the patch was placed into storage, physically moved, or its house is
     /// unreachable right now. An explicit list for the UI, never silently dropped.</summary>
@@ -216,7 +239,7 @@ public static class GardenJournal
 
         if (!patches.TryGetValue(patch.Key, out var record))
         {
-            var houseKey = patch.Key.Split(':')[0];
+            var houseKey = HouseKeyOf(patch.Key);
             var ordinal = 1;
             foreach (var existing in patches.Values)
             {
@@ -255,6 +278,20 @@ public static class GardenJournal
     /// <see cref="PatchRecord.Ordinal"/> order.</summary>
     public static IReadOnlyList<PatchRecord> PatchesForHouse(string houseKey) =>
         patches.Values.Where(p => p.HouseKey == houseKey).OrderBy(p => p.Ordinal).ToList();
+
+    /// <summary>How many patches are recorded at <paramref name="houseKey"/>. For the callers that
+    /// only ask whether the house has more than one, so a per-frame "should this label carry an
+    /// ordinal" question never sorts and materialises the list it is counting.</summary>
+    public static int PatchCountForHouse(string houseKey)
+    {
+        var count = 0;
+        foreach (var patch in patches.Values)
+        {
+            if (string.Equals(patch.HouseKey, houseKey, StringComparison.Ordinal))
+                count++;
+        }
+        return count;
+    }
 
     /// <summary>Every recorded patch's <see cref="PatchRecord.Kind"/>, across every house on the
     /// account, ordered by patch key for a reproducible result — the away-from-garden capacity

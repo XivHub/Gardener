@@ -239,7 +239,7 @@ namespace Gardener.Windows
         /// still incomplete, since a fully verified patch has nothing left to say about it.</summary>
         private static void DrawPatchMetaLine(Patch patch, IReadOnlyDictionary<int, BedState> byBed)
         {
-            var patchRecords = GardenJournal.AllRecords.Where(r => r.PatchKey == patch.Key).ToList();
+            var patchRecords = GardenJournal.ForPatch(patch.Key);
 
             var observedRecords = byBed.Values.Where(s => !s.IsEmpty)
                 .Select(s => GardenJournal.Get(patch.Key, s.BedNumber))
@@ -347,22 +347,26 @@ namespace Gardener.Windows
                 }
 
                 var record = GardenJournal.Get(patch.Key, bedNumber);
-                var color = BedColor(state, record);
+                // Computed once and passed down: Growth.HarvestWindow re-sorts the seed's calibration
+                // samples on every call, and the colour, the "when" sentence and the tooltip all want
+                // the same answer for the same bed.
+                var window = record is { } forWindow ? Growth.HarvestWindow(forWindow) : default;
+                var color = BedColor(state, record, window);
 
                 // Wrap at the cell's own right edge, which is what PushTextWrapPos(0) means inside a
                 // table; without it every cell here is one unbroken line and the last column is cut off.
                 ImGui.PushTextWrapPos(0f);
                 ImGui.TextColored(color, SeedName(state.SeedRow));
                 if (ImGui.IsItemHovered())
-                    DrawBedTooltip(patch, bedNumber, state, record);
+                    DrawBedTooltip(patch, bedNumber, state, record, window);
 
                 ImGui.TableNextColumn();
                 StageIndicator.Draw(state.Stage, color);
                 if (ImGui.IsItemHovered())
-                    DrawBedTooltip(patch, bedNumber, state, record);
+                    DrawBedTooltip(patch, bedNumber, state, record, window);
 
                 ImGui.TableNextColumn();
-                DrawWhenCell(patch.Key, bedNumber, state, record);
+                DrawWhenCell(patch.Key, bedNumber, state, record, window);
                 ImGui.PopTextWrapPos();
 
                 ImGui.TableNextColumn();
@@ -1353,7 +1357,7 @@ namespace Gardener.Windows
             foreach (var houseGroup in entries.GroupBy(e => e.HouseKey))
             {
                 DrawHouseHeader(houseGroup.Key);
-                var showPatchLine = GardenJournal.PatchesForHouse(houseGroup.Key).Count > 1;
+                var showPatchLine = GardenJournal.PatchCountForHouse(houseGroup.Key) > 1;
                 foreach (var patchGroup in houseGroup.GroupBy(e => e.PatchKey))
                 {
                     ImGui.Indent();
@@ -1374,7 +1378,7 @@ namespace Gardener.Windows
             foreach (var houseGroup in Reminders.ReadyToHarvest.GroupBy(h => h.Entry.HouseKey))
             {
                 DrawHouseHeader(houseGroup.Key);
-                var showPatchLine = GardenJournal.PatchesForHouse(houseGroup.Key).Count > 1;
+                var showPatchLine = GardenJournal.PatchCountForHouse(houseGroup.Key) > 1;
                 foreach (var patchGroup in houseGroup.GroupBy(h => h.Entry.PatchKey))
                 {
                     ImGui.Indent();
@@ -1408,7 +1412,7 @@ namespace Gardener.Windows
             foreach (var houseGroup in Reminders.TimingUnknown.GroupBy(e => e.HouseKey))
             {
                 DrawHouseHeader(houseGroup.Key);
-                var showPatchLine = GardenJournal.PatchesForHouse(houseGroup.Key).Count > 1;
+                var showPatchLine = GardenJournal.PatchCountForHouse(houseGroup.Key) > 1;
                 foreach (var patchGroup in houseGroup.GroupBy(e => e.PatchKey))
                 {
                     ImGui.Indent();
@@ -1472,13 +1476,13 @@ namespace Gardener.Windows
         /// → Warn, ready or mature → Good, empty or timing-unknown → Faint. Nothing here is a domain
         /// palette; these are the four roles HubStyle already exposes. Colours both the crop name and
         /// the growth meter, so the two cells never disagree about a bed's condition.</summary>
-        private static Vector4 BedColor(BedState state, BedRecord? record)
+        private static Vector4 BedColor(BedState state, BedRecord? record, HarvestWindow window)
         {
             if (state.IsEmpty)
                 return HubStyle.Faint;
             if (record?.ObservedWithered == true)
                 return HubStyle.Bad;
-            if (record is { } withRecord && Growth.HarvestWindow(withRecord).Earliest is { } earliest && earliest <= DateTimeOffset.UtcNow)
+            if (record is not null && window.Earliest is { } earliest && earliest <= DateTimeOffset.UtcNow)
                 return HubStyle.Good;
             if (state.Maturity == Maturity.MatureCandidate)
                 return HubStyle.Good;
@@ -1505,7 +1509,7 @@ namespace Gardener.Windows
         /// timed branch speaks a duration rather than a clock time, which is what a gardener acts on;
         /// confidence, uncertainty and the exact earliest-to-latest window live in
         /// <see cref="DrawBedTooltip"/> instead, not here.</summary>
-        private static void DrawWhenCell(string patchKey, int bedNumber, BedState state, BedRecord? record)
+        private static void DrawWhenCell(string patchKey, int bedNumber, BedState state, BedRecord? record, HarvestWindow window)
         {
             if (record is not { } rec)
             {
@@ -1531,7 +1535,6 @@ namespace Gardener.Windows
                 return;
             }
 
-            var window = Growth.HarvestWindow(rec);
             if (window.Earliest is { } earliest && earliest <= now)
             {
                 ImGui.TextColored(HubStyle.Good, Strings.Garden_WhenReadyNow);
@@ -1581,7 +1584,7 @@ namespace Gardener.Windows
         /// rather than <c>SetTooltip</c> so the crop-condition line keeps the Good/Warn/Bad/Faint colour
         /// it has always had — a single joined <c>SetTooltip</c> string would render everything in one
         /// colour and quietly drop that distinction.</summary>
-        private static void DrawBedTooltip(Patch patch, int bedNumber, BedState state, BedRecord? record)
+        private static void DrawBedTooltip(Patch patch, int bedNumber, BedState state, BedRecord? record, HarvestWindow window)
         {
             ImGui.BeginTooltip();
             ImGui.PushTextWrapPos(400f);
@@ -1606,7 +1609,6 @@ namespace Gardener.Windows
                 if (Growth.WiltsAt(rec) is { } wiltsAt)
                     ImGui.TextColored(HubStyle.Text, Formats.LocalDateTime(wiltsAt.ToLocalTime()));
 
-                var window = Growth.HarvestWindow(rec);
                 if (window.Confidence != HarvestConfidence.Unknown)
                 {
                     var confidenceText = HarvestConfidenceText(window);

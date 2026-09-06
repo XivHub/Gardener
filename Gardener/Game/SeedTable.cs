@@ -63,6 +63,7 @@ public static class SeedTable
     private static readonly Dictionary<uint, SeedEntry> bySeedRow = new();
     private static readonly List<CrossPair> pairs = new();
     private static readonly Dictionary<(uint, uint), CrossPair> pairByKey = new();
+    private static readonly Dictionary<uint, List<(uint A, uint B)>> pairsByTarget = new();
     private static readonly HashSet<(uint, uint)> deadPairs = new();
     private static readonly List<uint> gatherableRows = new();
     private static readonly List<uint> crossableTargets = new();
@@ -90,6 +91,13 @@ public static class SeedTable
             pairs.Add(pair);
             pairByKey[NormalizeKey(pair.A, pair.B)] = pair;
             targets.UnionWith(pair.Targets);
+
+            foreach (var target in pair.Targets)
+            {
+                if (!pairsByTarget.TryGetValue(target, out var forTarget))
+                    pairsByTarget[target] = forTarget = new List<(uint, uint)>();
+                forTarget.Add((pair.A, pair.B));
+            }
         }
         crossableTargets.AddRange(targets);
 
@@ -130,9 +138,13 @@ public static class SeedTable
     /// offer, since nothing else is reachable by planting two parents side by side.</summary>
     public static IReadOnlyList<uint> CrossableTargets => crossableTargets;
 
-    /// <summary>Every parent pair known to be able to yield <paramref name="target"/>.</summary>
+    /// <summary>Every parent pair known to be able to yield <paramref name="target"/>, in bundle
+    /// order. Indexed at load rather than scanned: <see cref="Planner.GoalRoute"/>'s fixpoint calls
+    /// this once per target per iteration and the bundle holds 2,609 pairs, so a scan here costs a
+    /// full table walk and a list allocation several thousand times a second while the Goal tab is
+    /// open. Callers only read the result, so the stored list is handed out directly.</summary>
     public static IReadOnlyList<(uint A, uint B)> Pairs(uint target) =>
-        pairs.Where(p => p.Targets.Contains(target)).Select(p => (p.A, p.B)).ToList();
+        pairsByTarget.TryGetValue(target, out var forTarget) ? forTarget : Array.Empty<(uint, uint)>();
 
     /// <summary>The offspring row ids for an unordered parent pair; empty if the pair is not a known cross.</summary>
     public static IReadOnlyList<uint> TargetsFor(uint a, uint b) =>
