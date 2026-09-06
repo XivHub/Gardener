@@ -80,8 +80,15 @@ public static class CrossPlanner
     /// take <c>SoilForCross</c>, the one that moves the intercross rate. The plan is re-checked against
     /// itself with <see cref="Verify"/> before it is returned.
     /// </summary>
+    /// <summary>"a pair" or "N pairs" as a complete noun phrase, so a warning never composes the
+    /// plural word itself into someone else's sentence.</summary>
+    private static string PairCountText(int n) => n == 1
+        ? Loc.Format(Strings.Plan_PairCount_One, Formats.Number(n))
+        : Loc.Format(Strings.Plan_PairCount_Other, Formats.Number(n));
+
     public static LayoutPlan PlanFillStep(
-        ushort target, int requestedBeds, Patch patch, IReadOnlyList<BedState> memory, PlantingStock stock)
+        ushort target, int requestedBeds, Patch patch, IReadOnlyList<BedState> memory, PlantingStock stock,
+        bool partOfSplit = false)
     {
         var plan = new LayoutPlan();
         var targetName = SeedItems.ProduceName(target);
@@ -178,10 +185,6 @@ public static class CrossPlanner
         // "N pair"/"N pairs" as a standalone noun phrase (composition contract rule 1), reused by every
         // reason sentence below rather than composed inline, since the plural word itself would
         // otherwise be a fragment substituted into someone else's sentence.
-        string PairCount(int n) => n == 1
-            ? Loc.Format(Strings.Plan_PairCount_One, Formats.Number(n))
-            : Loc.Format(Strings.Plan_PairCount_Other, Formats.Number(n));
-
         string SoilShortfall()
         {
             if (parentSoil is null)
@@ -195,25 +198,36 @@ public static class CrossPlanner
 
         if (pairs <= 0)
         {
-            plan.Warnings.Add(
-                pairsFromSeeds <= 0 ? Loc.Format(Strings.Plan_NeedParentsToStart, anchorName, crossName)
-                : pairsFromSoil <= 0 ? SoilShortfall()
-                : Strings.Plan_NoFreeBedsLeft);
+            // A full patch inside a split is not worth a sentence: the other patches take the work and
+            // the caller drops this one. Running out of seed or soil still is, since the bag is shared.
+            if (pairsFromSeeds <= 0)
+                plan.Warnings.Add(Loc.Format(Strings.Plan_NeedParentsToStart, anchorName, crossName));
+            else if (pairsFromSoil <= 0)
+                plan.Warnings.Add(SoilShortfall());
+            else if (!partOfSplit)
+                plan.Warnings.Add(Strings.Plan_NoFreeBedsLeft);
             return plan;
         }
 
         // One header sentence naming the shortfall, then each limiting reason as its own independent
         // warning — the reasons are separate observations about the patch, not clauses of one sentence,
         // and "and"-gluing them would inflect wrongly the moment there is more than one in Spanish.
+        // Inside a split the header belongs to the whole split, not to one patch: a patch filling four
+        // of the eight pairs a step wants is doing its share, and saying "planting 4 instead of 8" over
+        // the first of two patches reports a shortfall that is not happening. Bed capacity is likewise
+        // the patch's own size there. Seed and soil come from one shared bag, so those still speak here.
         if (pairs < requestedPairs)
         {
-            plan.Warnings.Add(Loc.Format(Strings.Plan_PlantingFewerPairs, PairCount(pairs), PairCount(requestedPairs)));
-            if (pairsFromBeds == pairs && pairsFromBeds < requestedPairs)
-                plan.Warnings.Add(Loc.Format(Strings.Plan_ReasonBeds, PairCount(pairsFromBeds)));
+            if (!partOfSplit)
+            {
+                plan.Warnings.Add(Loc.Format(Strings.Plan_PlantingFewerPairs, PairCountText(pairs), PairCountText(requestedPairs)));
+                if (pairsFromBeds == pairs && pairsFromBeds < requestedPairs)
+                    plan.Warnings.Add(Loc.Format(Strings.Plan_ReasonBeds, PairCountText(pairsFromBeds)));
+            }
             if (pairsFromSeeds == pairs && pairsFromSeeds < requestedPairs)
-                plan.Warnings.Add(Loc.Format(Strings.Plan_ReasonSeeds, anchorName, crossName, PairCount(pairsFromSeeds)));
+                plan.Warnings.Add(Loc.Format(Strings.Plan_ReasonSeeds, anchorName, crossName, PairCountText(pairsFromSeeds)));
             if (pairsFromSoil == pairs && pairsFromSoil < requestedPairs)
-                plan.Warnings.Add(Loc.Format(Strings.Plan_ReasonSoil, PairCount(pairsFromSoil)));
+                plan.Warnings.Add(Loc.Format(Strings.Plan_ReasonSoil, PairCountText(pairsFromSoil)));
         }
 
         var newAnchorBeds = anchorFreeSlots.Take(Math.Max(0, pairs - existingAnchorBeds.Count)).ToList();
@@ -298,7 +312,7 @@ public static class CrossPlanner
             }
 
             var memory = memoryFor(patch);
-            var plan = PlanFillStep(target, remainingBeds, patch, memory, stock);
+            var plan = PlanFillStep(target, remainingBeds, patch, memory, stock, partOfSplit: true);
             if (plan.Steps.Count == 0)
             {
                 // The patch is about to disappear from the split; carry its own reason up, or the
@@ -311,6 +325,14 @@ public static class CrossPlanner
             layouts.Add(new PatchLayout(patch, plan, plan.ExpectedTargets.Count));
             remainingBeds -= plan.Steps.Count;
         }
+
+        // Said once, about the split as a whole: the step asked for a number of pairs and the patches
+        // together came up short. Each patch's own share is not a shortfall and says nothing.
+        var plantedPairs = layouts.Sum(l => l.Pairs);
+        var requestedPairs = Math.Max(0, requestedBeds / 2);
+        if (plantedPairs > 0 && plantedPairs < requestedPairs)
+            warnings.Add(Loc.Format(Strings.Plan_PlantingFewerPairs,
+                PairCountText(plantedPairs), PairCountText(requestedPairs)));
 
         return new MultiPatchLayout(layouts, warnings);
     }
