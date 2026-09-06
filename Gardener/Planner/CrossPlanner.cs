@@ -4,6 +4,7 @@ using System.Linq;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Gardener.Game;
 using Gardener.Journal;
+using Gardener.Localization;
 using XivHubPluginKit.Inventory;
 
 namespace Gardener.Planner;
@@ -88,14 +89,15 @@ public static class CrossPlanner
         var candidatePairs = SeedTable.Pairs(target);
         if (candidatePairs.Count == 0)
         {
-            plan.Warnings.Add($"No known cross produces {targetName}.");
+            plan.Warnings.Add(Loc.Format(Strings.Plan_NoKnownCross, targetName));
             return plan;
         }
 
         if (patch.Kind != PatchKind.Deluxe)
         {
-            plan.Warnings.Add(
-                $"{patch.Kind} bed adjacency has never been confirmed, so a cross can't be placed here yet.");
+            // PatchKind names stay literal (do-not-translate register: no EObj-to-item mapping resolves
+            // Deluxe/Oblong/Round to the client's own furniture name), wrapped in a whole-sentence template.
+            plan.Warnings.Add(Loc.Format(Strings.Plan_AdjacencyUnconfirmed, patch.Kind));
             return plan;
         }
 
@@ -126,8 +128,7 @@ public static class CrossPlanner
 
         if (scored.Count == 0)
         {
-            plan.Warnings.Add(
-                $"{targetName} needs a pair currently held or already growing on this patch; none is available.");
+            plan.Warnings.Add(Loc.Format(Strings.Plan_NoPairAvailable, targetName));
             return plan;
         }
 
@@ -157,7 +158,7 @@ public static class CrossPlanner
         if (crossSoil is null)
         {
             plan.Warnings.Add(
-                GardeningItems.SoilUnavailable(Plugin.C.SoilForCross) ?? "No soil available for the crossing step.");
+                GardeningItems.SoilUnavailable(Plugin.C.SoilForCross) ?? Strings.Plan_NoSoilForCrossingFallback);
             return plan;
         }
         var parentSoil = GardeningItems.BestSoil(Plugin.C.SoilForYield, inventory);
@@ -177,39 +178,45 @@ public static class CrossPlanner
 
         var pairs = new[] { requestedPairs, pairsFromBeds, pairsFromSeeds, pairsFromSoil }.Min();
 
-        string PairWord(int n) => $"{n} pair{(n == 1 ? "" : "s")}";
+        // "N pair"/"N pairs" as a standalone noun phrase (composition contract rule 1), reused by every
+        // reason sentence below rather than composed inline, since the plural word itself would
+        // otherwise be a fragment substituted into someone else's sentence.
+        string PairCount(int n) => n == 1
+            ? Loc.Format(Strings.Plan_PairCount_One, Formats.Number(n))
+            : Loc.Format(Strings.Plan_PairCount_Other, Formats.Number(n));
 
         string SoilShortfall()
         {
             if (parentSoil is null)
-                return GardeningItems.SoilUnavailable(Plugin.C.SoilForYield) ?? "No soil for the parent beds.";
+                return GardeningItems.SoilUnavailable(Plugin.C.SoilForYield) ?? Strings.Plan_NoSoilForParentFallback;
             if (parentSoil.ItemId == crossSoil.ItemId)
-                return $"You hold {crossStock} {ItemSheet.Name(crossSoil.ItemId)}, and a pair needs one for " +
-                       "the parent bed and one for the cross bed.";
+                return Loc.Format(Strings.Plan_SoilSharedStock, Formats.Number(crossStock), ItemSheet.Name(crossSoil.ItemId));
             return crossStock <= 0
-                ? $"No {ItemSheet.Name(crossSoil.ItemId)} left for the cross beds."
-                : $"You hold {parentStock} {ItemSheet.Name(parentSoil.ItemId)} for the parent beds.";
+                ? Loc.Format(Strings.Plan_NoCrossSoilLeft, ItemSheet.Name(crossSoil.ItemId))
+                : Loc.Format(Strings.Plan_ParentSoilStock, Formats.Number(parentStock), ItemSheet.Name(parentSoil.ItemId));
         }
 
         if (pairs <= 0)
         {
             plan.Warnings.Add(
-                pairsFromSeeds <= 0 ? $"You need {anchorName} and {crossName} to start this pair; none held."
+                pairsFromSeeds <= 0 ? Loc.Format(Strings.Plan_NeedParentsToStart, anchorName, crossName)
                 : pairsFromSoil <= 0 ? SoilShortfall()
-                : "No free beds are left on this patch to start a new pair.");
+                : Strings.Plan_NoFreeBedsLeft);
             return plan;
         }
 
+        // One header sentence naming the shortfall, then each limiting reason as its own independent
+        // warning — the reasons are separate observations about the patch, not clauses of one sentence,
+        // and "and"-gluing them would inflect wrongly the moment there is more than one in Spanish.
         if (pairs < requestedPairs)
         {
-            var reasons = new List<string>();
+            plan.Warnings.Add(Loc.Format(Strings.Plan_PlantingFewerPairs, PairCount(pairs), PairCount(requestedPairs)));
             if (pairsFromBeds == pairs && pairsFromBeds < requestedPairs)
-                reasons.Add($"only {PairWord(pairsFromBeds)} of free beds fit on this patch");
+                plan.Warnings.Add(Loc.Format(Strings.Plan_ReasonBeds, PairCount(pairsFromBeds)));
             if (pairsFromSeeds == pairs && pairsFromSeeds < requestedPairs)
-                reasons.Add($"you hold enough {anchorName} and {crossName} for {PairWord(pairsFromSeeds)}");
+                plan.Warnings.Add(Loc.Format(Strings.Plan_ReasonSeeds, anchorName, crossName, PairCount(pairsFromSeeds)));
             if (pairsFromSoil == pairs && pairsFromSoil < requestedPairs)
-                reasons.Add($"you hold enough topsoil for {PairWord(pairsFromSoil)}");
-            plan.Warnings.Add($"Planting {PairWord(pairs)} instead of {requestedPairs}: {string.Join(" and ", reasons)}.");
+                plan.Warnings.Add(Loc.Format(Strings.Plan_ReasonSoil, PairCount(pairsFromSoil)));
         }
 
         var newAnchorBeds = anchorFreeSlots.Take(Math.Max(0, pairs - existingAnchorBeds.Count)).ToList();
@@ -219,33 +226,28 @@ public static class CrossPlanner
         {
             foreach (var bed in newAnchorBeds)
                 plan.Steps.Add(new PlantStep(bed, (ushort)anchorRow, parentSoil.ItemId,
-                    $"Parent for {targetName}: plant here first so its neighbours can cross with it."));
+                    Loc.Format(Strings.Plan_WhyParent, targetName)));
         }
 
-        var effText = SeedTable.EfficiencyFor(anchorRow, crossRow, target) is { } pct
-            ? $"ffxivgardening.com rates this pair {pct}/100"
-            : "this pair has no rating yet";
+        var why = SeedTable.EfficiencyFor(anchorRow, crossRow, target) is { } pct
+            ? Loc.Format(Strings.Plan_WhyCrossRated, anchorName, targetName, Formats.Number(pct))
+            : Loc.Format(Strings.Plan_WhyCrossUnrated, anchorName, targetName);
         foreach (var bed in newCrossBeds)
         {
-            plan.Steps.Add(new PlantStep(bed, (ushort)crossRow, crossSoil.ItemId,
-                $"Crosses with its neighbouring {anchorName} to reach {targetName} ({effText})."));
+            plan.Steps.Add(new PlantStep(bed, (ushort)crossRow, crossSoil.ItemId, why));
             plan.ExpectedTargets[bed] = allTargets;
         }
 
         if (allTargets.Count > 1)
         {
-            var others = allTargets.Where(t => t != target).Select(SeedItems.ProduceName);
-            plan.Warnings.Add(
-                $"This cross can also yield {string.Join(", ", others)} instead of {targetName}; " +
-                "the result isn't guaranteed.");
+            var others = allTargets.Where(t => t != target).Select(SeedItems.ProduceName).ToList();
+            plan.Warnings.Add(Loc.Format(Strings.Plan_AlsoYields, TextList.Or(others), targetName));
         }
 
         if (SeedTable.Yields(target)?.Seed is { } targetSeedYield &&
             crossSoil.Grade < targetSeedYield.Length && targetSeedYield[crossSoil.Grade] < 1)
         {
-            plan.Warnings.Add(
-                $"{targetName} returns no seeds of its own at Grade {crossSoil.Grade} soil; " +
-                "harvesting it won't restock this cross.");
+            plan.Warnings.Add(Loc.Format(Strings.Plan_NoSeedReturnAtGrade, targetName, Formats.Number(crossSoil.Grade)));
         }
 
         Verify(plan, patch);
@@ -283,7 +285,7 @@ public static class CrossPlanner
             if (Occupied(step.BedNumber))
             {
                 var seedName = SeedItems.ProduceName(step.SeedRow);
-                plan.Warnings.Add($"Bed {step.BedNumber} is no longer empty; the {seedName} step was dropped.");
+                plan.Warnings.Add(Loc.Format(Strings.Plan_BedNoLongerEmpty, Formats.Number(step.BedNumber), seedName));
                 allValid = false;
                 continue;
             }
@@ -307,8 +309,7 @@ public static class CrossPlanner
                 if (!unambiguous || firstValid is not { } resolved || !intendedParents.Contains(resolved))
                 {
                     var seedName = SeedItems.ProduceName(step.SeedRow);
-                    plan.Warnings.Add(
-                        $"Bed {step.BedNumber} ({seedName}) no longer crosses the way the plan expected; skipped.");
+                    plan.Warnings.Add(Loc.Format(Strings.Plan_BedCrossMismatch, Formats.Number(step.BedNumber), seedName));
                     allValid = false;
                     continue;
                 }

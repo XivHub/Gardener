@@ -1,5 +1,6 @@
 using System;
 using Gardener.Game;
+using Gardener.Localization;
 
 namespace Gardener.Planner;
 
@@ -41,12 +42,16 @@ public static class CrossOdds
         return (int)Math.Ceiling(Math.Log(0.10) / Math.Log(1 - chance));
     }
 
-    /// <summary>"about N in 10", N clamped to 1..10 — the only way odds are ever spoken, since the
+    /// <summary>"About N in 10", N clamped to 1..10 — the only way odds are ever spoken, since the
     /// intercross estimate (G3) and the even split across outcomes (G4) are both unmeasured and a
-    /// percentage or a decimal would claim a precision neither has.</summary>
-    public static string OddsPhrase(double chance)
-    {
-        var n = Math.Clamp((int)Math.Round(chance * 10), 1, 10);
-        return $"about {n} in 10";
-    }
+    /// percentage or a decimal would claim a precision neither has. Its one call site
+    /// (<see cref="GoalRoute"/>'s <c>Goal_OddsOfThemGive</c> sentence) always uses this sentence-initially,
+    /// so <c>Odds_AboutNInTen</c> is authored already capitalized rather than capitalized at runtime —
+    /// runtime capitalization of an arbitrary localized string is not safe in every script.</summary>
+    public static string OddsPhrase(double chance) => Loc.Format(Strings.Odds_AboutNInTen, Formats.Number(Tenths(chance)));
+
+    /// <summary>The clamped tenths count <see cref="OddsPhrase"/> speaks in, split out so a caller that
+    /// needs the bare count (rather than the whole "About N in 10" phrase) does not re-derive the
+    /// clamp.</summary>
+    public static int Tenths(double chance) => Math.Clamp((int)Math.Round(chance * 10), 1, 10);
 }

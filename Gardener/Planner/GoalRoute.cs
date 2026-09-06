@@ -10,11 +10,22 @@ namespace Gardener.Planner;
 /// Finds the cheapest route to a target seed and turns it into the ordered, worded steps the Goal tab
 /// renders. "Cheapest" means fewest expected bed-hours, not fewest crosses: two routes to the same seed
 /// can both be two generations deep and differ by a third in bed time, which a shortest-chain search
-/// cannot tell apart. Pure over its three arguments — no live scan, no <c>Plugin.C</c> read — so it is
-/// exercised without the game.
+/// cannot tell apart. Pure over its three arguments — no live scan and no config read; display language
+/// only (<see cref="Localization.Loc.Culture"/>) — so it is exercised without the game.
 /// </summary>
 public static class GoalRoute
 {
+    /// <summary>Who draws on a cross-only node's output, driving which whole sentence
+    /// <see cref="ClassifyConsumer"/> selects for the arithmetic paragraph's demand sentence: the verb
+    /// agrees with the subject in Spanish ("el cruce final necesita" vs "los pasos posteriores
+    /// necesitan"), so the subject is picked here in C#, never substituted into a shared template.</summary>
+    private enum ConsumerKind
+    {
+        FinalCross,
+        NamedStep,
+        LaterSteps,
+    }
+
     /// <summary>The notional cost of one gathering or vendor trip: far below any grow time, so the
     /// search never invents a cross for a seed that can simply be bought, but not zero, so a route
     /// needing several different gathered seeds scores above one needing fewer. A dial with a derived
@@ -165,12 +176,12 @@ public static class GoalRoute
             var outcomes = SeedTable.TargetsFor(first, second).ToArray();
             var isFinal = target == goalRow;
             var ownDemand = isFinal ? 1 : demand.GetValueOrDefault(target);
-            var consumerPhrase = ConsumerPhrase(target, goalRow, consumersOf);
+            var (consumerKind, namedConsumer) = ClassifyConsumer(target, goalRow, consumersOf);
 
             steps.Add(BuildCrossStep(
                 stepNumber++, first, second, target, outcomes, crossSoil, family, yieldFamily, isFinal,
                 attemptsNeeded[target], roundsNeeded[target], ownDemand, SeedYieldAtAssumedGrade(target),
-                consumerPhrase, explainedFamilies));
+                consumerKind, namedConsumer, explainedFamilies));
         }
 
         // A step that needs more than one round waits through the extra grow cycles sequentially, on
@@ -264,9 +275,9 @@ public static class GoalRoute
         foreach (var row in rows.Distinct())
         {
             if (gaps.RowsWithNoGrowTime.Any(g => g.Row == row))
-                warnings.Add($"{SeedItems.ProduceName(row)} has no bundled grow time; its timing in this plan is a guess.");
+                warnings.Add(Loc.Format(Strings.Goal_WarningNoGrowTime, SeedItems.ProduceName(row)));
             if (gaps.RowsAbsentFromCrossData.Any(g => g.Row == row))
-                warnings.Add($"{SeedItems.ProduceName(row)} is missing from the cross data; this route may be incomplete.");
+                warnings.Add(Loc.Format(Strings.Goal_WarningMissingCrossData, SeedItems.ProduceName(row)));
         }
     }
 
@@ -274,8 +285,6 @@ public static class GoalRoute
         List<GoalStep> steps, IReadOnlyList<uint> leaves, IReadOnlyDictionary<uint, int> obtainNeed,
         IReadOnlyDictionary<uint, int> held)
     {
-        const string title = "Get the starting seeds";
-
         foreach (var row in leaves)
         {
             var needCount = Math.Max(1, obtainNeed.GetValueOrDefault(row));
@@ -285,39 +294,39 @@ public static class GoalRoute
 
             var body = new List<string>
             {
+                Loc.Format(Strings.Goal_ObtainGet, Formats.Number(needCount), seedItemName),
                 heldCount >= needCount
-                    ? $"Get {needCount} {seedItemName}. You hold {heldCount}, so this one is covered."
-                    : $"Get {needCount} {seedItemName}. You hold {heldCount}.",
+                    ? Loc.Format(Strings.Goal_ObtainHeldCovered, Formats.Number(heldCount))
+                    : Loc.Format(Strings.Goal_ObtainHeldShort, Formats.Number(heldCount)),
             };
 
             var sources = SeedTable.Sources(row);
             if (sources.Count > 0)
-                body.Add($"Where: {string.Join("; ", sources)}");
+                body.Add(Loc.Format(Strings.Goal_ObtainWhere, string.Join("; ", sources)));
 
             var notes = new List<string>
             {
                 SeedYieldAtAssumedGrade(row) switch
                 {
-                    null => $"{produceName}'s seed yield isn't recorded, so Gardener assumes it gives nothing back; every one you plant is a fresh purchase.",
-                    0 => $"{produceName} gives no seeds back when you harvest it, so every one you plant is a fresh purchase.",
-                    _ => $"{produceName} gives seeds back when you harvest it, so this is enough to start; the first harvest funds the rest.",
+                    null => Loc.Format(Strings.Goal_ObtainYieldUnrecorded, produceName),
+                    0 => Loc.Format(Strings.Goal_ObtainYieldZero, produceName),
+                    _ => Loc.Format(Strings.Goal_ObtainYieldRestocks, produceName),
                 },
             };
 
-            steps.Add(new ObtainStep(1, title, body.ToArray(), notes.ToArray(), row, needCount));
+            steps.Add(new ObtainStep(1, Strings.Goal_ObtainTitle, body.ToArray(), notes.ToArray(), row, needCount));
         }
     }
 
     private static CrossStep BuildCrossStep(
         int number, uint first, uint second, uint target, uint[] outcomes, SoilPreference soilPreference,
         SoilFamily family, SoilFamily yieldFamily, bool isFinal, int attempts, int rounds, int ownDemand, int? yieldAtGrade,
-        string consumerPhrase, HashSet<SoilFamily> explainedFamilies)
+        ConsumerKind consumerKind, uint? namedConsumer, HashSet<SoilFamily> explainedFamilies)
     {
         var targetName = SeedItems.ProduceName(target);
         var body = new List<string>
         {
-            $"Plant {SeedItems.SeedItemName(first)} in half the beds around the ring, then plant {SeedItems.SeedItemName(second)} in " +
-            $"the beds between them, so every {SeedItems.SeedItemName(second)} has a {SeedItems.SeedItemName(first)} neighbour on both sides.",
+            Loc.Format(Strings.Goal_CrossPlantLayout, SeedItems.SeedItemName(first), SeedItems.SeedItemName(second)),
         };
 
         var singleOutcome = outcomes.Length <= 1;
@@ -326,16 +335,17 @@ public static class GoalRoute
 
         if (singleOutcome)
         {
-            body.Add($"Every one of these beds becomes {targetName}. This pair makes nothing else.");
+            body.Add(Loc.Format(Strings.Goal_CrossSingleOutcome, targetName));
+            body.Add(Strings.Goal_CrossSingleOutcomeOnly);
         }
         else
         {
-            var others = outcomes.Where(o => o != target).Select(SeedItems.ProduceName);
+            var outcomeNames = new List<string> { targetName };
+            outcomeNames.AddRange(outcomes.Where(o => o != target).Select(SeedItems.ProduceName));
             var chance = ResolveChance(outcomes.Length, family, AssumedSoilGrade);
-            body.Add(
-                $"Each of these beds becomes {targetName} or {string.Join(" or ", others)}, and you cannot pick which. " +
-                $"{Capitalize(CrossOdds.OddsPhrase(chance))} of them give {targetName}.");
-            body.Add("Nobody has published the split between the two, so Gardener treats it as a coin toss.");
+            body.Add(Loc.Format(Strings.Goal_CrossMultiOutcome, TextList.Or(outcomeNames)));
+            body.Add(Loc.Format(Strings.Goal_OddsOfThemGive, CrossOdds.OddsPhrase(chance), targetName));
+            body.Add(Strings.Goal_CrossCoinToss);
         }
 
         // The arithmetic behind the bed count: a full patch plants AssumedPatchPairs pairs a round, and
@@ -344,49 +354,47 @@ public static class GoalRoute
         {
             if (rounds > 1)
             {
-                body.Add(
-                    $"One round plants {AssumedPatchPairs} pairs, but this cross wants about {attempts} attempts, " +
-                    $"so plan on {rounds} rounds, about {roundDays * rounds} days total.");
+                body.Add(Loc.Format(Strings.Goal_CrossFinalRoundsPerRound, Formats.Number(AssumedPatchPairs)));
+                body.Add(Loc.Format(Strings.Goal_CrossFinalRoundsPlan,
+                    Formats.Number(attempts), Formats.Number(rounds), Formats.Number(roundDays * rounds)));
             }
         }
         else if (yieldAtGrade is { } y)
         {
-            var bedNoun = y == 1 ? "returns 1 seed" : $"returns {y} seeds";
-            body.Add(rounds <= 1
-                ? $"{consumerPhrase} wants {ownDemand} {targetName}, and a {targetName} bed {bedNoun}, so one round of {AssumedPatchBeds} beds covers it."
-                : $"{consumerPhrase} wants {ownDemand} {targetName}, and a {targetName} bed {bedNoun}, so this needs " +
-                  $"{rounds} rounds of {AssumedPatchBeds} beds, about {roundDays * rounds} days total.");
+            body.Add(DemandSentence(consumerKind, namedConsumer, ownDemand, targetName));
+            body.Add(YieldRoundsSentence(rounds, y, targetName, roundDays));
         }
         else
         {
-            body.Add(
-                $"{consumerPhrase} wants {ownDemand} {targetName}, but {targetName}'s seed yield isn't recorded, so " +
-                "Gardener could not work out how many rounds that takes; watch your seed count and plant another round if you come up short.");
+            body.Add(DemandSentence(consumerKind, namedConsumer, ownDemand, targetName));
+            body.Add(Loc.Format(Strings.Goal_YieldUnknown, targetName));
         }
 
         // Two soils, not one: a bed planted while its ring neighbours are still empty crosses with
         // nothing, so it is harvested for its own seed and takes the yield soil, and only the beds
         // planted against it take the soil that moves the intercross rate.
         var crossSoilName = GardeningItems.SoilName(family, AssumedSoilGrade);
-        var crossExplain = explainedFamilies.Add(family) ? $" {SoilSources.Does(family, crossSoilName)}" : "";
+        var explainCross = explainedFamilies.Add(family);
         if (yieldFamily == family)
         {
-            body.Add($"Soil: {crossSoilName} in every bed.{crossExplain}");
+            body.Add(Loc.Format(Strings.Goal_SoilSameFamily, crossSoilName));
+            if (explainCross)
+                body.Add(SoilSources.Does(family, crossSoilName));
         }
         else
         {
             var yieldSoilName = GardeningItems.SoilName(yieldFamily, AssumedSoilGrade);
-            var yieldExplain = explainedFamilies.Add(yieldFamily)
-                ? $" {SoilSources.Does(yieldFamily, yieldSoilName)}"
-                : "";
-            body.Add(
-                $"Soil: {crossSoilName} in the beds you plant second, the ones that " +
-                $"cross; {yieldSoilName} in the beds you plant first, which cross " +
-                $"with nothing and are harvested for seed.{crossExplain}{yieldExplain}");
+            var explainYield = explainedFamilies.Add(yieldFamily);
+            body.Add(Loc.Format(Strings.Goal_SoilTwoFamilies, crossSoilName, yieldSoilName));
+            if (explainCross)
+                body.Add(SoilSources.Does(family, crossSoilName));
+            if (explainYield)
+                body.Add(SoilSources.Does(yieldFamily, yieldSoilName));
         }
 
-        body.Add($"Beds: {AssumedPatchBeds} ({AssumedPatchPairs} pairs). Ready " +
-            $"{(targetGrowHours > 48 ? Phrases.AboutDays(Math.Round(targetGrowHours / 24.0)) : Phrases.AboutHours(Math.Round((double)targetGrowHours)))} after you plant.");
+        body.Add(Loc.Format(Strings.Goal_BedsCount, Formats.Number(AssumedPatchBeds), Formats.Number(AssumedPatchPairs)));
+        body.Add(Loc.Format(Strings.Goal_ReadyAfterPlant,
+            targetGrowHours > 48 ? Phrases.AboutDays(Math.Round(targetGrowHours / 24.0)) : Phrases.AboutHours(Math.Round((double)targetGrowHours))));
 
         if (singleOutcome)
         {
@@ -398,7 +406,7 @@ public static class GoalRoute
             {
                 var wiltHours = MinWiltHours(first, target);
                 if (wiltHours is { } w)
-                    body.Add($"Tend these beds {Phrases.EveryDay(w)} or they wilt.");
+                    body.Add(Loc.Format(Strings.Goal_TendOrWilt, Phrases.EveryDay(w)));
             }
         }
         else if (isFinal)
@@ -409,16 +417,49 @@ public static class GoalRoute
         var notes = new List<string>();
         if (SeedTable.EfficiencyFor(first, second, target) is { } rating)
         {
-            notes.Add(
-                $"ffxivgardening.com rates this pair {rating} out of 100. That rating is per pair, not per " +
-                "result, and its meaning isn't published, so Gardener only uses it to prefer one pair over " +
-                "another and sizes this step from the soil estimate instead.");
+            notes.Add(Loc.Format(Strings.Goal_NoteRating, Formats.Number(rating)));
+            notes.Add(Strings.Goal_NoteRatingMeaning);
         }
         if (SeedTable.Wilt(target)?.Disputed == true)
-            notes.Add($"{targetName}'s wilt time is disputed between sources; the cadence above is the shorter, safer figure.");
+            notes.Add(Loc.Format(Strings.Goal_NoteWiltDisputed, targetName));
 
-        return new CrossStep(number, $"Grow {targetName}", body.ToArray(), notes.ToArray(),
+        return new CrossStep(number, Loc.Format(Strings.Goal_CrossStepTitle, targetName), body.ToArray(), notes.ToArray(),
             first, second, target, outcomes, AssumedPatchBeds, soilPreference, ownDemand);
+    }
+
+    /// <summary>Sentence one of the arithmetic paragraph: who wants <paramref name="ownDemand"/> of
+    /// <paramref name="targetName"/>. Selected by <see cref="ConsumerKind"/> rather than substituted,
+    /// because "the final cross needs" and "later steps need" inflect their verb differently in
+    /// Spanish and the subject can never be a slot (composition contract rule 3).</summary>
+    private static string DemandSentence(ConsumerKind kind, uint? namedConsumer, int ownDemand, string targetName)
+    {
+        var demand = Formats.Number(ownDemand);
+        return kind switch
+        {
+            ConsumerKind.FinalCross => Loc.Format(Strings.Goal_DemandFinalCross, demand, targetName),
+            ConsumerKind.NamedStep => Loc.Format(Strings.Goal_DemandNamedStep, SeedItems.ProduceName(namedConsumer!.Value), demand, targetName),
+            ConsumerKind.LaterSteps => Loc.Format(Strings.Goal_DemandLaterSteps, demand, targetName),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "unhandled ConsumerKind"),
+        };
+    }
+
+    /// <summary>Sentence two of the arithmetic paragraph: what a bed of <paramref name="targetName"/>
+    /// gives back and whether one round of the patch covers <paramref name="rounds"/> worth of
+    /// attempts. Crossed on rounds &lt;= 1 and seed-yield plural (<paramref name="y"/> == 1), four
+    /// keys total, each phrased "a bed of {0}" so no gendered article precedes the item name
+    /// (composition contract rule 6).</summary>
+    private static string YieldRoundsSentence(int rounds, int y, string targetName, int roundDays)
+    {
+        if (rounds <= 1)
+            return y == 1
+                ? Loc.Format(Strings.Goal_YieldCoversOne_One, targetName, Formats.Number(AssumedPatchBeds))
+                : Loc.Format(Strings.Goal_YieldCoversOne_Other, targetName, Formats.Number(y), Formats.Number(AssumedPatchBeds));
+
+        return y == 1
+            ? Loc.Format(Strings.Goal_YieldNeedsRounds_One, targetName, Formats.Number(rounds),
+                Formats.Number(AssumedPatchBeds), Formats.Number(roundDays * rounds))
+            : Loc.Format(Strings.Goal_YieldNeedsRounds_Other, targetName, Formats.Number(y), Formats.Number(rounds),
+                Formats.Number(AssumedPatchBeds), Formats.Number(roundDays * rounds));
     }
 
     private static void AppendFinalWiltAndHarvest(List<string> body, uint target)
@@ -428,9 +469,11 @@ public static class GoalRoute
         {
             var growHours = SeedTable.Grow(target) ?? 0;
             var visits = wilt.Hours > 0 ? (int)Math.Ceiling(growHours / (double)wilt.Hours) : 1;
-            body.Add(
-                $"{targetName} wilts after {Phrases.Days(Math.Round(wilt.Hours / 24.0, 1))}, so visit it {Phrases.EveryDay(wilt.Hours)} " +
-                $"until you harvest it. That is {visits} visits.");
+            body.Add(Loc.Format(Strings.Goal_WiltCadence, targetName,
+                Phrases.Days(Math.Round(wilt.Hours / 24.0, 1)), Phrases.EveryDay(wilt.Hours)));
+            body.Add(visits == 1
+                ? Loc.Format(Strings.Goal_WiltVisitCount_One, Formats.Number(visits))
+                : Loc.Format(Strings.Goal_WiltVisitCount_Other, Formats.Number(visits)));
         }
 
         var yields = SeedTable.Yields(target);
@@ -439,8 +482,8 @@ public static class GoalRoute
         var allAgree = yields?.Crop is { } cy && cy.Length > 0 && cy.All(v => v == cy[0]) &&
                         yields?.Seed is { } sy && sy.Length > 0 && sy.All(v => v == sy[0]);
         body.Add(allAgree
-            ? $"Harvest gives {cropText} {targetName} and {seedText} seed back at any soil grade."
-            : $"Harvest gives {cropText} {targetName} and {seedText} seed back, depending on your soil.");
+            ? Loc.Format(Strings.Goal_HarvestYieldFixed, cropText, targetName, seedText)
+            : Loc.Format(Strings.Goal_HarvestYieldVaries, cropText, targetName, seedText));
     }
 
     /// <summary>The number of <paramref name="row"/>'s own seeds one harvest returns at
@@ -453,14 +496,19 @@ public static class GoalRoute
         return seedYield is { } y && AssumedSoilGrade < y.Length ? y[AssumedSoilGrade] : null;
     }
 
-    /// <summary>Names who draws on <paramref name="target"/>'s output, for the arithmetic sentence: the
-    /// final cross when the goal is its only consumer, the step that grows a named later seed, or the
-    /// generic plural when more than one step reaches back to the same row.</summary>
-    private static string ConsumerPhrase(uint target, uint goalRow, IReadOnlyDictionary<uint, List<uint>> consumersOf)
+    /// <summary>Who draws on <paramref name="target"/>'s output, for the arithmetic sentence: the final
+    /// cross when the goal is its only consumer, the step that grows a named later seed (returned
+    /// through <paramref name="namedConsumer"/>'s out value), or the generic plural when more than one
+    /// step reaches back to the same row. A <see cref="ConsumerKind"/> rather than a phrase, since the
+    /// Spanish verb agrees with which of these the subject is (composition contract rule 3).</summary>
+    private static (ConsumerKind Kind, uint? NamedConsumer) ClassifyConsumer(
+        uint target, uint goalRow, IReadOnlyDictionary<uint, List<uint>> consumersOf)
     {
         if (!consumersOf.TryGetValue(target, out var consumers) || consumers.Count != 1)
-            return "Later steps";
-        return consumers[0] == goalRow ? "The final cross" : $"Growing {SeedItems.ProduceName(consumers[0])}";
+            return (ConsumerKind.LaterSteps, null);
+        return consumers[0] == goalRow
+            ? (ConsumerKind.FinalCross, null)
+            : (ConsumerKind.NamedStep, consumers[0]);
     }
 
     private static int? MinWiltHours(uint anchorRow, uint targetRow)
@@ -471,8 +519,6 @@ public static class GoalRoute
         if (b is null) return a;
         return Math.Min(a.Value, b.Value);
     }
-
-    private static string Capitalize(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
     private static SoilFamily FamilyFor(SoilPreference preference) => preference switch
     {

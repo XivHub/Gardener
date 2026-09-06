@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Gardener.Game;
 using Gardener.Journal;
+using Gardener.Localization;
 
 namespace Gardener.Planner;
 
@@ -82,7 +83,7 @@ public static class GoalProgress
 
         var shortBy = step.Needed - heldCount;
         return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null,
-            $"You need {shortBy} more {SeedItems.SeedItemName(step.SeedRow)}.");
+            Loc.Format(Strings.Goal_NeedMoreSeed, Formats.Number(shortBy), SeedItems.SeedItemName(step.SeedRow)));
     }
 
     private static GoalStepProgress EvaluateCross(CrossStep step, IReadOnlyDictionary<uint, int> held, IReadOnlyList<BedState> beds)
@@ -113,11 +114,11 @@ public static class GoalProgress
 
         if (missing.Count > 0)
             return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null,
-                $"You need {string.Join(" and ", missing)} to plant this step.");
+                Loc.Format(Strings.Goal_NeedSeedsToPlant, TextList.And(missing)));
 
         var shortBy = step.Needed - heldCount;
         return new GoalStepProgress(GoalStepStatus.NotStarted, null, null, null,
-            $"You need {shortBy} more {SeedItems.SeedItemName(step.TargetRow)}.");
+            Loc.Format(Strings.Goal_NeedMoreSeed, Formats.Number(shortBy), SeedItems.SeedItemName(step.TargetRow)));
     }
 
     private static BedState? FirstOccupied(IReadOnlyList<BedState> beds, Func<BedState, bool> predicate)

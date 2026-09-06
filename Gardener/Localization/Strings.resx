@@ -940,4 +940,268 @@
     <value>{0} in beds {1}, using {2}</value>
     <comment>MainWindow.PlantingPhrase, plural branch (more than one bed in the group). {0} is the seed item's own name (SeedItems.SeedItemName); {1} is the bed numbers joined through TextList.And; {2} is the soil item's own name (ItemSheet.Name). Both {0} and {2} are client-language item names.</comment>
   </data>
+  <data name="Goal_WarningNoGrowTime" xml:space="preserve">
+    <value>{0} has no bundled grow time; its timing in this plan is a guess.</value>
+    <comment>GoalRoute.AddDataGapWarnings, RowsWithNoGrowTime branch, appended to GoalPlan.Warnings. {0} is the produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_WarningMissingCrossData" xml:space="preserve">
+    <value>{0} is missing from the cross data; this route may be incomplete.</value>
+    <comment>GoalRoute.AddDataGapWarnings, RowsAbsentFromCrossData branch, appended to GoalPlan.Warnings. {0} is the produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_ObtainTitle" xml:space="preserve">
+    <value>Get the starting seeds</value>
+    <comment>GoalRoute.AddObtainSteps, the shared ObtainStep.Title every leaf seed's step reports (the whole route's shopping list is one step, not one per seed).</comment>
+  </data>
+  <data name="Goal_ObtainGet" xml:space="preserve">
+    <value>Get {0} {1}.</value>
+    <comment>GoalRoute.AddObtainSteps, first body line. {0} is the seed count needed, an integer via Formats.Number; {1} is the seed item's own name (SeedItems.SeedItemName), a client-language name.</comment>
+  </data>
+  <data name="Goal_ObtainHeldCovered" xml:space="preserve">
+    <value>You hold {0}, so this one is covered.</value>
+    <comment>GoalRoute.AddObtainSteps, second body line, branch where the held count already meets the need. {0} is the held count, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_ObtainHeldShort" xml:space="preserve">
+    <value>You hold {0}.</value>
+    <comment>GoalRoute.AddObtainSteps, second body line, branch where the held count falls short of the need. {0} is the held count, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_ObtainWhere" xml:space="preserve">
+    <value>Where: {0}</value>
+    <comment>GoalRoute.AddObtainSteps, sources line. {0} is SeedTable.Sources joined with "; ", bundled English gathering/vendor text containing zone names (Decision 3, out of scope for translation) - only this wrapping label is localized.</comment>
+  </data>
+  <data name="Goal_ObtainYieldUnrecorded" xml:space="preserve">
+    <value>{0}'s seed yield isn't recorded, so Gardener assumes it gives nothing back; every one you plant is a fresh purchase.</value>
+    <comment>GoalRoute.AddObtainSteps note, branch where SeedYieldAtAssumedGrade is null. {0} is the produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_ObtainYieldZero" xml:space="preserve">
+    <value>{0} gives no seeds back when you harvest it, so every one you plant is a fresh purchase.</value>
+    <comment>GoalRoute.AddObtainSteps note, branch where the seed yield is recorded as exactly 0. {0} is the produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_ObtainYieldRestocks" xml:space="preserve">
+    <value>{0} gives seeds back when you harvest it, so this is enough to start; the first harvest funds the rest.</value>
+    <comment>GoalRoute.AddObtainSteps note, branch where the seed yield is a positive recorded number. {0} is the produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_CrossPlantLayout" xml:space="preserve">
+    <value>Plant {0} in half the beds around the ring, then plant {1} in the beds between them, so every {1} has a {0} neighbour on both sides.</value>
+    <comment>GoalRoute.BuildCrossStep, first body line, describing the alternating ring layout. {0} is the anchor seed item's own name (SeedItems.SeedItemName), reused for both its occurrences; {1} is the cross seed item's own name, likewise reused. Both are client-language names.</comment>
+  </data>
+  <data name="Goal_CrossSingleOutcome" xml:space="preserve">
+    <value>Every one of these beds becomes {0}.</value>
+    <comment>GoalRoute.BuildCrossStep, singleOutcome branch, first sentence. {0} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_CrossSingleOutcomeOnly" xml:space="preserve">
+    <value>This pair makes nothing else.</value>
+    <comment>GoalRoute.BuildCrossStep, singleOutcome branch, second sentence. No slots.</comment>
+  </data>
+  <data name="Goal_CrossMultiOutcome" xml:space="preserve">
+    <value>Each of these beds becomes {0}, and you cannot pick which.</value>
+    <comment>GoalRoute.BuildCrossStep, multi-outcome branch, first sentence. {0} is every possible outcome's produce name (target first, then the rest), joined through TextList.Or - all client-language names.</comment>
+  </data>
+  <data name="Goal_OddsOfThemGive" xml:space="preserve">
+    <value>{0} of them give {1}.</value>
+    <comment>GoalRoute.BuildCrossStep, multi-outcome branch, second sentence. {0} is CrossOdds.OddsPhrase's own whole noun phrase (Odds_AboutNInTen, already capitalized for this sentence-initial use); {1} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_CrossCoinToss" xml:space="preserve">
+    <value>Nobody has published the split between the two, so Gardener treats it as a coin toss.</value>
+    <comment>GoalRoute.BuildCrossStep, multi-outcome branch, third sentence. No slots.</comment>
+  </data>
+  <data name="Goal_CrossFinalRoundsPerRound" xml:space="preserve">
+    <value>One round plants {0} pairs.</value>
+    <comment>GoalRoute.BuildCrossStep, final-step multi-round branch, first sentence. {0} is AssumedPatchPairs, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_CrossFinalRoundsPlan" xml:space="preserve">
+    <value>This cross wants about {0} attempts, so plan on {1} rounds, about {2} days total.</value>
+    <comment>GoalRoute.BuildCrossStep, final-step multi-round branch, second sentence. {0} is the attempts needed; {1} is the rounds needed; {2} is the total days (roundDays * rounds). All integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_DemandFinalCross" xml:space="preserve">
+    <value>The final cross needs {0} {1}.</value>
+    <comment>GoalRoute.DemandSentence, ConsumerKind.FinalCross branch - the arithmetic paragraph's sentence one, whole-sentence-selected because "needs" agrees with a singular subject that can never be a slot (composition contract rule 3). {0} is the demand count, an integer via Formats.Number; {1} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_DemandNamedStep" xml:space="preserve">
+    <value>Growing {0} needs {1} {2}.</value>
+    <comment>GoalRoute.DemandSentence, ConsumerKind.NamedStep branch. {0} is the single named consumer step's produce name (SeedItems.ProduceName), a client-language name and the sentence's own subject; {1} is the demand count, an integer via Formats.Number; {2} is the target produce name, also client-language.</comment>
+  </data>
+  <data name="Goal_DemandLaterSteps" xml:space="preserve">
+    <value>Later steps need {0} {1}.</value>
+    <comment>GoalRoute.DemandSentence, ConsumerKind.LaterSteps branch (more than one step draws on this row, or none named). {0} is the demand count, an integer via Formats.Number; {1} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_YieldCoversOne_One" xml:space="preserve">
+    <value>A bed of {0} returns 1 seed, so one round of {1} beds covers it.</value>
+    <comment>GoalRoute.YieldRoundsSentence, rounds &lt;= 1 and seed yield == 1. {0} is the target produce name (SeedItems.ProduceName), a client-language name - phrased "a bed of {0}" per composition contract rule 6 so no gendered article precedes it; {1} is AssumedPatchBeds, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_YieldCoversOne_Other" xml:space="preserve">
+    <value>A bed of {0} returns {1} seeds, so one round of {2} beds covers it.</value>
+    <comment>GoalRoute.YieldRoundsSentence, rounds &lt;= 1 and seed yield != 1 (including 0). {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the seed yield count; {2} is AssumedPatchBeds. Both {1} and {2} are integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_YieldNeedsRounds_One" xml:space="preserve">
+    <value>A bed of {0} returns 1 seed, so this needs {1} rounds of {2} beds, about {3} days total.</value>
+    <comment>GoalRoute.YieldRoundsSentence, rounds &gt; 1 and seed yield == 1. {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the rounds needed; {2} is AssumedPatchBeds; {3} is the total days (roundDays * rounds). {1}-{3} are integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_YieldNeedsRounds_Other" xml:space="preserve">
+    <value>A bed of {0} returns {1} seeds, so this needs {2} rounds of {3} beds, about {4} days total.</value>
+    <comment>GoalRoute.YieldRoundsSentence, rounds &gt; 1 and seed yield != 1 (including 0). {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the seed yield count; {2} is the rounds needed; {3} is AssumedPatchBeds; {4} is the total days (roundDays * rounds). {1}-{4} are integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_YieldUnknown" xml:space="preserve">
+    <value>{0}'s seed yield isn't recorded, so Gardener could not work out how many rounds that takes; watch your seed count and plant another round if you come up short.</value>
+    <comment>GoalRoute.BuildCrossStep, arithmetic paragraph sentence two, unknown-yield branch (yieldAtGrade is null). {0} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_SoilSameFamily" xml:space="preserve">
+    <value>Soil: {0} in every bed.</value>
+    <comment>GoalRoute.BuildCrossStep, soil paragraph, branch where the cross and yield soil families are the same. {0} is the resolved soil item's real name (GardeningItems.SoilName), a client-language item name. SoilSources.Does' own whole sentence is appended as a separate body line, not concatenated here.</comment>
+  </data>
+  <data name="Goal_SoilTwoFamilies" xml:space="preserve">
+    <value>Soil: {0} in the beds you plant second, the ones that cross; {1} in the beds you plant first, which cross with nothing and are harvested for seed.</value>
+    <comment>GoalRoute.BuildCrossStep, soil paragraph, branch where the cross and yield soil families differ. {0} is the cross soil's real item name; {1} is the yield soil's real item name (both GardeningItems.SoilName), client-language item names. SoilSources.Does' own whole sentence(s) are appended as separate body lines, not concatenated here.</comment>
+  </data>
+  <data name="Goal_BedsCount" xml:space="preserve">
+    <value>Beds: {0} ({1} pairs).</value>
+    <comment>GoalRoute.BuildCrossStep, beds line. {0} is AssumedPatchBeds; {1} is AssumedPatchPairs. Both integers via Formats.Number.</comment>
+  </data>
+  <data name="Goal_ReadyAfterPlant" xml:space="preserve">
+    <value>Ready {0} after you plant.</value>
+    <comment>GoalRoute.BuildCrossStep, beds paragraph, second sentence. {0} is Phrases.AboutDays/AboutHours' own complete, grammatically inert duration phrase.</comment>
+  </data>
+  <data name="Goal_TendOrWilt" xml:space="preserve">
+    <value>Tend these beds {0} or they wilt.</value>
+    <comment>GoalRoute.BuildCrossStep, non-final single-outcome branch. {0} is Phrases.EveryDay's own complete, grammatically inert cadence phrase.</comment>
+  </data>
+  <data name="Goal_CrossStepTitle" xml:space="preserve">
+    <value>Grow {0}</value>
+    <comment>GoalRoute.BuildCrossStep, CrossStep.Title, rendered by MainWindow's Goal_StepHeader ({1} slot). {0} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_NoteRating" xml:space="preserve">
+    <value>ffxivgardening.com rates this pair {0} out of 100.</value>
+    <comment>GoalRoute.BuildCrossStep note, first sentence, shown when SeedTable.EfficiencyFor has a rating. {0} is that rating, an integer via Formats.Number. "ffxivgardening.com" is a source citation and stays literal in every language.</comment>
+  </data>
+  <data name="Goal_NoteRatingMeaning" xml:space="preserve">
+    <value>That rating is per pair, not per result, and its meaning isn't published, so Gardener only uses it to prefer one pair over another and sizes this step from the soil estimate instead.</value>
+    <comment>GoalRoute.BuildCrossStep note, second sentence, always paired with Goal_NoteRating. No slots.</comment>
+  </data>
+  <data name="Goal_NoteWiltDisputed" xml:space="preserve">
+    <value>{0}'s wilt time is disputed between sources; the cadence above is the shorter, safer figure.</value>
+    <comment>GoalRoute.BuildCrossStep note, shown when SeedTable.Wilt(target).Disputed is true. {0} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Goal_WiltCadence" xml:space="preserve">
+    <value>{0} wilts after {1}, so visit it {2} until you harvest it.</value>
+    <comment>GoalRoute.AppendFinalWiltAndHarvest, first sentence. {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is Phrases.Days' own complete noun phrase; {2} is Phrases.EveryDay's own complete cadence phrase.</comment>
+  </data>
+  <data name="Goal_WiltVisitCount_One" xml:space="preserve">
+    <value>That is {0} visit.</value>
+    <comment>GoalRoute.AppendFinalWiltAndHarvest, second sentence, singular branch (n == 1). {0} is the visit count, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_WiltVisitCount_Other" xml:space="preserve">
+    <value>That is {0} visits.</value>
+    <comment>GoalRoute.AppendFinalWiltAndHarvest, second sentence, plural branch (n != 1, including 0). {0} is the visit count, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Goal_HarvestYieldFixed" xml:space="preserve">
+    <value>Harvest gives {0} {1} and {2} seed back at any soil grade.</value>
+    <comment>GoalRoute.AppendFinalWiltAndHarvest, branch where every recorded soil-grade tier agrees. {0} is Phrases.OneNumberOrRange's own inert quantity phrase for the crop yield; {1} is the target produce name (SeedItems.ProduceName), a client-language name; {2} is Phrases.OneNumberOrRange's own inert quantity phrase for the seed yield.</comment>
+  </data>
+  <data name="Goal_HarvestYieldVaries" xml:space="preserve">
+    <value>Harvest gives {0} {1} and {2} seed back, depending on your soil.</value>
+    <comment>GoalRoute.AppendFinalWiltAndHarvest, branch where the recorded soil-grade tiers disagree. {0} is Phrases.OneNumberOrRange's own inert quantity phrase for the crop yield; {1} is the target produce name (SeedItems.ProduceName), a client-language name; {2} is Phrases.OneNumberOrRange's own inert quantity phrase for the seed yield.</comment>
+  </data>
+  <data name="Goal_NeedMoreSeed" xml:space="preserve">
+    <value>You need {0} more {1}.</value>
+    <comment>GoalProgress.EvaluateObtain and EvaluateCross, GoalStepProgress.Blocker text shared by both shortfall branches. {0} is the shortfall count, an integer via Formats.Number; {1} is the missing seed's own name (SeedItems.SeedItemName), a client-language name.</comment>
+  </data>
+  <data name="Goal_NeedSeedsToPlant" xml:space="preserve">
+    <value>You need {0} to plant this step.</value>
+    <comment>GoalProgress.EvaluateCross, GoalStepProgress.Blocker text for the branch where one or both parent seeds are missing entirely. {0} is the missing seed item name(s) (SeedItems.SeedItemName) joined through TextList.And - a single name when only one is missing, client-language names throughout.</comment>
+  </data>
+  <data name="Odds_AboutNInTen" xml:space="preserve">
+    <value>About {0} in 10</value>
+    <comment>CrossOdds.OddsPhrase - the intercross estimate (G3) and the even split across outcomes (G4) are both unmeasured, so odds are only ever spoken in tenths, never a percent or a decimal. {0} is the clamped tenths count (1-10, CrossOdds.Tenths), an integer via Formats.Number. Authored capitalized because this phrase's only call site (Goal_OddsOfThemGive) always uses it sentence-initially; not runtime-capitalized.</comment>
+  </data>
+  <data name="Plan_NoKnownCross" xml:space="preserve">
+    <value>No known cross produces {0}.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry when SeedTable.Pairs has no candidate pair at all. {0} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Plan_AdjacencyUnconfirmed" xml:space="preserve">
+    <value>{0} bed adjacency has never been confirmed, so a cross can't be placed here yet.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry for a non-Deluxe patch. {0} is the PatchKind enum name (Deluxe/Oblong/Round), left untranslated per the do-not-translate register since there is no EObj-to-item mapping to resolve it to the client's own furniture name.</comment>
+  </data>
+  <data name="Plan_NoPairAvailable" xml:space="preserve">
+    <value>{0} needs a pair currently held or already growing on this patch; none is available.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry when no candidate pair has a usable AssignFill. {0} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Plan_NoSoilForCrossingFallback" xml:space="preserve">
+    <value>No soil available for the crossing step.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings fallback used only when GardeningItems.SoilUnavailable itself returns null. No slots.</comment>
+  </data>
+  <data name="Plan_PairCount_One" xml:space="preserve">
+    <value>{0} pair</value>
+    <comment>CrossPlanner.PairCount, singular branch (n == 1) - a standalone noun phrase reused by every shortfall reason sentence below rather than composed inline. {0} is the pair count, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Plan_PairCount_Other" xml:space="preserve">
+    <value>{0} pairs</value>
+    <comment>CrossPlanner.PairCount, plural branch (n != 1, including 0) - a standalone noun phrase reused by every shortfall reason sentence below rather than composed inline. {0} is the pair count, an integer via Formats.Number.</comment>
+  </data>
+  <data name="Plan_NoSoilForParentFallback" xml:space="preserve">
+    <value>No soil for the parent beds.</value>
+    <comment>CrossPlanner.SoilShortfall fallback used only when GardeningItems.SoilUnavailable itself returns null. No slots.</comment>
+  </data>
+  <data name="Plan_SoilSharedStock" xml:space="preserve">
+    <value>You hold {0} {1}, and a pair needs one for the parent bed and one for the cross bed.</value>
+    <comment>CrossPlanner.SoilShortfall, branch where the parent and cross soil preferences resolve to the same item. {0} is the held stock count, an integer via Formats.Number; {1} is the soil item's own name (ItemSheet.Name), a client-language item name.</comment>
+  </data>
+  <data name="Plan_NoCrossSoilLeft" xml:space="preserve">
+    <value>No {0} left for the cross beds.</value>
+    <comment>CrossPlanner.SoilShortfall, branch where the cross soil stock is exhausted. {0} is the soil item's own name (ItemSheet.Name), a client-language item name.</comment>
+  </data>
+  <data name="Plan_ParentSoilStock" xml:space="preserve">
+    <value>You hold {0} {1} for the parent beds.</value>
+    <comment>CrossPlanner.SoilShortfall, branch where cross soil is available but parent soil is limited. {0} is the held stock count, an integer via Formats.Number; {1} is the soil item's own name (ItemSheet.Name), a client-language item name.</comment>
+  </data>
+  <data name="Plan_NeedParentsToStart" xml:space="preserve">
+    <value>You need {0} and {1} to start this pair; none held.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry when pairs &lt;= 0 because no parent seed is held at all. {0} is the anchor produce name; {1} is the cross produce name (both SeedItems.ProduceName), client-language names.</comment>
+  </data>
+  <data name="Plan_NoFreeBedsLeft" xml:space="preserve">
+    <value>No free beds are left on this patch to start a new pair.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry when pairs &lt;= 0 because no free beds remain. No slots.</comment>
+  </data>
+  <data name="Plan_PlantingFewerPairs" xml:space="preserve">
+    <value>Planting {0} instead of {1}.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings header entry when the plan cannot fit the full request; followed by one Plan_Reason* warning per limiting factor rather than a comma-joined clause. {0} is the pair count actually planned; {1} is the pair count requested - both Plan_PairCount_One/_Other's own inert noun phrase.</comment>
+  </data>
+  <data name="Plan_ReasonBeds" xml:space="preserve">
+    <value>Only {0} of free beds fit on this patch.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry following Plan_PlantingFewerPairs when free beds are the limiting factor. {0} is Plan_PairCount_One/_Other's own inert noun phrase.</comment>
+  </data>
+  <data name="Plan_ReasonSeeds" xml:space="preserve">
+    <value>You hold enough {0} and {1} for {2}.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry following Plan_PlantingFewerPairs when held seed count is the limiting factor. {0} is the anchor produce name; {1} is the cross produce name (both SeedItems.ProduceName, client-language names); {2} is Plan_PairCount_One/_Other's own inert noun phrase.</comment>
+  </data>
+  <data name="Plan_ReasonSoil" xml:space="preserve">
+    <value>You hold enough topsoil for {0}.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry following Plan_PlantingFewerPairs when held topsoil is the limiting factor. {0} is Plan_PairCount_One/_Other's own inert noun phrase.</comment>
+  </data>
+  <data name="Plan_WhyParent" xml:space="preserve">
+    <value>Parent for {0}: plant here first so its neighbours can cross with it.</value>
+    <comment>CrossPlanner.PlanFillStep, PlantStep.Why for an anchor bed. {0} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Plan_WhyCrossRated" xml:space="preserve">
+    <value>Crosses with its neighbouring {0} to reach {1} (ffxivgardening.com rating: {2}/100).</value>
+    <comment>CrossPlanner.PlanFillStep, PlantStep.Why for a cross bed, branch where SeedTable.EfficiencyFor has a rating. {0} is the anchor produce name; {1} is the target produce name (both SeedItems.ProduceName, client-language names); {2} is the rating, an integer via Formats.Number. The rating is a parenthetical noun label rather than an embedded "ffxivgardening.com rates this pair X" clause, since a fragment with its own verb cannot be substituted into another sentence (composition contract rule 3).</comment>
+  </data>
+  <data name="Plan_WhyCrossUnrated" xml:space="preserve">
+    <value>Crosses with its neighbouring {0} to reach {1} (no rating yet).</value>
+    <comment>CrossPlanner.PlanFillStep, PlantStep.Why for a cross bed, branch where SeedTable.EfficiencyFor has no rating. {0} is the anchor produce name; {1} is the target produce name (both SeedItems.ProduceName), client-language names.</comment>
+  </data>
+  <data name="Plan_AlsoYields" xml:space="preserve">
+    <value>This cross can also yield {0} instead of {1}; the result isn't guaranteed.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry when the chosen pair has more than one possible outcome. {0} is every other outcome's produce name, joined through TextList.Or; {1} is the target produce name (both SeedItems.ProduceName), client-language names.</comment>
+  </data>
+  <data name="Plan_NoSeedReturnAtGrade" xml:space="preserve">
+    <value>{0} returns no seeds of its own at Grade {1} soil; harvesting it won't restock this cross.</value>
+    <comment>CrossPlanner.PlanFillStep, LayoutPlan.Warnings entry when the target's seed yield at the resolved cross soil's grade is 0. {0} is the target produce name (SeedItems.ProduceName), a client-language name; {1} is the resolved cross soil's grade, an integer via Formats.Number (no family name composed alongside it, per the do-not-translate register).</comment>
+  </data>
+  <data name="Plan_BedNoLongerEmpty" xml:space="preserve">
+    <value>Bed {0} is no longer empty; the {1} step was dropped.</value>
+    <comment>CrossPlanner.Verify, LayoutPlan.Warnings entry when a planned bed is occupied by the time the plan is re-checked. {0} is the bed number, an integer via Formats.Number; {1} is the dropped step's produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
+  <data name="Plan_BedCrossMismatch" xml:space="preserve">
+    <value>Bed {0} ({1}) no longer crosses the way the plan expected; skipped.</value>
+    <comment>CrossPlanner.Verify, LayoutPlan.Warnings entry when a crossing bed's resolved neighbour no longer matches LayoutPlan.ExpectedTargets. {0} is the bed number, an integer via Formats.Number; {1} is the skipped step's produce name (SeedItems.ProduceName), a client-language name.</comment>
+  </data>
 </root>
