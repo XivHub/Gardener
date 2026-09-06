@@ -1073,20 +1073,20 @@
     <comment>GoalRoute.BuildCrossStep, first body line, stating the alternating ring layout Gardener lays out for the player - a description of the step, not an instruction, since the per-patch bed table and its Plant button below place every seed. {0} is the anchor seed item's own name (SeedItems.SeedItemName); {1} is the cross seed item's own name. Both are client-language names, each used once.</comment>
   </data>
   <data name="Goal_CrossSingleOutcome" xml:space="preserve">
-    <value>Every one of these beds becomes {0}.</value>
-    <comment>GoalRoute.BuildCrossStep, singleOutcome branch, first sentence. {0} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+    <value>{0} of the crossing beds become {1}.</value>
+    <comment>GoalRoute.BuildCrossStep, singleOutcome branch, first sentence. A pair with one possible offspring is not a pair that always crosses, so this branch speaks the intercross chance exactly as the multi-outcome branch does, and names the crossing half of the ring rather than every bed - the anchor beds attempt no cross. {0} is CrossOdds.OddsPhrase's own whole noun phrase (Odds_AboutNInTen, already capitalized for this sentence-initial use); {1} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
   </data>
   <data name="Goal_CrossSingleOutcomeOnly" xml:space="preserve">
     <value>This pair makes nothing else.</value>
     <comment>GoalRoute.BuildCrossStep, singleOutcome branch, second sentence. No slots.</comment>
   </data>
   <data name="Goal_CrossMultiOutcome" xml:space="preserve">
-    <value>Each of these beds becomes {0}, and you cannot pick which.</value>
-    <comment>GoalRoute.BuildCrossStep, multi-outcome branch, first sentence. {0} is every possible outcome's produce name (target first, then the rest), joined through TextList.Or - all client-language names.</comment>
+    <value>The crossing beds come back as {0}, and you cannot pick which.</value>
+    <comment>GoalRoute.BuildCrossStep, multi-outcome branch, first sentence. Names the crossing half of the ring, since the anchor beds attempt no cross and come back as their own seed. {0} is every possible outcome's produce name (target first, then the rest), joined through TextList.Or - all client-language names.</comment>
   </data>
   <data name="Goal_OddsOfThemGive" xml:space="preserve">
-    <value>{0} of them give {1}.</value>
-    <comment>GoalRoute.BuildCrossStep, multi-outcome branch, second sentence. {0} is CrossOdds.OddsPhrase's own whole noun phrase (Odds_AboutNInTen, already capitalized for this sentence-initial use); {1} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
+    <value>{0} of them become {1}.</value>
+    <comment>GoalRoute.BuildCrossStep, multi-outcome branch, second sentence. "Them" is the crossing beds Goal_CrossMultiOutcome just named. {0} is CrossOdds.OddsPhrase's own whole noun phrase (Odds_AboutNInTen, already capitalized for this sentence-initial use); {1} is the target produce name (SeedItems.ProduceName), a client-language name.</comment>
   </data>
   <data name="Goal_CrossCoinToss" xml:space="preserve">
     <value>Nobody has published the split between the two, so Gardener treats it as a coin toss.</value>

@@ -346,16 +346,20 @@ public static class GoalRoute
         var targetGrowHours = SeedTable.Grow(target) ?? 0;
         var roundDays = Math.Max(1, (int)Math.Round(targetGrowHours / 24.0));
 
+        // Both branches speak the chance. A pair with one possible offspring is not a pair that always
+        // crosses: CrossOdds.Chance divides the soil's intercross rate by the outcome count, so one
+        // outcome leaves that rate whole, and docs/FACTS.md puts its ceiling at 89.06% on Grade 3
+        // Thanalan and near zero elsewhere.
+        var chance = ResolveChance(outcomes.Length, family, AssumedSoilGrade);
         if (singleOutcome)
         {
-            odds.Add(Loc.Format(Strings.Goal_CrossSingleOutcome, targetName));
+            odds.Add(Loc.Format(Strings.Goal_CrossSingleOutcome, CrossOdds.OddsPhrase(chance), targetName));
             odds.Add(Strings.Goal_CrossSingleOutcomeOnly);
         }
         else
         {
             var outcomeNames = new List<string> { targetName };
             outcomeNames.AddRange(outcomes.Where(o => o != target).Select(SeedItems.ProduceName));
-            var chance = ResolveChance(outcomes.Length, family, AssumedSoilGrade);
             odds.Add(Loc.Format(Strings.Goal_CrossMultiOutcome, TextList.Or(outcomeNames)));
             odds.Add(Loc.Format(Strings.Goal_OddsOfThemGive, CrossOdds.OddsPhrase(chance), targetName));
             odds.Add(Strings.Goal_CrossCoinToss);

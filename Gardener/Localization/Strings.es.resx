@@ -808,16 +808,16 @@
     <value>La mitad de las parcelas llevan {0} y la otra mitad {1}, alternando alrededor del anillo.</value>
   </data>
   <data name="Goal_CrossSingleOutcome" xml:space="preserve">
-    <value>Todas estas parcelas se convierten en {0}.</value>
+    <value>{0} de las parcelas que cruzan se convierten en {1}.</value>
   </data>
   <data name="Goal_CrossSingleOutcomeOnly" xml:space="preserve">
     <value>Este par no da nada más.</value>
   </data>
   <data name="Goal_CrossMultiOutcome" xml:space="preserve">
-    <value>Cada una de estas parcelas se convierte en {0}, y no puedes elegir cuál.</value>
+    <value>Las parcelas que cruzan se convierten en {0}, y no puedes elegir cuál.</value>
   </data>
   <data name="Goal_OddsOfThemGive" xml:space="preserve">
-    <value>{0} de ellas dan {1}.</value>
+    <value>{0} de ellas se convierten en {1}.</value>
   </data>
   <data name="Goal_CrossCoinToss" xml:space="preserve">
     <value>Nadie ha publicado el reparto entre los dos, así que Gardener lo trata como cara o cruz.</value>
