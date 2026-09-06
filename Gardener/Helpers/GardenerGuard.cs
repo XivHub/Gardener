@@ -103,6 +103,29 @@ public static class GardenerGuard
     }
 
     /// <summary>
+    /// Reach measured against one named patch's own centre, for a sweep about to start on that patch
+    /// specifically. <see cref="EnvironmentBlockingReason"/>'s own reach branch proves only that
+    /// *some* patch is close enough, via <c>Patches.Min(...)</c> — the wrong thing to prove once a
+    /// plot has two patches and the far one is the one <see cref="Scheduler.SchedulerMain.EnablePlugin"/>
+    /// was asked to run. Deliberately does not reuse <see cref="Strings.Guard_NearestPatchTooFar"/>:
+    /// that sentence names "the nearest patch", which is false here whenever a nearer patch exists and
+    /// is in reach while this one is not. Null when the player's position cannot be read, matching
+    /// <see cref="EnvironmentBlockingReason"/>'s own silent pass-through for that case.
+    /// </summary>
+    public static string? ReachBlockingReason(Patch patch)
+    {
+        var position = Plugin.ObjectTable.LocalPlayer?.Position;
+        if (position is not { } pos)
+            return null;
+
+        var distance = Vector3.Distance(pos, patch.Center);
+        return distance > Plugin.C.BedReachDistance
+            ? Loc.Format(Strings.Guard_PatchTooFar,
+                Formats.Number(distance, "F1"), Formats.Number(Plugin.C.BedReachDistance, "F1"))
+            : null;
+    }
+
+    /// <summary>
     /// A warning (never a block) naming FC rank permissions as the likely cause of an automation
     /// failure, shown only while standing on the character's own FC estate. What
     /// <c>HousingManager.HasHousePermissions()</c> actually covers — furniture placement, gardening,

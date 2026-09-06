@@ -717,11 +717,20 @@
   <data name="Goal_MineHint" xml:space="preserve">
     <value>Mina grado 3 en {0}.</value>
   </data>
+  <data name="Goal_PlantsIntoHeader" xml:space="preserve">
+    <value>Este paso planta en</value>
+  </data>
   <data name="Goal_PairBedPlantHere" xml:space="preserve">
     <value>parcela {0}: planta {1} aquí</value>
   </data>
   <data name="Goal_PairBedExisting" xml:space="preserve">
     <value>parcela {0}: {1}</value>
+  </data>
+  <data name="Goal_PatchPairCount_One" xml:space="preserve">
+    <value>{0} par aquí</value>
+  </data>
+  <data name="Goal_PatchPairCount_Other" xml:space="preserve">
+    <value>{0} pares aquí</value>
   </data>
   <data name="Goal_CannotFitStep" xml:space="preserve">
     <value>Gardener no puede encajar este paso en las parcelas libres de este huerto.</value>
@@ -729,11 +738,23 @@
   <data name="Goal_PlantStepButton" xml:space="preserve">
     <value>{0}: este paso</value>
   </data>
+  <data name="Goal_PlantHereButton" xml:space="preserve">
+    <value>{0} en este huerto</value>
+  </data>
+  <data name="Goal_PatchOutOfReach" xml:space="preserve">
+    <value>Acércate más a este huerto para plantarlo ({0}y de distancia).</value>
+  </data>
   <data name="Goal_ConfirmPlantStepTitle" xml:space="preserve">
     <value>¿Plantar este paso?</value>
   </data>
-  <data name="Goal_ConfirmPlantStepBody" xml:space="preserve">
-    <value>Gardener plantará {0}. Solo planta este paso y se detiene.</value>
+  <data name="Goal_ConfirmPlantPatchBody" xml:space="preserve">
+    <value>Plantar en {0}: {1}.</value>
+  </data>
+  <data name="Goal_ConfirmOtherPatchesPending_One" xml:space="preserve">
+    <value>Queda {0} parcela más esperando su propio botón.</value>
+  </data>
+  <data name="Goal_ConfirmOtherPatchesPending_Other" xml:space="preserve">
+    <value>Quedan {0} parcelas más esperando sus propios botones.</value>
   </data>
   <data name="Goal_PlantingClause_One" xml:space="preserve">
     <value>{0} en la parcela {1}, usando {2}</value>
@@ -1028,6 +1049,9 @@
   </data>
   <data name="Guard_NearestPatchTooFar" xml:space="preserve">
     <value>El huerto más cercano está a {0}y (límite {1}y).</value>
+  </data>
+  <data name="Guard_PatchTooFar" xml:space="preserve">
+    <value>Este huerto está a {0}y (límite {1}y).</value>
   </data>
   <data name="Guard_FcPermissionsWarning" xml:space="preserve">
     <value>Este personaje podría no tener permisos de rango de FC aquí; las acciones de jardinería podrían fallar sin avisar.</value>

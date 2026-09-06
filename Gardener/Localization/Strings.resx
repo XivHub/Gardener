@@ -952,29 +952,57 @@
     <value>Mine Grade 3 in {0}.</value>
     <comment>MainWindow.DrawGoalCurrentStepDetail, appended as its own sentence after the soil-unavailable reason (space joined in code, not composed via a slot) whenever the soil preference is not SoilPreference.Fixed. {0} is SoilSources.Where's own location noun phrase, containing bundled English zone text (Decision 3, out of scope for translation).</comment>
   </data>
+  <data name="Goal_PlantsIntoHeader" xml:space="preserve">
+    <value>This step plants into</value>
+    <comment>MainWindow.DrawGoalCurrentStepDetail, heading drawn once above the whole per-patch split (every PatchLayout CrossPlanner.PlanFillStepAcross returned). No slots.</comment>
+  </data>
   <data name="Goal_PairBedPlantHere" xml:space="preserve">
     <value>bed {0}: plant {1} here</value>
-    <comment>MainWindow.DrawGoalCurrentStepDetail, pair-strip cell for a bed the single-step plan will plant into (LayoutPlan.ExpectedTargets). {0} is the bed number, an integer via Formats.Number; {1} is the produce name, a client-language name.</comment>
+    <comment>MainWindow.DrawGoalCurrentStepDetail, pair-strip cell for a bed one patch's own plan will plant into (LayoutPlan.ExpectedTargets). {0} is the bed number, an integer via Formats.Number; {1} is the produce name, a client-language name.</comment>
   </data>
   <data name="Goal_PairBedExisting" xml:space="preserve">
     <value>bed {0}: {1}</value>
     <comment>MainWindow.DrawGoalCurrentStepDetail, pair-strip cell for a bed already holding the seed the plan reads (not one of LayoutPlan.ExpectedTargets). {0} is the bed number, an integer via Formats.Number; {1} is the produce name, a client-language name.</comment>
   </data>
+  <data name="Goal_PatchPairCount_One" xml:space="preserve">
+    <value>{0} pair here</value>
+    <comment>MainWindow.DrawGoalCurrentStepDetail, right-aligned Faint line on one PatchLayout's own header row - how many pairs (PatchLayout.Pairs) that patch's own slice of the split plants. {0} is the count, an integer via Formats.Number, always 1 here.</comment>
+  </data>
+  <data name="Goal_PatchPairCount_Other" xml:space="preserve">
+    <value>{0} pairs here</value>
+    <comment>MainWindow.DrawGoalCurrentStepDetail, right-aligned Faint line on one PatchLayout's own header row - how many pairs (PatchLayout.Pairs) that patch's own slice of the split plants. {0} is the count, an integer via Formats.Number, 0 or 2 or more.</comment>
+  </data>
   <data name="Goal_CannotFitStep" xml:space="preserve">
     <value>Gardener cannot fit this step into the free beds on this patch.</value>
-    <comment>MainWindow.DrawGoalHandoff, shown when CrossPlanner.Verify rejects the single-step plan.</comment>
+    <comment>MainWindow.DrawGoalHandoff, shown when CrossPlanner.Verify rejects this patch's own plan, and MainWindow.DrawGoalCurrentStepDetail, shown when the whole split came back with no usable patch at all.</comment>
   </data>
   <data name="Goal_PlantStepButton" xml:space="preserve">
     <value>{0}: this step</value>
-    <comment>MainWindow.DrawGoalHandoff, the handoff button (Decision 2: borrows the game's own bed-menu verb, like the sweep buttons). {0} is GameWords.Action(MenuKey.SetSeed), the game's own "Plant Seeds" wording.</comment>
+    <comment>MainWindow.DrawGoalHandoff, the handoff button when the split has exactly one patch (Decision 2: borrows the game's own bed-menu verb, like the sweep buttons). {0} is GameWords.Action(MenuKey.SetSeed), the game's own "Plant Seeds" wording.</comment>
+  </data>
+  <data name="Goal_PlantHereButton" xml:space="preserve">
+    <value>{0} on this patch</value>
+    <comment>MainWindow.DrawGoalHandoff, the handoff button when the split has more than one patch, so each button names which patch it plants rather than implying it is the step's only one. {0} is GameWords.Action(MenuKey.SetSeed), the game's own "Plant Seeds" wording.</comment>
+  </data>
+  <data name="Goal_PatchOutOfReach" xml:space="preserve">
+    <value>Stand closer to this patch to plant it ({0}y away).</value>
+    <comment>MainWindow.DrawGoalHandoff, drawn in Faint in place of the plant button when GardenerGuard.ReachBlockingReason(patch) is non-null. {0} is the live distance to the patch, a decimal via Formats.Number(value, "F1"). A friendlier Goal-tab-specific sentence, not Guard_PatchTooFar or Guard_NearestPatchTooFar, which are the scheduler's own chat-error wording.</comment>
   </data>
   <data name="Goal_ConfirmPlantStepTitle" xml:space="preserve">
     <value>Plant this step?</value>
-    <comment>MainWindow.DrawGoalHandoff, confirm popup title (the "Confirm plant goal step" popup id is a literal identifier, never translated).</comment>
+    <comment>MainWindow.DrawGoalHandoff, confirm popup title (the "Confirm plant goal step##{patch.Key}" popup id is a literal identifier, never translated).</comment>
   </data>
-  <data name="Goal_ConfirmPlantStepBody" xml:space="preserve">
-    <value>Gardener will plant {0}. It plants this one step and stops.</value>
-    <comment>MainWindow.DrawGoalHandoff, confirm popup body. {0} is MainWindow.PlantingPhrase's own roster of seed/bed/soil clauses, itself built from Goal_PlantingClause_One/_Other joined with "; ".</comment>
+  <data name="Goal_ConfirmPlantPatchBody" xml:space="preserve">
+    <value>Plant on {0}: {1}.</value>
+    <comment>MainWindow.DrawGoalHandoff, confirm popup body, naming which patch this press plants. {0} is PatchLabel.Header's own patch name; {1} is MainWindow.PlantingPhrase's own roster of seed/bed/soil clauses, itself built from Goal_PlantingClause_One/_Other joined with "; ".</comment>
+  </data>
+  <data name="Goal_ConfirmOtherPatchesPending_One" xml:space="preserve">
+    <value>{0} more bed is still waiting on its own button.</value>
+    <comment>MainWindow.DrawGoalHandoff, appended after Goal_ConfirmPlantPatchBody when the rest of the split still has unplanted beds elsewhere. {0} is the bed count on every other patch in the split, an integer via Formats.Number, always 1 here.</comment>
+  </data>
+  <data name="Goal_ConfirmOtherPatchesPending_Other" xml:space="preserve">
+    <value>{0} more beds are still waiting on their own buttons.</value>
+    <comment>MainWindow.DrawGoalHandoff, appended after Goal_ConfirmPlantPatchBody when the rest of the split still has unplanted beds elsewhere. {0} is the bed count on every other patch in the split, an integer via Formats.Number, 0 or 2 or more (0 never reaches this branch - it is only drawn when the count is positive).</comment>
   </data>
   <data name="Goal_PlantingClause_One" xml:space="preserve">
     <value>{0} in bed {1}, using {2}</value>
@@ -1367,6 +1395,10 @@
   <data name="Guard_NearestPatchTooFar" xml:space="preserve">
     <value>Nearest patch is {0}y away (limit {1}y).</value>
     <comment>GardenerGuard.EnvironmentBlockingReason, branch where every discovered patch is farther than Configuration.BedReachDistance. {0} is the distance to the nearest patch, a decimal via Formats.Number(value, "F1"); {1} is the configured reach limit, the same format.</comment>
+  </data>
+  <data name="Guard_PatchTooFar" xml:space="preserve">
+    <value>This patch is {0}y away (limit {1}y).</value>
+    <comment>GardenerGuard.ReachBlockingReason, printed by Scheduler.SchedulerMain.EnablePlugin when the one named patch a sweep was asked to run is out of reach. Never Guard_NearestPatchTooFar, which names "the nearest patch" - false here whenever a nearer patch is in reach and this one is not. {0} is the distance to this patch, a decimal via Formats.Number(value, "F1"); {1} is the configured reach limit, the same format.</comment>
   </data>
   <data name="Guard_FcPermissionsWarning" xml:space="preserve">
     <value>This character may lack FC rank permissions here; gardening actions may silently fail.</value>

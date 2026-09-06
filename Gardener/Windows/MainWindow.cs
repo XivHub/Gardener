@@ -888,8 +888,6 @@ namespace Gardener.Windows
                 return;
             }
 
-            var patch = PatchDiscovery.Patches.First();
-
             if (MissingSeedForHandoff(crossStep, held) is { } missing)
             {
                 DrawGoalHandoffDisabled(missing);
@@ -916,30 +914,67 @@ namespace Gardener.Windows
             // what to lay out to obtain it.
             var targetSeed = (ushort)crossStep.TargetRow;
 
-            var memory = GardenMemory.Read(patch);
-            var singleStepPlan = CrossPlanner.PlanFillStep(targetSeed, crossStep.Beds, patch, memory, bag);
+            // Stable order, not discovery order: PatchDiscovery.Patches is not guaranteed stable frame
+            // to frame, and the per-patch split must not reshuffle under the player's cursor.
+            var patches = PatchDiscovery.Patches.OrderBy(p => p.Key, StringComparer.Ordinal).ToList();
+            var split = CrossPlanner.PlanFillStepAcross(targetSeed, crossStep.Beds, patches, GardenMemory.Read, bag);
 
-            if (singleStepPlan.Steps.Count > 0)
+            ImGui.Separator();
+            ImGui.TextUnformatted(Strings.Goal_PlantsIntoHeader);
+
+            foreach (var warning in split.Warnings)
+                ImGui.TextColored(HubStyle.Warn, warning);
+
+            if (split.Patches.Count == 0)
             {
-                if (ImGui.BeginTable($"##goalpair-{patch.Key}", 2, ImGuiTableFlags.Borders))
+                DrawGoalHandoffDisabled(Strings.Goal_CannotFitStep);
+                return;
+            }
+
+            // Only one HubStyle.Primary() control per frame: the nearest reachable patch. Every other
+            // patch's own control renders as a plain button, or - when out of reach - Faint text
+            // instead of a button at all.
+            var playerPosition = Plugin.ObjectTable.LocalPlayer?.Position;
+            var nearestReachableKey = split.Patches
+                .Where(p => GardenerGuard.ReachBlockingReason(p.Patch) is null)
+                .OrderBy(p => playerPosition is { } pos ? Vector3.Distance(pos, p.Patch.Center) : float.PositiveInfinity)
+                .Select(p => (string?)p.Patch.Key)
+                .FirstOrDefault();
+
+            var plotIndex = PatchDiscovery.LastDiagnostics.CurrentPlot;
+            var multiplePatches = split.Patches.Count > 1;
+
+            foreach (var layout in split.Patches)
+            {
+                ImGui.TextUnformatted(PatchLabel.Header(layout.Patch, plotIndex));
+
+                var pairsText = layout.Pairs == 1
+                    ? Loc.Format(Strings.Goal_PatchPairCount_One, Formats.Number(layout.Pairs))
+                    : Loc.Format(Strings.Goal_PatchPairCount_Other, Formats.Number(layout.Pairs));
+                var pairsWidth = ImGui.CalcTextSize(pairsText).X;
+                ImGui.SameLine(ImGui.GetContentRegionMax().X - pairsWidth - ImGui.GetStyle().FramePadding.X * 2f);
+                ImGui.TextColored(HubStyle.Faint, pairsText);
+
+                if (ImGui.BeginTable($"##goalpair-{layout.Patch.Key}", 2, ImGuiTableFlags.Borders))
                 {
                     ImGui.TableNextRow();
-                    foreach (var step in singleStepPlan.Steps.OrderBy(s => s.BedNumber))
+                    foreach (var step in layout.Plan.Steps.OrderBy(s => s.BedNumber))
                     {
                         ImGui.TableNextColumn();
-                        var label = singleStepPlan.ExpectedTargets.ContainsKey(step.BedNumber)
+                        var label = layout.Plan.ExpectedTargets.ContainsKey(step.BedNumber)
                             ? Loc.Format(Strings.Goal_PairBedPlantHere, Formats.Number(step.BedNumber), SeedItems.ProduceName(step.SeedRow))
                             : Loc.Format(Strings.Goal_PairBedExisting, Formats.Number(step.BedNumber), SeedItems.ProduceName(step.SeedRow));
                         ImGui.TextUnformatted($"[{label}]");
                     }
                     ImGui.EndTable();
                 }
+
+                foreach (var warning in layout.Plan.Warnings)
+                    ImGui.TextColored(HubStyle.Warn, warning);
+
+                var otherBedsWaiting = split.Patches.Where(p => p.Patch.Key != layout.Patch.Key).Sum(p => p.Plan.Steps.Count);
+                DrawGoalHandoff(layout, layout.Patch.Key == nearestReachableKey, multiplePatches, otherBedsWaiting, plotIndex);
             }
-
-            foreach (var warning in singleStepPlan.Warnings)
-                ImGui.TextColored(HubStyle.Warn, warning);
-
-            DrawGoalHandoff(patch, singleStepPlan);
         }
 
         /// <summary>The whole disabled-reason sentence for the handoff when one more planting of the
@@ -961,34 +996,57 @@ namespace Gardener.Windows
 
         private static void DrawGoalHandoffDisabled(string reason) => ImGui.TextColored(HubStyle.Faint, reason);
 
-        /// <summary>The one-step handoff: a single <see cref="HubStyle.Primary"/> control that plants
-        /// exactly the beds named above and stops. Never queues a second step and never re-runs itself:
-        /// Gardener plants one step, when asked, and stops.</summary>
-        private static void DrawGoalHandoff(Patch patch, LayoutPlan singleStepPlan)
+        /// <summary>The per-patch handoff: a control that plants exactly the beds named above, on this
+        /// one patch, and stops. Never queues a second step, never plants a second patch, and never
+        /// re-runs itself. <paramref name="isNearestReachable"/> gates the single <see cref="HubStyle.Primary"/>
+        /// styling this frame is allowed to spend — every other patch's control is a plain button, so
+        /// the gold treatment still marks exactly one action. <paramref name="multiplePatches"/> picks
+        /// which button label reads correctly ("this step" only makes sense when there is exactly one
+        /// patch to plant it on). <paramref name="otherBedsWaiting"/> is the confirm popup's own count
+        /// of beds still unplanted on every other patch in the split.</summary>
+        private static void DrawGoalHandoff(
+            PatchLayout layout, bool isNearestReachable, bool multiplePatches, int otherBedsWaiting, sbyte? plotIndex)
         {
-            var canPlant = singleStepPlan.Steps.Count > 0 && CrossPlanner.Verify(singleStepPlan, patch);
+            var patch = layout.Patch;
+            var plan = layout.Plan;
+            var canPlant = plan.Steps.Count > 0 && CrossPlanner.Verify(plan, patch);
             if (!canPlant)
             {
                 DrawGoalHandoffDisabled(Strings.Goal_CannotFitStep);
                 return;
             }
 
-            using (HubStyle.Primary())
+            if (GardenerGuard.ReachBlockingReason(patch) is not null)
             {
-                // Borrows the game's own "Plant Seeds" verb (Decision 2): the label then names the same
-                // action the bed menu itself offers, correct in every client language for free.
-                if (ImGui.Button(Loc.Format(Strings.Goal_PlantStepButton, GameWords.Action(MenuKey.SetSeed))))
+                var distance = Plugin.ObjectTable.LocalPlayer?.Position is { } pos
+                    ? Vector3.Distance(pos, patch.Center)
+                    : float.PositiveInfinity;
+                DrawGoalHandoffDisabled(Loc.Format(Strings.Goal_PatchOutOfReach, Formats.Number(distance, "F1")));
+                return;
+            }
+
+            // Borrows the game's own "Plant Seeds" verb (Decision 2): the label then names the same
+            // action the bed menu itself offers, correct in every client language for free.
+            var buttonLabel = multiplePatches
+                ? Loc.Format(Strings.Goal_PlantHereButton, GameWords.Action(MenuKey.SetSeed))
+                : Loc.Format(Strings.Goal_PlantStepButton, GameWords.Action(MenuKey.SetSeed));
+
+            // Popup identifier, not copy: BeginPopup never draws this string. Unique per patch so two
+            // patches in one split never share (or fight over) the same popup.
+            var popupId = $"Confirm plant goal step##{patch.Key}";
+
+            using (isNearestReachable ? HubStyle.Primary() : null)
+            {
+                if (ImGui.Button($"{buttonLabel}##{patch.Key}"))
                 {
                     if (Plugin.C.ConfirmBeforeRun)
-                        ImGui.OpenPopup("Confirm plant goal step");
+                        ImGui.OpenPopup(popupId);
                     else
-                        StartGoalStep(singleStepPlan, patch);
+                        StartGoalStep(plan, patch);
                 }
             }
 
-            // Popup identifier, not copy: BeginPopup never draws this string, and it must match the
-            // OpenPopup call above verbatim, so it stays literal English.
-            if (!ImGui.BeginPopup("Confirm plant goal step"))
+            if (!ImGui.BeginPopup(popupId))
                 return;
 
             ImGui.TextUnformatted(Strings.Goal_ConfirmPlantStepTitle);
@@ -997,11 +1055,18 @@ namespace Gardener.Windows
             // button row instead and the sentence stacks into a narrow column. A fixed wrap position
             // gives the popup a width to size itself to.
             ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + ConfirmWrapWidth);
-            ImGui.TextUnformatted(Loc.Format(Strings.Goal_ConfirmPlantStepBody, PlantingPhrase(singleStepPlan)));
+            ImGui.TextUnformatted(Loc.Format(
+                Strings.Goal_ConfirmPlantPatchBody, PatchLabel.Header(patch, plotIndex), PlantingPhrase(plan)));
+            if (otherBedsWaiting > 0)
+            {
+                ImGui.TextUnformatted(Loc.Format(
+                    otherBedsWaiting == 1 ? Strings.Goal_ConfirmOtherPatchesPending_One : Strings.Goal_ConfirmOtherPatchesPending_Other,
+                    Formats.Number(otherBedsWaiting)));
+            }
             ImGui.PopTextWrapPos();
             if (ImGui.Button(Strings.Common_Confirm))
             {
-                StartGoalStep(singleStepPlan, patch);
+                StartGoalStep(plan, patch);
                 ImGui.CloseCurrentPopup();
             }
             ImGui.SameLine();

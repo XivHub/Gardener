@@ -81,7 +81,7 @@ public static class CrossPlanner
     /// itself with <see cref="Verify"/> before it is returned.
     /// </summary>
     public static LayoutPlan PlanFillStep(
-        ushort target, int requestedBeds, Patch patch, IReadOnlyList<BedState> memory, IReadOnlyList<SlotView> inventory)
+        ushort target, int requestedBeds, Patch patch, IReadOnlyList<BedState> memory, PlantingStock stock)
     {
         var plan = new LayoutPlan();
         var targetName = SeedItems.ProduceName(target);
@@ -110,10 +110,7 @@ public static class CrossPlanner
                 .OrderBy(b => b)
                 .ToList();
 
-        int HeldCount(uint row) =>
-            SeedItems.SeedItemForRow(row) is { } itemId
-                ? inventory.Where(s => s.ItemId == itemId).Sum(s => (int)s.Qty)
-                : 0;
+        int HeldCount(uint row) => stock.SeedCount(row);
 
         var requestedPairs = Math.Max(0, requestedBeds / 2);
 
@@ -154,16 +151,16 @@ public static class CrossPlanner
         // Anchors and crosses take different soil: an anchor is planted with empty neighbours, so it
         // crosses with nothing and is harvested for its own seeds, which is what SoilForYield is for;
         // only the cross bed's soil moves the intercross rate.
-        var crossSoil = GardeningItems.BestSoil(Plugin.C.SoilForCross, inventory);
+        var crossSoil = GardeningItems.BestSoil(Plugin.C.SoilForCross, stock.Bag);
         if (crossSoil is null)
         {
             plan.Warnings.Add(
                 GardeningItems.SoilUnavailable(Plugin.C.SoilForCross) ?? Strings.Plan_NoSoilForCrossingFallback);
             return plan;
         }
-        var parentSoil = GardeningItems.BestSoil(Plugin.C.SoilForYield, inventory);
+        var parentSoil = GardeningItems.BestSoil(Plugin.C.SoilForYield, stock.Bag);
 
-        int HeldItemCount(uint itemId) => inventory.Where(s => s.ItemId == itemId).Sum(s => (int)s.Qty);
+        int HeldItemCount(uint itemId) => stock.Count(itemId);
 
         var pairsFromBeds = Math.Min(existingAnchorBeds.Count + anchorFreeSlots.Count, crossFreeSlots.Count);
         var pairsFromSeeds = Math.Min(existingAnchorBeds.Count + HeldCount(anchorRow), HeldCount(crossRow));
@@ -251,7 +248,65 @@ public static class CrossPlanner
         }
 
         Verify(plan, patch);
+
+        // Spent against the shared bag after Verify has pruned anything it rejected, so a step this
+        // call ultimately does not emit never claims seed or soil another patch could still use.
+        foreach (var step in plan.Steps)
+        {
+            if (SeedItems.SeedItemForRow(step.SeedRow) is { } seedItemId)
+                stock.Take(seedItemId, 1);
+            stock.Take(step.SoilItemId, 1);
+        }
+
         return plan;
+    }
+
+    /// <summary>
+    /// The multi-patch entry point: one <see cref="PlanFillStep"/> call per usable patch, sharing one
+    /// <see cref="PlantingStock"/> and a bed budget that shrinks by whatever the earlier patches in
+    /// <see cref="PatchLayout"/> order already claimed. A pair is always two beds in the same patch —
+    /// crossbreeding never crosses a patch boundary, since <see cref="Adjacency.Neighbours"/> only
+    /// ever walks one patch's own ring — so this never merges bed sets or two-colour rings across
+    /// patches; it plans each patch's own ring in isolation and concatenates the results. Patches are
+    /// ordered by <see cref="Patch.Key"/> rather than caller order, since <c>PatchDiscovery.Patches</c>
+    /// is not guaranteed stable frame to frame and the budget split must not reshuffle under the
+    /// player's cursor. A patch whose layout is not confirmed is skipped, forwarding
+    /// <see cref="Strings.Plan_AdjacencyUnconfirmed"/> once rather than once per such patch; a patch
+    /// whose own <see cref="PlanFillStep"/> call emits no steps (out of beds, seeds or soil) is dropped
+    /// from the result entirely rather than kept as an empty entry.
+    /// </summary>
+    public static MultiPatchLayout PlanFillStepAcross(
+        ushort target, int requestedBeds, IReadOnlyList<Patch> patches,
+        Func<Patch, IReadOnlyList<BedState>> memoryFor, IReadOnlyList<SlotView> bag)
+    {
+        var stock = PlantingStock.FromBag(bag);
+        var layouts = new List<PatchLayout>();
+        var warnings = new List<string>();
+        var remainingBeds = requestedBeds;
+        var warnedUnconfirmed = false;
+
+        foreach (var patch in patches.OrderBy(p => p.Key, StringComparer.Ordinal))
+        {
+            if (!patch.Kind.HasConfirmedLayout())
+            {
+                if (!warnedUnconfirmed)
+                {
+                    warnings.Add(Loc.Format(Strings.Plan_AdjacencyUnconfirmed, patch.Kind));
+                    warnedUnconfirmed = true;
+                }
+                continue;
+            }
+
+            var memory = memoryFor(patch);
+            var plan = PlanFillStep(target, remainingBeds, patch, memory, stock);
+            if (plan.Steps.Count == 0)
+                continue;
+
+            layouts.Add(new PatchLayout(patch, plan, plan.ExpectedTargets.Count));
+            remainingBeds -= plan.Steps.Count;
+        }
+
+        return new MultiPatchLayout(layouts, warnings);
     }
 
     /// <summary>

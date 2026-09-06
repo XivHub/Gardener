@@ -107,6 +107,15 @@ public static class SchedulerMain
             return false;
         }
 
+        // Named-patch reach, on top of BlockingReason's own "some patch is close enough": a plot with
+        // two patches can pass that check on the near one while the far one — the one this call was
+        // actually asked to run — is still out of reach.
+        if (GardenerGuard.ReachBlockingReason(patch) is { } reachReason)
+        {
+            Plugin.ChatGui.PrintError(Loc.Format(Strings.Chat_Prefix, reachReason));
+            return false;
+        }
+
         var position = Plugin.ObjectTable.LocalPlayer?.Position;
         if (position is not { } pos)
         {
