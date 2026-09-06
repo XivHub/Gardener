@@ -226,7 +226,8 @@ public static class DebugDump
                 ? $"{Vector3.Distance(skip.Position, origin):F2}y"
                 : "n/a";
             sb.AppendLine($"  ({skip.Position.X:F2},{skip.Position.Y:F2},{skip.Position.Z:F2}) " +
-                          $"beds={skip.AssociatedBeds} playerDistance={playerDist}: {skip.Reason}");
+                          $"entityId=0x{skip.EntityId:X8} beds={skip.AssociatedBeds} " +
+                          $"playerDistance={playerDist}: {skip.Reason}");
         }
 
         // SAFETY: HousingManager.Instance() is a static client pointer; OutdoorTerritory is only

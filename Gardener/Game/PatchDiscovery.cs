@@ -125,7 +125,7 @@ public readonly record struct PatchAttribution(Patch Patch, int? PlotIndex, floa
 /// <summary>One patch object the furniture array reported that never became a <see cref="Patch"/>,
 /// with the reason. Without these a dump shows only what survived, which hides the case where the
 /// patches in front of the player are dropped and a neighbour's are the ones attributed.</summary>
-public readonly record struct SkippedPatchObject(Vector3 Position, int AssociatedBeds, string Reason);
+public readonly record struct SkippedPatchObject(Vector3 Position, uint EntityId, int AssociatedBeds, string Reason);
 
 public readonly record struct DiscoveryDiagnostics(
     int FurnitureArrayWalked,
@@ -234,41 +234,43 @@ public static class PatchDiscovery
         // Deluxe patches 3.3y apart discovered nothing at all. The tie never arises in practice
         // because a bed EventObj reports its own patch's position (see FACTS.md), so a bed is 0y from
         // its patch and a whole patch-spacing away from any other.
-        var bedsByPatch = new Dictionary<uint, List<IGameObject>>();
+        // Keyed by position in patchObjects, not by EntityId: a furniture-array object does not carry
+        // the distinct entity id an object-table bed does, so keying on it collapses every patch onto
+        // one entry and each then claims every bed in the territory.
+        var bedsByPatch = new List<IGameObject>[patchObjects.Count];
         var unassociatedBeds = new List<(uint DataId, Vector3 Position)>();
 
         foreach (var bed in bedObjects)
         {
-            PatchObject? owner = null;
+            var owner = -1;
             var ownerDistance = float.MaxValue;
-            foreach (var candidate in patchObjects)
+            for (var i = 0; i < patchObjects.Count; i++)
             {
-                var distance = Vector3.Distance(bed.Position, candidate.Position);
+                var distance = Vector3.Distance(bed.Position, patchObjects[i].Position);
                 if (distance > BedAssociationRadius || distance >= ownerDistance)
                     continue;
                 ownerDistance = distance;
-                owner = candidate;
+                owner = i;
             }
 
-            if (owner is not { } patchOwner)
+            if (owner < 0)
             {
                 unassociatedBeds.Add((bed.BaseId, bed.Position));
                 continue;
             }
 
-            if (!bedsByPatch.TryGetValue(patchOwner.EntityId, out var owned))
-                bedsByPatch[patchOwner.EntityId] = owned = new List<IGameObject>();
-            owned.Add(bed);
+            (bedsByPatch[owner] ??= new List<IGameObject>()).Add(bed);
         }
 
         var builtPatches = new List<Patch>();
         var skippedPatches = new List<SkippedPatchObject>();
-        foreach (var patchObj in patchObjects)
+        for (var patchIndex = 0; patchIndex < patchObjects.Count; patchIndex++)
         {
-            var associated = bedsByPatch.GetValueOrDefault(patchObj.EntityId) ?? new List<IGameObject>();
+            var patchObj = patchObjects[patchIndex];
+            var associated = bedsByPatch[patchIndex] ?? new List<IGameObject>();
             if (associated.Count == 0)
             {
-                skippedPatches.Add(new SkippedPatchObject(patchObj.Position, 0, "no beds within the association radius"));
+                skippedPatches.Add(new SkippedPatchObject(patchObj.Position, patchObj.EntityId, 0, "no beds within the association radius"));
                 Plugin.Logger.Debug($"[PatchDiscovery] patch at {patchObj.Position} has no beds within {BedAssociationRadius}y; skipping");
                 continue;
             }
@@ -276,7 +278,7 @@ public static class PatchDiscovery
             var dataIds = associated.Select(b => b.BaseId).Distinct().ToList();
             if (dataIds.Count != 1)
             {
-                skippedPatches.Add(new SkippedPatchObject(patchObj.Position, associated.Count, $"mixed bed DataIds ({string.Join(",", dataIds)})"));
+                skippedPatches.Add(new SkippedPatchObject(patchObj.Position, patchObj.EntityId, associated.Count, $"mixed bed DataIds ({string.Join(",", dataIds)})"));
                 Plugin.Logger.Warning(
                     $"[PatchDiscovery] patch at {patchObj.Position} has beds with mixed DataIds " +
                     $"({string.Join(",", dataIds)}); skipping rather than guessing a shape");
@@ -291,7 +293,7 @@ public static class PatchDiscovery
                 case OblongBedDataId: kind = PatchKind.Oblong; expectedCount = 6; break;
                 case RoundBedDataId: kind = PatchKind.Round; expectedCount = 4; break;
                 default:
-                    skippedPatches.Add(new SkippedPatchObject(patchObj.Position, associated.Count, $"unrecognised bed DataId {dataIds[0]}"));
+                    skippedPatches.Add(new SkippedPatchObject(patchObj.Position, patchObj.EntityId, associated.Count, $"unrecognised bed DataId {dataIds[0]}"));
                     Plugin.Logger.Warning($"[PatchDiscovery] patch at {patchObj.Position} has beds with unrecognised DataId {dataIds[0]}; skipping");
                     continue;
             }
@@ -302,7 +304,8 @@ public static class PatchDiscovery
                     $"[PatchDiscovery] patch at {patchObj.Position} looks like {kind} ({associated.Count} beds) but " +
                     $"expected {expectedCount}; skipping rather than guessing a shape");
                 skippedPatches.Add(new SkippedPatchObject(
-                    patchObj.Position, associated.Count, $"{associated.Count} beds, expected {expectedCount} for {kind}"));
+                    patchObj.Position, patchObj.EntityId, associated.Count,
+                    $"{associated.Count} beds, expected {expectedCount} for {kind}"));
                 continue;
             }
 
