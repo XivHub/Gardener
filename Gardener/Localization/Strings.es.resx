@@ -501,14 +501,11 @@
   <data name="Garden_RemoveButtonTooltip" xml:space="preserve">
     <value>{0}: parcela {1}, {2}.</value>
   </data>
-  <data name="Reminders_HouseFallback" xml:space="preserve">
-    <value>Casa</value>
-  </data>
   <data name="Garden_PlantedHoursAgoButton" xml:space="preserve">
     <value>Plantado hace {0}h</value>
   </data>
   <data name="Reminders_DueToTendHeader" xml:space="preserve">
-    <value>Pendientes de cuidar</value>
+    <value>Pendientes de cuidar ({0})</value>
   </data>
   <data name="Reminders_AllTended" xml:space="preserve">
     <value>Todas las parcelas están cuidadas.</value>
@@ -517,7 +514,7 @@
     <value>{0}, parcela {1}: se marchita {2}</value>
   </data>
   <data name="Reminders_AboutToWitherHeader" xml:space="preserve">
-    <value>A punto de secarse</value>
+    <value>A punto de secarse ({0})</value>
   </data>
   <data name="Reminders_NothingWithering" xml:space="preserve">
     <value>Nada está cerca de secarse.</value>
@@ -526,16 +523,22 @@
     <value>{0}, parcela {1}: se seca {2}</value>
   </data>
   <data name="Reminders_ReadyHeader" xml:space="preserve">
-    <value>Listas para cosechar</value>
+    <value>Listas para cosechar ({0})</value>
   </data>
   <data name="Reminders_TimingUnknownHeader" xml:space="preserve">
-    <value>Hora de plantado desconocida</value>
+    <value>Hora de plantado desconocida ({0})</value>
   </data>
   <data name="Reminders_AllTimingKnown" xml:space="preserve">
     <value>Se conoce la hora de plantado de todas las parcelas.</value>
   </data>
-  <data name="Reminders_TimingUnknownLine" xml:space="preserve">
-    <value>{0}, parcela {1}: hora de plantado desconocida</value>
+  <data name="Reminders_TimingUnknownCollapsed_One" xml:space="preserve">
+    <value>{0} parcela no tiene hora de plantado.</value>
+  </data>
+  <data name="Reminders_TimingUnknownCollapsed_Other" xml:space="preserve">
+    <value>{0} parcelas no tienen hora de plantado.</value>
+  </data>
+  <data name="Reminders_OpenInGardenButton" xml:space="preserve">
+    <value>Ver en la pestaña Jardín</value>
   </data>
   <data name="Reminders_NothingReady" xml:space="preserve">
     <value>Nada está listo para cosechar todavía.</value>

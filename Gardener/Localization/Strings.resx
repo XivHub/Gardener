@@ -474,7 +474,7 @@
   </data>
   <data name="Garden_OrphanLine" xml:space="preserve">
     <value>{0}, bed {1}: {2}</value>
-    <comment>MainWindow.DrawOrphans, one orphaned bed record. {0} is the raw patch-key identifier (unlocalized, not prose); {1} is the bed number, an integer via Formats.Number; {2} is the produce name for the recorded seed row (a client-language name, or the Garden_UnresolvedSeedRow fallback).</comment>
+    <comment>MainWindow.DrawOrphans, one orphaned bed record. {0} is PatchLabel.FromKey(orphan.PatchKey), never the raw patch key; {1} is the bed number, an integer via Formats.Number; {2} is the produce name for the recorded seed row (a client-language name, or the Garden_UnresolvedSeedRow fallback).</comment>
   </data>
   <data name="Garden_ForgetButton" xml:space="preserve">
     <value>Forget</value>
@@ -664,53 +664,57 @@
     <value>{0}: bed {1}, {2}.</value>
     <comment>MainWindow.DrawRemoveCropButton hover tooltip. {0} is GameWords.Action(MenuKey.Dispose), the game's own bed-menu verb; {1} is the bed number via Formats.Number; {2} is the produce name, a client-language name.</comment>
   </data>
-  <data name="Reminders_HouseFallback" xml:space="preserve">
-    <value>House</value>
-    <comment>MainWindow.DrawHouseHeader fallback, shown when GardenJournal.EstateTypeFor has never recorded this house's estate type.</comment>
-  </data>
   <data name="Garden_PlantedHoursAgoButton" xml:space="preserve">
     <value>Planted {0}h ago</value>
     <comment>MainWindow.DrawPlantedAtEstimate button that hand-sets PlantedAt from an hours-ago guess. {0} is the entered hour count, an integer via Formats.Number.</comment>
   </data>
   <data name="Reminders_DueToTendHeader" xml:space="preserve">
-    <value>Due to tend</value>
-    <comment>MainWindow.DrawRemindersTab section header, above Reminders.DueToTend.</comment>
+    <value>Due to tend ({0})</value>
+    <comment>MainWindow.DrawRemindersTab section header, shown only while Reminders.DueToTend is non-empty. {0} is its count via Formats.Number.</comment>
   </data>
   <data name="Reminders_AllTended" xml:space="preserve">
     <value>Every bed is tended.</value>
-    <comment>MainWindow.DrawRemindersTab, DrawReminderGroup empty-state text for Reminders.DueToTend.</comment>
+    <comment>MainWindow.DrawRemindersTab, DrawReminderSection empty-state text shown in place of the header when Reminders.DueToTend is empty.</comment>
   </data>
   <data name="Reminders_TendLine" xml:space="preserve">
     <value>{0}, bed {1}: wilts {2}</value>
     <comment>MainWindow.DrawRemindersTab, one Reminders.DueToTend entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is the local wilt time via Formats.LocalDateTime.</comment>
   </data>
   <data name="Reminders_AboutToWitherHeader" xml:space="preserve">
-    <value>About to wither</value>
-    <comment>MainWindow.DrawRemindersTab section header, above Reminders.AboutToWither.</comment>
+    <value>About to wither ({0})</value>
+    <comment>MainWindow.DrawRemindersTab section header, shown only while Reminders.AboutToWither is non-empty. {0} is its count via Formats.Number.</comment>
   </data>
   <data name="Reminders_NothingWithering" xml:space="preserve">
     <value>Nothing is close to withering.</value>
-    <comment>MainWindow.DrawRemindersTab, DrawReminderGroup empty-state text for Reminders.AboutToWither.</comment>
+    <comment>MainWindow.DrawRemindersTab, DrawReminderSection empty-state text shown in place of the header when Reminders.AboutToWither is empty.</comment>
   </data>
   <data name="Reminders_WitherLine" xml:space="preserve">
     <value>{0}, bed {1}: withers {2}</value>
     <comment>MainWindow.DrawRemindersTab, one Reminders.AboutToWither entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number; {2} is the local wither time via Formats.LocalDateTime.</comment>
   </data>
   <data name="Reminders_ReadyHeader" xml:space="preserve">
-    <value>Ready to harvest</value>
-    <comment>MainWindow.DrawRemindersTab section header, above DrawHarvestGroup.</comment>
+    <value>Ready to harvest ({0})</value>
+    <comment>MainWindow.DrawRemindersTab section header, shown only while Reminders.ReadyToHarvest is non-empty. {0} is its count via Formats.Number.</comment>
   </data>
   <data name="Reminders_TimingUnknownHeader" xml:space="preserve">
-    <value>Planting time unknown</value>
-    <comment>MainWindow.DrawRemindersTab section header, above Reminders.TimingUnknown.</comment>
+    <value>Planting time unknown ({0})</value>
+    <comment>MainWindow.DrawRemindersTab section header, shown only while Reminders.TimingUnknown is non-empty. {0} is its count via Formats.Number.</comment>
   </data>
   <data name="Reminders_AllTimingKnown" xml:space="preserve">
     <value>Every bed's planting time is known.</value>
-    <comment>MainWindow.DrawRemindersTab, DrawReminderGroup empty-state text for Reminders.TimingUnknown.</comment>
+    <comment>MainWindow.DrawRemindersTab, DrawReminderSection empty-state text shown in place of the header when Reminders.TimingUnknown is empty.</comment>
   </data>
-  <data name="Reminders_TimingUnknownLine" xml:space="preserve">
-    <value>{0}, bed {1}: planting time unknown</value>
-    <comment>MainWindow.DrawRemindersTab, one Reminders.TimingUnknown entry. {0} is the seed's produce name, a client-language name; {1} is the bed number via Formats.Number.</comment>
+  <data name="Reminders_TimingUnknownCollapsed_One" xml:space="preserve">
+    <value>{0} bed has no planting time.</value>
+    <comment>MainWindow.DrawTimingUnknownGroup, singular (n == 1): one line per patch replacing what used to be one row per bed. {0} is the patch's Reminders.TimingUnknown count via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_TimingUnknownCollapsed_Other" xml:space="preserve">
+    <value>{0} beds have no planting time.</value>
+    <comment>MainWindow.DrawTimingUnknownGroup, plural (n != 1). {0} is the patch's Reminders.TimingUnknown count via Formats.Number.</comment>
+  </data>
+  <data name="Reminders_OpenInGardenButton" xml:space="preserve">
+    <value>Show in the Garden tab</value>
+    <comment>MainWindow.DrawTimingUnknownGroup button beside the collapsed count, drawn only when the patch is currently in PatchDiscovery.Patches; sets MainWindow.RequestedPatchKey/RequestGardenTab to jump to and expand that patch's Garden tab header.</comment>
   </data>
   <data name="Reminders_NothingReady" xml:space="preserve">
     <value>Nothing is ready to harvest yet.</value>

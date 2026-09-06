@@ -47,6 +47,13 @@ namespace Gardener.Windows
         private static GardenCapacity quickPicksCapacityCache;
         private static List<(uint Row, GoalPlan Plan)> quickPicksCache = new();
 
+        // Cross-tab navigation from a Reminders line to the Garden tab's matching
+        // CollapsingHeader. Both fields are consumed for exactly one Draw() frame and cleared
+        // there: RequestGardenTab selects the Garden tab and RequestedPatchKey forces that
+        // patch's header open, so a stale request can never pin the tab or the header.
+        public static string? RequestedPatchKey;
+        public static bool RequestGardenTab;
+
         public MainWindow(Configuration configuration) : base("Gardener###GardenerMain")
         {
             SizeConstraints = new WindowSizeConstraints
@@ -68,7 +75,8 @@ namespace Gardener.Windows
             // ###-suffixed: BeginTabItem derives tab identity (and so which tab stays selected
             // across a redraw) from the label, and the visible text ahead of "Garden" etc. will
             // change with the UI language while these ids must not.
-            if (ImGui.BeginTabItem($"{Strings.Garden_TabLabel}###gardenTab"))
+            var gardenTabFlags = RequestGardenTab ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None;
+            if (ImGui.BeginTabItem($"{Strings.Garden_TabLabel}###gardenTab", gardenTabFlags))
             {
                 DrawGardenTab();
                 ImGui.EndTabItem();
@@ -111,9 +119,18 @@ namespace Gardener.Windows
 
             var plot = PatchDiscovery.LastDiagnostics.CurrentPlot;
 
+            // Consumed once per Draw() call regardless of whether a patch below actually matches,
+            // so a request for a patch that has since gone undiscovered cannot pin this tab open.
+            var requestedPatchKey = RequestedPatchKey;
+            RequestedPatchKey = null;
+            RequestGardenTab = false;
+
             foreach (var patch in patches)
             {
-                ImGui.SetNextItemOpen(true, ImGuiCond.FirstUseEver);
+                if (patch.Key == requestedPatchKey)
+                    ImGui.SetNextItemOpen(true, ImGuiCond.Always);
+                else
+                    ImGui.SetNextItemOpen(true, ImGuiCond.FirstUseEver);
                 // ###-suffixed: CollapsingHeader keys its own open/collapsed state off GetID(label),
                 // and the visible half (PatchLabel.Header) changes with the UI language.
                 var open = ImGui.CollapsingHeader($"{PatchLabel.Header(patch, plot)}###patch-{patch.Key}");
@@ -195,7 +212,7 @@ namespace Gardener.Windows
             ImGui.TextColored(HubStyle.Faint, Strings.Garden_OrphansNote);
             foreach (var orphan in orphans)
             {
-                ImGui.TextUnformatted(Loc.Format(Strings.Garden_OrphanLine, orphan.PatchKey,
+                ImGui.TextUnformatted(Loc.Format(Strings.Garden_OrphanLine, PatchLabel.FromKey(orphan.PatchKey),
                     Formats.Number(orphan.BedNumber), SeedName(orphan.SeedRow)));
                 ImGui.SameLine();
                 if (ImGui.Button($"{Strings.Garden_ForgetButton}##orphan-{orphan.PatchKey}-{orphan.BedNumber}"))
@@ -1259,46 +1276,57 @@ namespace Gardener.Windows
         {
             // Tending and wither risk both need no house permission at all: any character can water
             // any outdoor garden, so unlike harvesting these two never carry a "switch to" note.
-            ImGui.TextColored(HubStyle.Warn, Strings.Reminders_DueToTendHeader);
-            DrawReminderGroup(Reminders.DueToTend, HubStyle.Warn, Strings.Reminders_AllTended,
-                e => Loc.Format(Strings.Reminders_TendLine, e.SeedName, Formats.Number(e.BedNumber), Formats.LocalDateTime(e.At.ToLocalTime())),
-                showReach: false);
+            DrawReminderSection(Reminders.DueToTend.Count, HubStyle.Warn, Strings.Reminders_DueToTendHeader, Strings.Reminders_AllTended,
+                () => DrawReminderGroup(Reminders.DueToTend, HubStyle.Warn,
+                    e => Loc.Format(Strings.Reminders_TendLine, e.SeedName, Formats.Number(e.BedNumber), Formats.LocalDateTime(e.At.ToLocalTime())),
+                    showReach: false));
 
             ImGui.Separator();
-            ImGui.TextColored(HubStyle.Bad, Strings.Reminders_AboutToWitherHeader);
-            DrawReminderGroup(Reminders.AboutToWither, HubStyle.Bad, Strings.Reminders_NothingWithering,
-                e => Loc.Format(Strings.Reminders_WitherLine, e.SeedName, Formats.Number(e.BedNumber), Formats.LocalDateTime(e.At.ToLocalTime())),
-                showReach: false);
+            DrawReminderSection(Reminders.AboutToWither.Count, HubStyle.Bad, Strings.Reminders_AboutToWitherHeader, Strings.Reminders_NothingWithering,
+                () => DrawReminderGroup(Reminders.AboutToWither, HubStyle.Bad,
+                    e => Loc.Format(Strings.Reminders_WitherLine, e.SeedName, Formats.Number(e.BedNumber), Formats.LocalDateTime(e.At.ToLocalTime())),
+                    showReach: false));
 
             ImGui.Separator();
-            ImGui.TextColored(HubStyle.Good, Strings.Reminders_ReadyHeader);
+            DrawReminderSection(Reminders.ReadyToHarvest.Count, HubStyle.Good, Strings.Reminders_ReadyHeader, Strings.Reminders_NothingReady,
+                DrawHarvestGroup);
+
+            // Outside the section body on purpose: the note explains why a bed that has matured may
+            // not be listed here, so an empty list is exactly when the player needs to read it.
             ImGui.TextColored(HubStyle.Faint, Strings.Garden_HarvestLagNote);
-            DrawHarvestGroup();
 
             ImGui.Separator();
-            ImGui.TextColored(HubStyle.Faint, Strings.Reminders_TimingUnknownHeader);
-            DrawReminderGroup(Reminders.TimingUnknown, HubStyle.Faint, Strings.Reminders_AllTimingKnown,
-                e => Loc.Format(Strings.Reminders_TimingUnknownLine, e.SeedName, Formats.Number(e.BedNumber)),
-                showReach: true);
+            DrawReminderSection(Reminders.TimingUnknown.Count, HubStyle.Faint, Strings.Reminders_TimingUnknownHeader, Strings.Reminders_AllTimingKnown,
+                DrawTimingUnknownGroup);
         }
 
-        private static void DrawReminderGroup(
-            IReadOnlyList<ReminderEntry> entries, Vector4 color, string emptyText, Func<ReminderEntry, string> lineText,
-            bool showReach)
+        /// <summary>One of the four Reminders sections: the header (with its count) only when
+        /// <paramref name="count"/> is non-zero, otherwise the empty-state line alone — a section
+        /// with nothing due does not also print a header saying so.</summary>
+        private static void DrawReminderSection(int count, Vector4 headerColor, string headerTemplate, string emptyText, Action drawBody)
         {
-            if (entries.Count == 0)
+            if (count == 0)
             {
                 ImGui.TextColored(HubStyle.Faint, emptyText);
                 return;
             }
 
+            ImGui.TextColored(headerColor, Loc.Format(headerTemplate, Formats.Number(count)));
+            drawBody();
+        }
+
+        private static void DrawReminderGroup(
+            IReadOnlyList<ReminderEntry> entries, Vector4 color, Func<ReminderEntry, string> lineText, bool showReach)
+        {
             foreach (var houseGroup in entries.GroupBy(e => e.HouseKey))
             {
                 DrawHouseHeader(houseGroup.Key);
+                var showPatchLine = GardenJournal.PatchesForHouse(houseGroup.Key).Count > 1;
                 foreach (var patchGroup in houseGroup.GroupBy(e => e.PatchKey))
                 {
                     ImGui.Indent();
-                    ImGui.TextColored(HubStyle.Faint, patchGroup.Key);
+                    if (showPatchLine)
+                        ImGui.TextColored(HubStyle.Faint, PatchLabel.FromKey(patchGroup.Key));
                     foreach (var entry in patchGroup.OrderBy(e => e.BedNumber))
                         DrawReminderLine(color, lineText(entry), showReach ? entry.ReachableBy : null);
                     ImGui.Unindent();
@@ -1309,18 +1337,17 @@ namespace Gardener.Windows
         private static void DrawHarvestGroup()
         {
             if (Reminders.ReadyToHarvest.Count == 0)
-            {
-                ImGui.TextColored(HubStyle.Faint, Strings.Reminders_NothingReady);
                 return;
-            }
 
             foreach (var houseGroup in Reminders.ReadyToHarvest.GroupBy(h => h.Entry.HouseKey))
             {
                 DrawHouseHeader(houseGroup.Key);
+                var showPatchLine = GardenJournal.PatchesForHouse(houseGroup.Key).Count > 1;
                 foreach (var patchGroup in houseGroup.GroupBy(h => h.Entry.PatchKey))
                 {
                     ImGui.Indent();
-                    ImGui.TextColored(HubStyle.Faint, patchGroup.Key);
+                    if (showPatchLine)
+                        ImGui.TextColored(HubStyle.Faint, PatchLabel.FromKey(patchGroup.Key));
                     foreach (var harvest in patchGroup.OrderBy(h => h.Entry.BedNumber))
                     {
                         var text = harvest.FromWindow
@@ -1333,6 +1360,50 @@ namespace Gardener.Windows
                                 Formats.Number(harvest.Entry.BedNumber));
                         DrawReminderLine(HubStyle.Good, text, harvest.Entry.ReachableBy);
                     }
+                    ImGui.Unindent();
+                }
+            }
+        }
+
+        /// <summary>The <see cref="Reminders.TimingUnknown"/> section: one line per patch carrying
+        /// its bed count, never one row per bed — a house with sixteen unset beds across two patches
+        /// used to print sixteen near-identical lines here. Next to the count, either the button that
+        /// jumps to that patch's Garden tab header (only when the patch is currently discovered, so
+        /// the Garden tab actually has something to show) or the same reach note every other section
+        /// with <c>showReach: true</c> would print.</summary>
+        private static void DrawTimingUnknownGroup()
+        {
+            foreach (var houseGroup in Reminders.TimingUnknown.GroupBy(e => e.HouseKey))
+            {
+                DrawHouseHeader(houseGroup.Key);
+                var showPatchLine = GardenJournal.PatchesForHouse(houseGroup.Key).Count > 1;
+                foreach (var patchGroup in houseGroup.GroupBy(e => e.PatchKey))
+                {
+                    ImGui.Indent();
+                    if (showPatchLine)
+                        ImGui.TextColored(HubStyle.Faint, PatchLabel.FromKey(patchGroup.Key));
+
+                    var count = patchGroup.Count();
+                    var line = Loc.Format(
+                        count == 1 ? Strings.Reminders_TimingUnknownCollapsed_One : Strings.Reminders_TimingUnknownCollapsed_Other,
+                        Formats.Number(count));
+                    ImGui.TextColored(HubStyle.Faint, line);
+                    ImGui.SameLine();
+
+                    var patchKey = patchGroup.Key;
+                    if (PatchDiscovery.Patches.Any(p => p.Key == patchKey))
+                    {
+                        if (ImGui.SmallButton($"{Strings.Reminders_OpenInGardenButton}##opengarden-{patchKey}"))
+                        {
+                            RequestedPatchKey = patchKey;
+                            RequestGardenTab = true;
+                        }
+                    }
+                    else
+                    {
+                        ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, Reminders.ReachText(patchGroup.First().ReachableBy)));
+                    }
+
                     ImGui.Unindent();
                 }
             }
@@ -1362,10 +1433,7 @@ namespace Gardener.Windows
 
         private static void DrawHouseHeader(string houseKey)
         {
-            var estateType = GardenJournal.EstateTypeFor(houseKey);
-            ImGui.TextUnformatted(estateType is { } et ? et.ToString() : Strings.Reminders_HouseFallback);
-            ImGui.SameLine();
-            ImGui.TextColored(HubStyle.Faint, houseKey);
+            ImGui.TextUnformatted(PatchLabel.HouseHeader(houseKey));
         }
 
         /// <summary>Semantic bed-state colour per THEME.md: withered or overdue → Bad, due to tend soon
