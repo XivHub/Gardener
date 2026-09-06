@@ -164,11 +164,6 @@ public static class PatchDiscovery
     // whole yard from wherever the player is standing in it.
     private const float DiagnosticRadius = 30f;
 
-    // How close the player has to be for a patch to count as theirs regardless of which placard is
-    // nearest. Sized between the two figures measured in game: a patch attributed to the wrong plot
-    // still sat within the 30y diagnostic radius of the player standing at it, while the nearest
-    // patch belonging to a neighbour was 37y away.
-    private const float PlayerPlotRadius = 30f;
 
     // HousingManager.GetCurrentPlot() sentinels for standing in an apartment building rather than
     // on a numbered land plot.
@@ -233,18 +228,44 @@ public static class PatchDiscovery
                 nearbyBedDataIds[obj.BaseId] = nearbyBedDataIds.GetValueOrDefault(obj.BaseId) + 1;
         }
 
-        var unassociatedBeds = bedObjects
-            .Where(b => !patchObjects.Any(p => Vector3.Distance(b.Position, p.Position) <= BedAssociationRadius))
-            .Select(b => (b.BaseId, b.Position))
-            .ToList();
+        // A bed belongs to exactly one patch: the nearest within the radius. Taking every bed in range
+        // instead would let two patches placed close together each claim the other's beds, and both
+        // would then fail their own bed-count check and be skipped — which is how a plot holding two
+        // Deluxe patches 3.3y apart discovered nothing at all. The tie never arises in practice
+        // because a bed EventObj reports its own patch's position (see FACTS.md), so a bed is 0y from
+        // its patch and a whole patch-spacing away from any other.
+        var bedsByPatch = new Dictionary<uint, List<IGameObject>>();
+        var unassociatedBeds = new List<(uint DataId, Vector3 Position)>();
+
+        foreach (var bed in bedObjects)
+        {
+            PatchObject? owner = null;
+            var ownerDistance = float.MaxValue;
+            foreach (var candidate in patchObjects)
+            {
+                var distance = Vector3.Distance(bed.Position, candidate.Position);
+                if (distance > BedAssociationRadius || distance >= ownerDistance)
+                    continue;
+                ownerDistance = distance;
+                owner = candidate;
+            }
+
+            if (owner is not { } patchOwner)
+            {
+                unassociatedBeds.Add((bed.BaseId, bed.Position));
+                continue;
+            }
+
+            if (!bedsByPatch.TryGetValue(patchOwner.EntityId, out var owned))
+                bedsByPatch[patchOwner.EntityId] = owned = new List<IGameObject>();
+            owned.Add(bed);
+        }
 
         var builtPatches = new List<Patch>();
         var skippedPatches = new List<SkippedPatchObject>();
         foreach (var patchObj in patchObjects)
         {
-            var associated = bedObjects
-                .Where(b => Vector3.Distance(b.Position, patchObj.Position) <= BedAssociationRadius)
-                .ToList();
+            var associated = bedsByPatch.GetValueOrDefault(patchObj.EntityId) ?? new List<IGameObject>();
             if (associated.Count == 0)
             {
                 skippedPatches.Add(new SkippedPatchObject(patchObj.Position, 0, "no beds within the association radius"));
@@ -302,18 +323,10 @@ public static class PatchDiscovery
         var currentPlot = CurrentPlotOrNull();
         var ownsCurrentPlot = houseKey.Owned;
 
-        // The furniture array spans the neighbouring plots too, so a patch has to be attributed before
-        // it is kept, and neither available signal is sufficient alone.
-        //
-        // Nearest plot marker is the primary test and is usually unambiguous: on a ward plot each
-        // patch sits 11-18y from its own placard and the plots either side attribute elsewhere. But a
-        // marker stands at the placard, not the centre of the plot, so on a deep plot a patch can end
-        // up 47y from its own marker and 28y from the neighbour's and be handed to the wrong plot.
-        //
-        // Standing next to the patch settles that case: a bed has to be within BedReachDistance to be
-        // used at all, so a patch inside PlayerPlotRadius of the player is one the player is at,
-        // whatever the placards say. A neighbour's patch is far enough away — the nearest foreign
-        // patch measured on a real plot was 37y — that this does not readmit one.
+        // The furniture array spans the neighbouring plots, so a patch is kept only when the plot
+        // marker nearest to it is the one the player is standing on. Measured on real plots, a
+        // patch sits 8-18y from its own placard while the neighbours attribute elsewhere, which is
+        // wide enough margin for the test to be unambiguous.
         var onOwnNumberedPlot = ownsCurrentPlot && currentPlot is not null;
 
         var kept = new List<Patch>();
@@ -321,11 +334,7 @@ public static class PatchDiscovery
         foreach (var patch in builtPatches)
         {
             var (plotIndex, distance) = AttributeToPlot(patch.Center);
-            var attributedHere = currentPlot is { } cp && plotIndex == cp;
-            var underfoot = playerPosition is { } pp &&
-                            Vector3.Distance(patch.Center, pp) <= PlayerPlotRadius;
-
-            var isKept = onOwnNumberedPlot && (attributedHere || underfoot);
+            var isKept = onOwnNumberedPlot && currentPlot is { } cp && plotIndex == cp;
             attributions.Add(new PatchAttribution(patch, plotIndex, distance, isKept));
             if (isKept)
                 kept.Add(patch);
