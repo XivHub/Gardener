@@ -164,7 +164,7 @@ public static class GoalRoute
         var steps = new List<GoalStep>();
         var explainedFamilies = new HashSet<SoilFamily>();
 
-        AddObtainSteps(steps, leafOrder, obtainNeed, held);
+        AddObtainSteps(steps, leafOrder, obtainNeed, held, family, yieldFamily);
 
         var stepNumber = 2;
         foreach (var target in order)
@@ -279,40 +279,52 @@ public static class GoalRoute
         }
     }
 
+    /// <summary>Builds one <see cref="ObtainStep"/> per leaf seed. Needed/held counts are typed fields
+    /// (<see cref="ObtainStep.Needed"/> and the live <c>held</c> dictionary the Goal tab already
+    /// carries), not baked into <see cref="GoalStep.Body"/> text, since the held count changes every
+    /// frame and <see cref="Solve"/> only runs once. The soil note lands on the first obtain step only,
+    /// so the player learns which topsoil the route will want on the same trip that buys the seeds,
+    /// rather than discovering the shortfall at the patch.</summary>
     private static void AddObtainSteps(
         List<GoalStep> steps, IReadOnlyList<uint> leaves, IReadOnlyDictionary<uint, int> obtainNeed,
-        IReadOnlyDictionary<uint, int> held)
+        IReadOnlyDictionary<uint, int> held, SoilFamily crossFamily, SoilFamily yieldFamily)
     {
-        foreach (var row in leaves)
+        var crossSoilName = GardeningItems.SoilName(crossFamily, AssumedSoilGrade);
+        var yieldSoilName = GardeningItems.SoilName(yieldFamily, AssumedSoilGrade);
+
+        for (var i = 0; i < leaves.Count; i++)
         {
+            var row = leaves[i];
             var needCount = Math.Max(1, obtainNeed.GetValueOrDefault(row));
-            var heldCount = held.GetValueOrDefault(row);
-            var seedItemName = SeedItems.SeedItemName(row);
             var produceName = SeedItems.ProduceName(row);
 
-            var body = new List<string>
-            {
-                Loc.Format(Strings.Goal_ObtainGet, Formats.Number(needCount), seedItemName),
-                heldCount >= needCount
-                    ? Loc.Format(Strings.Goal_ObtainHeldCovered, Formats.Number(heldCount))
-                    : Loc.Format(Strings.Goal_ObtainHeldShort, Formats.Number(heldCount)),
-            };
-
+            var obtainLines = new List<string>();
             var sources = SeedTable.Sources(row);
             if (sources.Count > 0)
-                body.Add(Loc.Format(Strings.Goal_ObtainWhere, string.Join("; ", sources)));
+                obtainLines.Add(Loc.Format(Strings.Goal_ObtainWhere, string.Join("; ", sources)));
+            // Named once, on the first thing the player goes shopping for, so topsoil is bought on the
+            // same trip as the seeds. One name when both preferences resolve to the same item: asking
+            // for it twice in one sentence reads as two separate purchases.
+            if (i == 0)
+                obtainLines.Add(crossSoilName == yieldSoilName
+                    ? Loc.Format(Strings.Goal_ObtainSoilNoteSame, crossSoilName)
+                    : Loc.Format(Strings.Goal_ObtainSoilNote, crossSoilName, yieldSoilName));
 
-            var notes = new List<string>
+            var sections = new[] { new GoalSection(GoalSectionKind.Obtain, obtainLines.ToArray()) };
+
+            var notes = new List<string>();
+            switch (SeedYieldAtAssumedGrade(row))
             {
-                SeedYieldAtAssumedGrade(row) switch
-                {
-                    null => Loc.Format(Strings.Goal_ObtainYieldUnrecorded, produceName),
-                    0 => Loc.Format(Strings.Goal_ObtainYieldZero, produceName),
-                    _ => Loc.Format(Strings.Goal_ObtainYieldRestocks, produceName),
-                },
-            };
+                case null:
+                    notes.Add(Loc.Format(Strings.Goal_ObtainYieldUnrecorded, produceName));
+                    break;
+                case 0:
+                    notes.Add(Loc.Format(Strings.Goal_ObtainYieldZero, produceName));
+                    break;
+                // A positive recorded yield restocks itself; the unsurprising default costs no line.
+            }
 
-            steps.Add(new ObtainStep(1, Strings.Goal_ObtainTitle, body.ToArray(), notes.ToArray(), row, needCount));
+            steps.Add(new ObtainStep(1, Strings.Goal_ObtainTitle, sections, notes.ToArray(), row, needCount));
         }
     }
 
@@ -322,10 +334,13 @@ public static class GoalRoute
         ConsumerKind consumerKind, uint? namedConsumer, HashSet<SoilFamily> explainedFamilies, GardenCapacity capacity)
     {
         var targetName = SeedItems.ProduceName(target);
-        var body = new List<string>
+        var plant = new List<string>
         {
             Loc.Format(Strings.Goal_CrossPlantLayout, SeedItems.SeedItemName(first), SeedItems.SeedItemName(second)),
         };
+        var odds = new List<string>();
+        var sizing = new List<string>();
+        var care = new List<string>();
 
         var singleOutcome = outcomes.Length <= 1;
         var targetGrowHours = SeedTable.Grow(target) ?? 0;
@@ -333,17 +348,17 @@ public static class GoalRoute
 
         if (singleOutcome)
         {
-            body.Add(Loc.Format(Strings.Goal_CrossSingleOutcome, targetName));
-            body.Add(Strings.Goal_CrossSingleOutcomeOnly);
+            odds.Add(Loc.Format(Strings.Goal_CrossSingleOutcome, targetName));
+            odds.Add(Strings.Goal_CrossSingleOutcomeOnly);
         }
         else
         {
             var outcomeNames = new List<string> { targetName };
             outcomeNames.AddRange(outcomes.Where(o => o != target).Select(SeedItems.ProduceName));
             var chance = ResolveChance(outcomes.Length, family, AssumedSoilGrade);
-            body.Add(Loc.Format(Strings.Goal_CrossMultiOutcome, TextList.Or(outcomeNames)));
-            body.Add(Loc.Format(Strings.Goal_OddsOfThemGive, CrossOdds.OddsPhrase(chance), targetName));
-            body.Add(Strings.Goal_CrossCoinToss);
+            odds.Add(Loc.Format(Strings.Goal_CrossMultiOutcome, TextList.Or(outcomeNames)));
+            odds.Add(Loc.Format(Strings.Goal_OddsOfThemGive, CrossOdds.OddsPhrase(chance), targetName));
+            odds.Add(Strings.Goal_CrossCoinToss);
         }
 
         // The arithmetic behind the bed count: a full patch's worth of capacity.Pairs pairs plants a
@@ -353,20 +368,20 @@ public static class GoalRoute
         {
             if (rounds > 1)
             {
-                body.Add(Loc.Format(Strings.Goal_CrossFinalRoundsPerRound, Formats.Number(capacity.Pairs)));
-                body.Add(Loc.Format(Strings.Goal_CrossFinalRoundsPlan,
+                sizing.Add(Loc.Format(Strings.Goal_CrossFinalRoundsPerRound, Formats.Number(capacity.Pairs)));
+                sizing.Add(Loc.Format(Strings.Goal_CrossFinalRoundsPlan,
                     Formats.Number(attempts), Formats.Number(rounds), Formats.Number(roundDays * rounds)));
             }
         }
         else if (yieldAtGrade is { } y)
         {
-            body.Add(DemandSentence(consumerKind, namedConsumer, ownDemand, targetName));
-            body.Add(YieldRoundsSentence(rounds, y, targetName, roundDays, capacity.Beds));
+            sizing.Add(DemandSentence(consumerKind, namedConsumer, ownDemand, targetName));
+            sizing.Add(YieldRoundsSentence(rounds, y, targetName, roundDays, capacity.Beds));
         }
         else
         {
-            body.Add(DemandSentence(consumerKind, namedConsumer, ownDemand, targetName));
-            body.Add(Loc.Format(Strings.Goal_YieldUnknown, targetName));
+            sizing.Add(DemandSentence(consumerKind, namedConsumer, ownDemand, targetName));
+            sizing.Add(Loc.Format(Strings.Goal_YieldUnknown, targetName));
         }
 
         // Two soils, not one: a bed planted while its ring neighbours are still empty crosses with
@@ -376,46 +391,62 @@ public static class GoalRoute
         var explainCross = explainedFamilies.Add(family);
         if (yieldFamily == family)
         {
-            body.Add(Loc.Format(Strings.Goal_SoilSameFamily, crossSoilName));
+            plant.Add(Loc.Format(Strings.Goal_SoilSameFamily, crossSoilName));
             if (explainCross)
-                body.Add(SoilSources.Does(family, crossSoilName));
+                plant.Add(SoilSources.Does(family, crossSoilName));
+
+            // Both preferences resolve to the same item at the assumed grade: one summed sentence,
+            // never two, so the player is never asked for the same soil twice in a row.
+            var combinedPerRound = capacity.Pairs * 2;
+            plant.Add(Loc.Format(Strings.Goal_SoilPerRoundSame, Formats.Number(combinedPerRound), crossSoilName));
+            if (rounds > 1)
+                plant.Add(Loc.Format(Strings.Goal_SoilAllRoundsSame,
+                    Formats.Number(rounds), Formats.Number(combinedPerRound * rounds)));
         }
         else
         {
             var yieldSoilName = GardeningItems.SoilName(yieldFamily, AssumedSoilGrade);
             var explainYield = explainedFamilies.Add(yieldFamily);
-            body.Add(Loc.Format(Strings.Goal_SoilTwoFamilies, crossSoilName, yieldSoilName));
+            plant.Add(Loc.Format(Strings.Goal_SoilTwoFamilies, crossSoilName, yieldSoilName));
             if (explainCross)
-                body.Add(SoilSources.Does(family, crossSoilName));
+                plant.Add(SoilSources.Does(family, crossSoilName));
             if (explainYield)
-                body.Add(SoilSources.Does(yieldFamily, yieldSoilName));
+                plant.Add(SoilSources.Does(yieldFamily, yieldSoilName));
+
+            // Soil is one unit per bed planted (Task_Plant resolves one SoilItemId per PlantStep), so
+            // a round spends capacity.Pairs of each: one crossing bed and one anchor bed per pair.
+            plant.Add(Loc.Format(Strings.Goal_SoilPerRound,
+                Formats.Number(capacity.Pairs), crossSoilName, Formats.Number(capacity.Pairs), yieldSoilName));
+            if (rounds > 1)
+                plant.Add(Loc.Format(Strings.Goal_SoilAllRounds,
+                    Formats.Number(rounds), Formats.Number(capacity.Pairs * rounds), Formats.Number(capacity.Pairs * rounds)));
         }
 
-        body.Add(capacity.Assumed
+        sizing.Add(capacity.Assumed
             ? Loc.Format(Strings.Goal_BedsCountAssumed, Formats.Number(capacity.Beds), Formats.Number(capacity.Pairs))
             : capacity.PatchCount == 1
                 ? Loc.Format(Strings.Goal_BedsCountOnePatch, Formats.Number(capacity.Beds), Formats.Number(capacity.Pairs))
                 : Loc.Format(Strings.Goal_BedsCountManyPatches,
                     Formats.Number(capacity.Beds), Formats.Number(capacity.PatchCount), Formats.Number(capacity.Pairs)));
-        body.Add(Loc.Format(Strings.Goal_ReadyAfterPlant,
+        sizing.Add(Loc.Format(Strings.Goal_ReadyAfterPlant,
             targetGrowHours > 48 ? Phrases.AboutDays(Math.Round(targetGrowHours / 24.0)) : Phrases.AboutHours(Math.Round((double)targetGrowHours))));
 
         if (singleOutcome)
         {
             if (isFinal)
             {
-                AppendFinalWiltAndHarvest(body, target);
+                AppendFinalWiltAndHarvest(care, target);
             }
             else
             {
                 var wiltHours = MinWiltHours(first, target);
                 if (wiltHours is { } w)
-                    body.Add(Loc.Format(Strings.Goal_TendOrWilt, Phrases.EveryDay(w)));
+                    care.Add(Loc.Format(Strings.Goal_TendOrWilt, Phrases.EveryDay(w)));
             }
         }
         else if (isFinal)
         {
-            AppendFinalWiltAndHarvest(body, target);
+            AppendFinalWiltAndHarvest(care, target);
         }
 
         var notes = new List<string>();
@@ -427,7 +458,15 @@ public static class GoalRoute
         if (SeedTable.Wilt(target)?.Disputed == true)
             notes.Add(Loc.Format(Strings.Goal_NoteWiltDisputed, targetName));
 
-        return new CrossStep(number, Loc.Format(Strings.Goal_CrossStepTitle, targetName), body.ToArray(), notes.ToArray(),
+        var sections = new[]
+        {
+            new GoalSection(GoalSectionKind.Plant, plant.ToArray()),
+            new GoalSection(GoalSectionKind.Odds, odds.ToArray()),
+            new GoalSection(GoalSectionKind.Sizing, sizing.ToArray()),
+            new GoalSection(GoalSectionKind.Care, care.ToArray()),
+        };
+
+        return new CrossStep(number, Loc.Format(Strings.Goal_CrossStepTitle, targetName), sections, notes.ToArray(),
             first, second, target, outcomes, capacity.Beds, soilPreference, ownDemand);
     }
 

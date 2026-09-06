@@ -645,14 +645,8 @@
   <data name="Goal_StepProgress" xml:space="preserve">
     <value>Paso {0} de {1}</value>
   </data>
-  <data name="Goal_TotalStepsCount" xml:space="preserve">
-    <value>{0} pasos.</value>
-  </data>
-  <data name="Goal_BestCaseDuration" xml:space="preserve">
-    <value>Unos {0} si la apuesta sale bien a la primera.</value>
-  </data>
-  <data name="Goal_PeakBeds" xml:space="preserve">
-    <value>{0} parcelas en el paso más exigente.</value>
+  <data name="Goal_RouteSummary" xml:space="preserve">
+    <value>{0} pasos, unos {1}, hasta {2} parcelas a la vez.</value>
   </data>
   <data name="Goal_StepHeader" xml:space="preserve">
     <value>Paso {0}: {1}</value>
@@ -732,6 +726,12 @@
   <data name="Goal_PatchPairCount_Other" xml:space="preserve">
     <value>{0} pares aquí</value>
   </data>
+  <data name="Goal_SoilHeld" xml:space="preserve">
+    <value>Tienes {0} y {1}.</value>
+  </data>
+  <data name="Goal_SoilHeldSame" xml:space="preserve">
+    <value>Tienes {0}.</value>
+  </data>
   <data name="Goal_CannotFitStep" xml:space="preserve">
     <value>Gardener no puede encajar este paso en las parcelas libres de este huerto.</value>
   </data>
@@ -774,14 +774,11 @@
   <data name="Goal_ObtainTitle" xml:space="preserve">
     <value>Consigue las semillas iniciales</value>
   </data>
-  <data name="Goal_ObtainGet" xml:space="preserve">
-    <value>Consigue {0} {1}.</value>
+  <data name="Goal_ObtainNeedAndHeld" xml:space="preserve">
+    <value>{0} {1} necesarias, tienes {2}.</value>
   </data>
-  <data name="Goal_ObtainHeldCovered" xml:space="preserve">
-    <value>Tienes {0}, así que esto ya está cubierto.</value>
-  </data>
-  <data name="Goal_ObtainHeldShort" xml:space="preserve">
-    <value>Tienes {0}.</value>
+  <data name="Goal_ObtainSoilNote" xml:space="preserve">
+    <value>Más adelante en esta ruta también necesitarás {0} y {1}.</value>
   </data>
   <data name="Goal_ObtainWhere" xml:space="preserve">
     <value>Dónde: {0}</value>
@@ -792,8 +789,17 @@
   <data name="Goal_ObtainYieldZero" xml:space="preserve">
     <value>{0} no devuelve semillas al cosecharla, así que cada una que plantes es una compra nueva.</value>
   </data>
-  <data name="Goal_ObtainYieldRestocks" xml:space="preserve">
-    <value>{0} devuelve semillas al cosecharla, así que esto basta para empezar; la primera cosecha financia el resto.</value>
+  <data name="Goal_SectionPlant" xml:space="preserve">
+    <value>Planta</value>
+  </data>
+  <data name="Goal_SectionOdds" xml:space="preserve">
+    <value>Probabilidades</value>
+  </data>
+  <data name="Goal_SectionSizing" xml:space="preserve">
+    <value>Cuántas</value>
+  </data>
+  <data name="Goal_SectionCare" xml:space="preserve">
+    <value>Cuidados</value>
   </data>
   <data name="Goal_CrossPlantLayout" xml:space="preserve">
     <value>Planta {0} en la mitad de las parcelas del anillo, luego planta {1} en las parcelas que quedan entre ellas, de modo que cada {1} tenga un vecino {0} a cada lado.</value>
@@ -848,6 +854,18 @@
   </data>
   <data name="Goal_SoilTwoFamilies" xml:space="preserve">
     <value>Tierra: {0} en las parcelas que plantas segundo, las que cruzan; {1} en las parcelas que plantas primero, que no cruzan con nada y se cosechan por su semilla.</value>
+  </data>
+  <data name="Goal_SoilPerRound" xml:space="preserve">
+    <value>Esta ronda necesita {0} {1} y {2} {3}.</value>
+  </data>
+  <data name="Goal_SoilAllRounds" xml:space="preserve">
+    <value>En {0} rondas eso son {1} y {2}.</value>
+  </data>
+  <data name="Goal_SoilPerRoundSame" xml:space="preserve">
+    <value>Esta ronda necesita {0} {1}.</value>
+  </data>
+  <data name="Goal_SoilAllRoundsSame" xml:space="preserve">
+    <value>En {0} rondas eso son {1}.</value>
   </data>
   <data name="Goal_BedsCountOnePatch" xml:space="preserve">
     <value>Parcelas: {0} ({1} pares).</value>
@@ -1410,5 +1428,9 @@
   <data name="Patch_HouseHeaderWithPlot" xml:space="preserve">
     <value>{0}, terreno {1}</value>
     <comment>PatchLabel.HouseHeader, la linea que agrupa por casa en la pestana Recordatorios. {0} es una palabra de PatchLabel.Estate, {1} es el numero de terreno que ve el jugador.</comment>
+  </data>
+  <data name="Goal_ObtainSoilNoteSame" xml:space="preserve">
+    <value>Mas adelante en esta ruta tambien necesitaras {0}.</value>
+    <comment>GoalRoute.AddObtainSteps, primer paso de obtencion, cuando las dos preferencias de tierra resuelven al mismo objeto. {0} es el nombre del objeto en el idioma del cliente.</comment>
   </data>
 </root>

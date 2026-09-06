@@ -2,19 +2,37 @@ using System;
 
 namespace Gardener.Planner;
 
+/// <summary>The display grouping a <see cref="GoalSection"/> belongs to. <see cref="Obtain"/> is the
+/// only kind an <see cref="ObtainStep"/> ever carries; a <see cref="CrossStep"/> carries the other
+/// four, in <see cref="Plant"/>, <see cref="Odds"/>, <see cref="Sizing"/>, <see cref="Care"/> order.</summary>
+public enum GoalSectionKind
+{
+    Plant,
+    Odds,
+    Sizing,
+    Care,
+    Obtain,
+}
+
+/// <summary>One heading's worth of a step's body. Each entry in <see cref="Lines"/> is still a whole
+/// sentence in its own right — grouping under a heading is a display concern only, never a reason to
+/// merge two sentences into one.</summary>
+public readonly record struct GoalSection(GoalSectionKind Kind, string[] Lines);
+
 /// <summary>
 /// One step of a <see cref="GoalPlan"/>. <see cref="Number"/> groups steps for display — every
 /// <see cref="ObtainStep"/> in a plan shares <c>Number == 1</c>, since the whole route's shopping list
 /// is one step, not one per seed — and <see cref="Body"/> / <see cref="Notes"/> are the exact strings
 /// the Goal tab renders, generated once by <see cref="GoalRoute.Solve"/> rather than re-derived at
-/// draw time.
+/// draw time. <see cref="Body"/> is grouped into <see cref="GoalSection"/>s for display; each line
+/// inside a section is still a whole sentence.
 /// </summary>
-public abstract record GoalStep(int Number, string Title, string[] Body, string[] Notes);
+public abstract record GoalStep(int Number, string Title, GoalSection[] Body, string[] Notes);
 
 /// <summary>One seed to buy or gather before any crossing step can start. Every obtain in a route is a
 /// leaf — held already or reachable through <see cref="Game.SeedTable.Sources"/> — so all of them merge
 /// into the route's single opening step.</summary>
-public sealed record ObtainStep(int Number, string Title, string[] Body, string[] Notes, uint SeedRow, int Needed)
+public sealed record ObtainStep(int Number, string Title, GoalSection[] Body, string[] Notes, uint SeedRow, int Needed)
     : GoalStep(Number, Title, Body, Notes);
 
 /// <summary><see cref="FirstSeedRow"/> is the anchor: planted first, and the bed it occupies stays
@@ -28,7 +46,7 @@ public sealed record ObtainStep(int Number, string Title, string[] Body, string[
 /// goal itself, more for a cross-only node later steps draw on — carried through rather than
 /// recomputed, since <see cref="GoalRoute"/> already sized it while sizing this step.</summary>
 public sealed record CrossStep(
-    int Number, string Title, string[] Body, string[] Notes,
+    int Number, string Title, GoalSection[] Body, string[] Notes,
     uint FirstSeedRow, uint SecondSeedRow, uint TargetRow, uint[] AllOutcomes, int Beds, SoilPreference Soil,
     int Needed)
     : GoalStep(Number, Title, Body, Notes);

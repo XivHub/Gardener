@@ -856,17 +856,9 @@
     <value>Step {0} of {1}</value>
     <comment>MainWindow.DrawGoalPlanBody, current-step-of-total header. {0} is the current step's own Number; {1} is the highest step Number in the plan, both integers via Formats.Number.</comment>
   </data>
-  <data name="Goal_TotalStepsCount" xml:space="preserve">
-    <value>{0} steps.</value>
-    <comment>MainWindow.DrawGoalPlanBody, first of three summary sentences (split per composition contract rule 4 rather than one composed line). {0} is the plan's total step count, an integer via Formats.Number.</comment>
-  </data>
-  <data name="Goal_BestCaseDuration" xml:space="preserve">
-    <value>About {0} if the gamble lands first time.</value>
-    <comment>MainWindow.DrawGoalPlanBody, second summary sentence. {0} is a complete duration noun phrase from Phrases.Days/Hours over plan.BestCaseDuration.</comment>
-  </data>
-  <data name="Goal_PeakBeds" xml:space="preserve">
-    <value>{0} beds at the busiest step.</value>
-    <comment>MainWindow.DrawGoalPlanBody, third summary sentence. {0} is plan.PeakBeds, an integer via Formats.Number.</comment>
+  <data name="Goal_RouteSummary" xml:space="preserve">
+    <value>{0} steps, about {1}, up to {2} beds at once.</value>
+    <comment>MainWindow.DrawGoalPlanBody, one summary sentence replacing the three that used to compose it (Goal_TotalStepsCount/Goal_BestCaseDuration/Goal_PeakBeds, all retired). {0} is the plan's total step count, an integer via Formats.Number; {1} is a complete duration noun phrase from Phrases.Days/Hours over plan.BestCaseDuration; {2} is plan.PeakBeds, an integer via Formats.Number.</comment>
   </data>
   <data name="Goal_StepHeader" xml:space="preserve">
     <value>Step {0}: {1}</value>
@@ -972,6 +964,14 @@
     <value>{0} pairs here</value>
     <comment>MainWindow.DrawGoalCurrentStepDetail, right-aligned Faint line on one PatchLayout's own header row - how many pairs (PatchLayout.Pairs) that patch's own slice of the split plants. {0} is the count, an integer via Formats.Number, 0 or 2 or more.</comment>
   </data>
+  <data name="Goal_SoilHeld" xml:space="preserve">
+    <value>You hold {0} and {1}.</value>
+    <comment>MainWindow.DrawGoalSoilHeldLine, drawn beneath the whole per-patch split, branch where the cross and yield soil preferences resolved to two different real items (Bags.Scan at render time, never GoalRoute.Solve). Good when both counts cover one round's own demand (crossStep.Beds / 2 pairs of each), Warn otherwise. {0} is the held count of the cross soil; {1} is the held count of the yield soil, both integers via Formats.Number. Names are not repeated here since Goal_SoilPerRound/Goal_SoilTwoFamilies just named both.</comment>
+  </data>
+  <data name="Goal_SoilHeldSame" xml:space="preserve">
+    <value>You hold {0}.</value>
+    <comment>MainWindow.DrawGoalSoilHeldLine, drawn beneath the whole per-patch split, branch where the cross and yield soil preferences resolved to the same real item id - reporting one combined held count rather than the same number twice. Good when it covers one round's own combined demand, Warn otherwise. {0} is the held count, an integer via Formats.Number.</comment>
+  </data>
   <data name="Goal_CannotFitStep" xml:space="preserve">
     <value>Gardener cannot fit this step into the free beds on this patch.</value>
     <comment>MainWindow.DrawGoalHandoff, shown when CrossPlanner.Verify rejects this patch's own plan, and MainWindow.DrawGoalCurrentStepDetail, shown when the whole split came back with no usable patch at all.</comment>
@@ -1022,23 +1022,19 @@
   </data>
   <data name="Goal_CapacityIgnoresUnconfirmed" xml:space="preserve">
     <value>Patches with an unconfirmed layout: {0}. This route does not plant on them.</value>
-    <comment>GoalRoute.Solve, appended to GoalPlan.Warnings when GardenCapacity.UnusablePatchCount > 0. {0} is that count, an integer via Formats.Number. Phrased as a label plus a separate sentence so no verb has to agree with the count (composition contract rule 5 would otherwise need an _One/_Other split the plan does not call for).</comment>
+    <comment>GoalRoute.Solve, appended to GoalPlan.Warnings when GardenCapacity.UnusablePatchCount &gt; 0. {0} is that count, an integer via Formats.Number. Phrased as a label plus a separate sentence so no verb has to agree with the count (composition contract rule 5 would otherwise need an _One/_Other split the plan does not call for).</comment>
   </data>
   <data name="Goal_ObtainTitle" xml:space="preserve">
     <value>Get the starting seeds</value>
     <comment>GoalRoute.AddObtainSteps, the shared ObtainStep.Title every leaf seed's step reports (the whole route's shopping list is one step, not one per seed).</comment>
   </data>
-  <data name="Goal_ObtainGet" xml:space="preserve">
-    <value>Get {0} {1}.</value>
-    <comment>GoalRoute.AddObtainSteps, first body line. {0} is the seed count needed, an integer via Formats.Number; {1} is the seed item's own name (SeedItems.SeedItemName), a client-language name.</comment>
+  <data name="Goal_ObtainNeedAndHeld" xml:space="preserve">
+    <value>{0} {1} needed, you hold {2}.</value>
+    <comment>MainWindow.DrawGoalStepBody, ObtainStep's live need-vs-held line, read every frame from the typed ObtainStep.Needed and the current held dictionary rather than baked into GoalRoute.Solve's own output. {0} is the needed count, an integer via Formats.Number; {1} is the seed item's own name (SeedItems.SeedItemName), a client-language name; {2} is the held count, an integer via Formats.Number. Count-first construction (composition contract rule 6) so no article lands in front of the item name.</comment>
   </data>
-  <data name="Goal_ObtainHeldCovered" xml:space="preserve">
-    <value>You hold {0}, so this one is covered.</value>
-    <comment>GoalRoute.AddObtainSteps, second body line, branch where the held count already meets the need. {0} is the held count, an integer via Formats.Number.</comment>
-  </data>
-  <data name="Goal_ObtainHeldShort" xml:space="preserve">
-    <value>You hold {0}.</value>
-    <comment>GoalRoute.AddObtainSteps, second body line, branch where the held count falls short of the need. {0} is the held count, an integer via Formats.Number.</comment>
+  <data name="Goal_ObtainSoilNote" xml:space="preserve">
+    <value>You will also need {0} and {1} later in this route.</value>
+    <comment>GoalRoute.AddObtainSteps, Obtain section, appended only on the route's first obtain step so the player buys topsoil on the same trip as the seeds. {0} is the cross soil's real item name; {1} is the yield soil's real item name (both GardeningItems.SoilName at the route's assumed grade), client-language item names.</comment>
   </data>
   <data name="Goal_ObtainWhere" xml:space="preserve">
     <value>Where: {0}</value>
@@ -1052,9 +1048,21 @@
     <value>{0} gives no seeds back when you harvest it, so every one you plant is a fresh purchase.</value>
     <comment>GoalRoute.AddObtainSteps note, branch where the seed yield is recorded as exactly 0. {0} is the produce name (SeedItems.ProduceName), a client-language name.</comment>
   </data>
-  <data name="Goal_ObtainYieldRestocks" xml:space="preserve">
-    <value>{0} gives seeds back when you harvest it, so this is enough to start; the first harvest funds the rest.</value>
-    <comment>GoalRoute.AddObtainSteps note, branch where the seed yield is a positive recorded number. {0} is the produce name (SeedItems.ProduceName), a client-language name.</comment>
+  <data name="Goal_SectionPlant" xml:space="preserve">
+    <value>Plant</value>
+    <comment>MainWindow.DrawGoalStepBody, Faint heading over a CrossStep's GoalSectionKind.Plant lines (the layout line and the soil sentences). No slots.</comment>
+  </data>
+  <data name="Goal_SectionOdds" xml:space="preserve">
+    <value>Odds</value>
+    <comment>MainWindow.DrawGoalStepBody, Faint heading over a CrossStep's GoalSectionKind.Odds lines (the outcome and chance sentences). No slots.</comment>
+  </data>
+  <data name="Goal_SectionSizing" xml:space="preserve">
+    <value>How many</value>
+    <comment>MainWindow.DrawGoalStepBody, Faint heading over a CrossStep's GoalSectionKind.Sizing lines (demand, yield, rounds, bed count, ready-after-plant). No slots.</comment>
+  </data>
+  <data name="Goal_SectionCare" xml:space="preserve">
+    <value>Care</value>
+    <comment>MainWindow.DrawGoalStepBody, Faint heading over a CrossStep's GoalSectionKind.Care lines (tend cadence and final harvest yield). No slots.</comment>
   </data>
   <data name="Goal_CrossPlantLayout" xml:space="preserve">
     <value>Plant {0} in half the beds around the ring, then plant {1} in the beds between them, so every {1} has a {0} neighbour on both sides.</value>
@@ -1128,13 +1136,29 @@
     <value>Soil: {0} in the beds you plant second, the ones that cross; {1} in the beds you plant first, which cross with nothing and are harvested for seed.</value>
     <comment>GoalRoute.BuildCrossStep, soil paragraph, branch where the cross and yield soil families differ. {0} is the cross soil's real item name; {1} is the yield soil's real item name (both GardeningItems.SoilName), client-language item names. SoilSources.Does' own whole sentence(s) are appended as separate body lines, not concatenated here.</comment>
   </data>
+  <data name="Goal_SoilPerRound" xml:space="preserve">
+    <value>This round needs {0} {1} and {2} {3}.</value>
+    <comment>GoalRoute.BuildCrossStep, soil paragraph, branch where the cross and yield soil families differ (follows Goal_SoilTwoFamilies). Soil is one unit per bed planted, so a round spends capacity.Pairs of each. {0} is capacity.Pairs, an integer via Formats.Number; {1} is the cross soil's real item name (GardeningItems.SoilName); {2} is capacity.Pairs again; {3} is the yield soil's real item name. Count-first construction (composition contract rule 6) so no article lands in front of either item name.</comment>
+  </data>
+  <data name="Goal_SoilAllRounds" xml:space="preserve">
+    <value>Over {0} rounds that is {1} and {2}.</value>
+    <comment>GoalRoute.BuildCrossStep, soil paragraph, appended after Goal_SoilPerRound only when rounds &gt; 1. An elliptical continuation that does not re-name either item, since Goal_SoilPerRound just named both. {0} is the round count, an integer via Formats.Number; {1} is capacity.Pairs * rounds (the cross soil's whole-step total); {2} is capacity.Pairs * rounds again (the yield soil's whole-step total, numerically identical but a distinct slot since the two soils are usually different items).</comment>
+  </data>
+  <data name="Goal_SoilPerRoundSame" xml:space="preserve">
+    <value>This round needs {0} {1}.</value>
+    <comment>GoalRoute.BuildCrossStep, soil paragraph, branch where the cross and yield soil families are the same (follows Goal_SoilSameFamily). The two preferences resolve to one real item at the route's assumed grade, so the per-round cross and yield counts are summed into one rather than naming the same item twice. {0} is capacity.Pairs * 2, an integer via Formats.Number; {1} is the resolved soil item's real name (GardeningItems.SoilName).</comment>
+  </data>
+  <data name="Goal_SoilAllRoundsSame" xml:space="preserve">
+    <value>Over {0} rounds that is {1}.</value>
+    <comment>GoalRoute.BuildCrossStep, soil paragraph, appended after Goal_SoilPerRoundSame only when rounds &gt; 1 - the same-item counterpart to Goal_SoilAllRounds, kept as its own key rather than reusing that one so this branch never states the same item's name twice either. {0} is the round count, an integer via Formats.Number; {1} is capacity.Pairs * 2 * rounds, the whole step's total of the one shared item.</comment>
+  </data>
   <data name="Goal_BedsCountOnePatch" xml:space="preserve">
     <value>Beds: {0} ({1} pairs).</value>
     <comment>GoalRoute.BuildCrossStep, beds line, GardenCapacity.PatchCount == 1 and not Assumed. {0} is capacity.Beds; {1} is capacity.Pairs. Both integers via Formats.Number.</comment>
   </data>
   <data name="Goal_BedsCountManyPatches" xml:space="preserve">
     <value>Beds: {0} across {1} patches ({2} pairs).</value>
-    <comment>GoalRoute.BuildCrossStep, beds line, GardenCapacity.PatchCount > 1. {0} is capacity.Beds; {1} is capacity.PatchCount; {2} is capacity.Pairs. All three integers via Formats.Number.</comment>
+    <comment>GoalRoute.BuildCrossStep, beds line, GardenCapacity.PatchCount &gt; 1. {0} is capacity.Beds; {1} is capacity.PatchCount; {2} is capacity.Pairs. All three integers via Formats.Number.</comment>
   </data>
   <data name="Goal_BedsCountAssumed" xml:space="preserve">
     <value>Beds: {0} ({1} pairs), assuming a single Deluxe patch; no patch has been recorded yet.</value>
@@ -1875,5 +1899,9 @@
   <data name="Patch_HouseHeaderWithPlot" xml:space="preserve">
     <value>{0}, plot {1}</value>
     <comment>PatchLabel.HouseHeader, the Reminders tab house grouping line. {0} is a keyed estate word from PatchLabel.Estate, {1} is the plot number the game shows the player (one-based).</comment>
+  </data>
+  <data name="Goal_ObtainSoilNoteSame" xml:space="preserve">
+    <value>You will also need {0} later in this route.</value>
+    <comment>GoalRoute.AddObtainSteps, first obtain step, when the cross and yield soil preferences resolve to the same item. {0} is a client-language soil item name from GardeningItems.SoilName; the sibling Goal_ObtainSoilNote names two.</comment>
   </data>
 </root>

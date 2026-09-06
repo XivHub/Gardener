@@ -711,9 +711,8 @@ namespace Gardener.Windows
             var bestCaseDuration = bestCase.TotalHours > 48
                 ? Phrases.Days(Math.Round(bestCase.TotalDays))
                 : Phrases.Hours(Math.Round(bestCase.TotalHours));
-            ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Goal_TotalStepsCount, Formats.Number(totalSteps)));
-            ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Goal_BestCaseDuration, bestCaseDuration));
-            ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Goal_PeakBeds, Formats.Number(plan.PeakBeds)));
+            ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Goal_RouteSummary,
+                Formats.Number(totalSteps), bestCaseDuration, Formats.Number(plan.PeakBeds)));
 
             foreach (var warning in plan.Warnings)
                 ImGui.TextColored(HubStyle.Warn, warning);
@@ -776,7 +775,11 @@ namespace Gardener.Windows
         }
 
         /// <summary>Body text dims to <see cref="HubStyle.Faint"/> once a step is behind or ahead of
-        /// the current one; the current step always reads at full strength, whatever its own status.</summary>
+        /// the current one; the current step always reads at full strength, whatever its own status.
+        /// An <see cref="ObtainStep"/> renders its need-vs-held line live from typed fields rather than
+        /// from baked-in <see cref="GoalStep.Body"/> text, since the held count moves every frame and
+        /// <see cref="GoalRoute.Solve"/> only runs once; a <see cref="CrossStep"/> renders each
+        /// <see cref="GoalSection"/> under its own Faint heading.</summary>
         private static void DrawGoalStepBody(GoalStep step, GoalStepProgress progress, bool isCurrent, IReadOnlyDictionary<uint, int> held)
         {
             var color = isCurrent || progress.Status != GoalStepStatus.NotStarted ? HubStyle.Text : HubStyle.Faint;
@@ -784,8 +787,37 @@ namespace Gardener.Windows
             // The goal step text is prose, not labels, and a narrow window otherwise clips it at the
             // right edge with no way to read the rest.
             ImGui.PushTextWrapPos(0f);
-            foreach (var line in step.Body)
-                ImGui.TextColored(color, line);
+
+            if (step is ObtainStep obtain)
+            {
+                var heldCount = held.GetValueOrDefault(obtain.SeedRow);
+                var needColor = heldCount >= obtain.Needed ? HubStyle.Good : HubStyle.Text;
+                ImGui.TextColored(needColor, Loc.Format(Strings.Goal_ObtainNeedAndHeld,
+                    Formats.Number(obtain.Needed), SeedItems.SeedItemName(obtain.SeedRow), Formats.Number(heldCount)));
+
+                foreach (var section in obtain.Body)
+                {
+                    ImGui.Indent();
+                    foreach (var line in section.Lines)
+                        ImGui.TextColored(HubStyle.Faint, line);
+                    ImGui.Unindent();
+                }
+            }
+            else
+            {
+                foreach (var section in step.Body)
+                {
+                    if (section.Lines.Length == 0)
+                        continue;
+
+                    ImGui.TextColored(HubStyle.Faint, SectionHeading(section.Kind));
+                    ImGui.Indent();
+                    foreach (var line in section.Lines)
+                        ImGui.TextColored(color, line);
+                    ImGui.Unindent();
+                }
+            }
+
             foreach (var note in step.Notes)
                 ImGui.TextColored(HubStyle.Faint, note);
 
@@ -793,6 +825,18 @@ namespace Gardener.Windows
             ImGui.TextColored(statusColor, text);
             ImGui.PopTextWrapPos();
         }
+
+        /// <summary>The Faint heading text for one <see cref="GoalSectionKind"/> — every <see
+        /// cref="CrossStep"/> section but <see cref="GoalSectionKind.Obtain"/>, which never reaches
+        /// here since an <see cref="ObtainStep"/> renders its one section inline instead.</summary>
+        private static string SectionHeading(GoalSectionKind kind) => kind switch
+        {
+            GoalSectionKind.Plant => Strings.Goal_SectionPlant,
+            GoalSectionKind.Odds => Strings.Goal_SectionOdds,
+            GoalSectionKind.Sizing => Strings.Goal_SectionSizing,
+            GoalSectionKind.Care => Strings.Goal_SectionCare,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "unhandled GoalSectionKind"),
+        };
 
         /// <summary>The exact phrasing from the copy's "Status lines" set, chosen by
         /// <see cref="GoalStepProgress.Status"/> and, for the two growing statuses, by
@@ -897,9 +941,14 @@ namespace Gardener.Windows
             // A fill step needs both soils: the yield soil for the parent beds and the cross soil for
             // the beds planted against them.
             var bag = Bags.Scan();
-            foreach (var preference in new[] { Plugin.C.SoilForCross, Plugin.C.SoilForYield })
+            var crossSoilItem = GardeningItems.BestSoil(Plugin.C.SoilForCross, bag);
+            var yieldSoilItem = GardeningItems.BestSoil(Plugin.C.SoilForYield, bag);
+            foreach (var (preference, resolved) in new[]
+                     {
+                         (Plugin.C.SoilForCross, crossSoilItem), (Plugin.C.SoilForYield, yieldSoilItem),
+                     })
             {
-                if (GardeningItems.BestSoil(preference, bag) is not null)
+                if (resolved is not null)
                     continue;
 
                 var reason = GardeningItems.SoilUnavailable(preference) ?? Strings.Goal_NoSoilForStepFallback;
@@ -974,6 +1023,38 @@ namespace Gardener.Windows
 
                 var otherBedsWaiting = split.Patches.Where(p => p.Patch.Key != layout.Patch.Key).Sum(p => p.Plan.Steps.Count);
                 DrawGoalHandoff(layout, layout.Patch.Key == nearestReachableKey, multiplePatches, otherBedsWaiting, plotIndex);
+            }
+
+            DrawGoalSoilHeldLine(crossStep, bag, crossSoilItem!, yieldSoilItem!);
+        }
+
+        /// <summary>The live "do you actually hold enough" line beneath the per-patch split — read from
+        /// the same <see cref="Bags.Scan"/> the handoff above already performed, never from
+        /// <see cref="GoalRoute.Solve"/>, which stays pure over its arguments. Compares against one
+        /// round's own demand (<c>crossStep.Beds / 2</c> pairs), not the whole step's total, since a
+        /// round is what one "Plant" press actually spends. Collapses to the single-item wording when
+        /// the two preferences resolved to the same real item, for the same reason
+        /// <see cref="GoalRoute"/>'s own per-round sentence does: naming one item twice in a row reads
+        /// like two different demands instead of one.</summary>
+        private static void DrawGoalSoilHeldLine(CrossStep crossStep, IReadOnlyList<SlotView> bag, SoilItem crossSoilItem, SoilItem yieldSoilItem)
+        {
+            var pairs = crossStep.Beds / 2;
+            var stock = PlantingStock.FromBag(bag);
+
+            if (crossSoilItem.ItemId == yieldSoilItem.ItemId)
+            {
+                var need = pairs * 2;
+                var heldCount = stock.Count(crossSoilItem.ItemId);
+                ImGui.TextColored(heldCount >= need ? HubStyle.Good : HubStyle.Warn,
+                    Loc.Format(Strings.Goal_SoilHeldSame, Formats.Number(heldCount)));
+            }
+            else
+            {
+                var crossHeld = stock.Count(crossSoilItem.ItemId);
+                var yieldHeld = stock.Count(yieldSoilItem.ItemId);
+                var covers = crossHeld >= pairs && yieldHeld >= pairs;
+                ImGui.TextColored(covers ? HubStyle.Good : HubStyle.Warn,
+                    Loc.Format(Strings.Goal_SoilHeld, Formats.Number(crossHeld), Formats.Number(yieldHeld)));
             }
         }
 
