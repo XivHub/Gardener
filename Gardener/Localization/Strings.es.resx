@@ -1,0 +1,1315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="Common_Confirm" xml:space="preserve">
+    <value>Confirmar</value>
+  </data>
+  <data name="Action_Tend" xml:space="preserve">
+    <value>Cuidar cultivo</value>
+  </data>
+  <data name="Action_Harvest" xml:space="preserve">
+    <value>Cosechar</value>
+  </data>
+  <data name="Action_PlantSeeds" xml:space="preserve">
+    <value>Plantar semillas</value>
+  </data>
+  <data name="Action_Fertilize" xml:space="preserve">
+    <value>Abonar cultivo</value>
+  </data>
+  <data name="Action_RemoveCrop" xml:space="preserve">
+    <value>Retirar cultivo</value>
+  </data>
+  <data name="List_Separator" xml:space="preserve">
+    <value>, </value>
+  </data>
+  <data name="List_And" xml:space="preserve">
+    <value>{0} y {1}</value>
+  </data>
+  <data name="List_Or" xml:space="preserve">
+    <value>{0} o {1}</value>
+  </data>
+  <data name="Duration_About" xml:space="preserve">
+    <value>alrededor de {0}</value>
+  </data>
+  <data name="Duration_Days_One" xml:space="preserve">
+    <value>{0} día</value>
+  </data>
+  <data name="Duration_Days_Other" xml:space="preserve">
+    <value>{0} días</value>
+  </data>
+  <data name="Duration_Hours_One" xml:space="preserve">
+    <value>{0} hora</value>
+  </data>
+  <data name="Duration_Hours_Other" xml:space="preserve">
+    <value>{0} horas</value>
+  </data>
+  <data name="Duration_Every" xml:space="preserve">
+    <value>cada {0}</value>
+  </data>
+  <data name="Duration_EveryDay" xml:space="preserve">
+    <value>cada día</value>
+  </data>
+  <data name="Phrase_UnknownCount" xml:space="preserve">
+    <value>una cantidad desconocida de</value>
+  </data>
+  <data name="Phrase_NumberRange" xml:space="preserve">
+    <value>{0} a {1}</value>
+  </data>
+  <data name="GardeningItems_SoilNameUnresolved" xml:space="preserve">
+    <value>sin id de objeto registrado para tierra {1} de grado {0}</value>
+  </data>
+  <data name="GardeningItems_NoSoilPinned" xml:space="preserve">
+    <value>No hay tierra fijada (FixedSoilItemId es 0).</value>
+  </data>
+  <data name="GardeningItems_PinnedSoilNotRecognised" xml:space="preserve">
+    <value>El objeto de tierra fijado {0} no es una tierra reconocida.</value>
+  </data>
+  <data name="GardeningItems_SoilFamilyNotInBag" xml:space="preserve">
+    <value>No tienes tierra de este tipo. La que debes conseguir es {0}.</value>
+  </data>
+  <data name="GardeningItems_SoilNotInBag" xml:space="preserve">
+    <value>No tienes {0} en la bolsa.</value>
+  </data>
+  <data name="Soil_WhereHiddenRare" xml:space="preserve">
+    <value>{0}, en un nodo oculto y raro</value>
+  </data>
+  <data name="Soil_WhereUnspoiled" xml:space="preserve">
+    <value>{0}, en el nodo virgen a las {1}</value>
+  </data>
+  <data name="Soil_WhereUnrecorded" xml:space="preserve">
+    <value>{0}: ubicación minera no registrada.</value>
+  </data>
+  <data name="Soil_DoesThanalan" xml:space="preserve">
+    <value>{0} hace que cruzar sea más probable.</value>
+  </data>
+  <data name="Soil_DoesShroud" xml:space="preserve">
+    <value>{0} aumenta el tamaño de la cosecha.</value>
+  </data>
+  <data name="Soil_DoesLaNoscean" xml:space="preserve">
+    <value>{0} mejora la calidad.</value>
+  </data>
+  <data name="Config_WindowTitle" xml:space="preserve">
+    <value>Configuración de Gardener</value>
+  </data>
+  <data name="Config_Language_Label" xml:space="preserve">
+    <value>Idioma de la interfaz</value>
+  </data>
+  <data name="Config_Language_Automatic" xml:space="preserve">
+    <value>Automático (seguir a Dalamud)</value>
+  </data>
+  <data name="Config_Language_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Config_Language_Spanish" xml:space="preserve">
+    <value>Español</value>
+  </data>
+  <data name="Config_Automation_Header" xml:space="preserve">
+    <value>Automatización</value>
+  </data>
+  <data name="Config_Automation_StepDelayMs" xml:space="preserve">
+    <value>Retardo entre acciones (ms)</value>
+  </data>
+  <data name="Config_Automation_SlowerReliable" xml:space="preserve">
+    <value>Aumentar este valor hace las ejecuciones más lentas pero más fiables.</value>
+  </data>
+  <data name="Config_Automation_BedDelayMs" xml:space="preserve">
+    <value>Retardo entre parcelas (ms)</value>
+  </data>
+  <data name="Config_Automation_MenuTimeoutMs" xml:space="preserve">
+    <value>Tiempo de espera del menú (ms)</value>
+  </data>
+  <data name="Config_Automation_StopIfPlayerMoves" xml:space="preserve">
+    <value>Detener la ejecución si me muevo</value>
+  </data>
+  <data name="Config_Automation_MoveAbortDistance" xml:space="preserve">
+    <value>Distancia que cuenta como alejarse (yalms)</value>
+  </data>
+  <data name="Config_Automation_BedReachDistance" xml:space="preserve">
+    <value>Distancia de alcance para iniciar una ejecución (yalms)</value>
+  </data>
+  <data name="Config_Automation_ConfirmBeforeRun" xml:space="preserve">
+    <value>Confirmar antes de ejecutar un barrido</value>
+  </data>
+  <data name="Config_Planting_Header" xml:space="preserve">
+    <value>Valores predeterminados de plantado</value>
+  </data>
+  <data name="Config_Planting_Intro" xml:space="preserve">
+    <value>Qué tierra usar cuando el complemento planta por ti.</value>
+  </data>
+  <data name="Config_Planting_SoilForCross" xml:space="preserve">
+    <value>Tierra para un paso de cruce</value>
+  </data>
+  <data name="Config_Planting_SoilForYield" xml:space="preserve">
+    <value>Tierra para un paso de rendimiento</value>
+  </data>
+  <data name="Config_Planting_PinnedSoilHeader" xml:space="preserve">
+    <value>Tierra fijada</value>
+  </data>
+  <data name="Config_NotHeld" xml:space="preserve">
+    <value>(no disponible)</value>
+  </data>
+  <data name="Config_SoilPreference_HighestThanalan" xml:space="preserve">
+    <value>Tierra de Thanalan de grado más alto (mejor tasa de cruce)</value>
+  </data>
+  <data name="Config_SoilPreference_HighestShroud" xml:space="preserve">
+    <value>Tierra de Shroud de grado más alto (mejor rendimiento)</value>
+  </data>
+  <data name="Config_SoilPreference_HighestLaNoscean" xml:space="preserve">
+    <value>Tierra de La Noscean de grado más alto (equivalente a Potting Soil)</value>
+  </data>
+  <data name="Config_SoilPreference_Fixed" xml:space="preserve">
+    <value>Una tierra específica, fijada abajo</value>
+  </data>
+  <data name="Config_Fertilizer_Header" xml:space="preserve">
+    <value>Abono</value>
+  </data>
+  <data name="Config_Fertilizer_OnlyGrowing" xml:space="preserve">
+    <value>Abonar solo una parcela en crecimiento</value>
+  </data>
+  <data name="Config_Fertilizer_CooldownMinutes" xml:space="preserve">
+    <value>Tiempo de espera por parcela (minutos)</value>
+  </data>
+  <data name="Config_Fertilizer_CooldownNote" xml:space="preserve">
+    <value>El juego acepta una aplicación por parcela cada hora sin importar este ajuste; un tiempo de espera más corto aquí solo hace que se intente antes y se rechace.</value>
+  </data>
+  <data name="Config_Fertilizer_WhichHeader" xml:space="preserve">
+    <value>Qué abono usar</value>
+  </data>
+  <data name="Config_Fertilizer_AutomaticFirstHeld" xml:space="preserve">
+    <value>Automático (el primero que tengas)</value>
+  </data>
+  <data name="Config_Reminders_Header" xml:space="preserve">
+    <value>Recordatorios</value>
+  </data>
+  <data name="Config_Reminders_ShowDtr" xml:space="preserve">
+    <value>Mostrar contadores de recordatorios en la barra de información del servidor</value>
+  </data>
+  <data name="Config_Reminders_ChatEcho" xml:space="preserve">
+    <value>Repetir recordatorios en el chat</value>
+  </data>
+  <data name="Config_Reminders_WiltWarningHours" xml:space="preserve">
+    <value>Avisar con esta cantidad de horas antes de que una parcela se marchite</value>
+  </data>
+  <data name="Config_Reminders_ChatIntervalMinutes" xml:space="preserve">
+    <value>Intervalo de recordatorio en el chat (minutos)</value>
+  </data>
+  <data name="Config_Reminders_NarrateSweeps" xml:space="preserve">
+    <value>Narrar los barridos en el chat</value>
+  </data>
+  <data name="Config_Reminders_NarrateSweepsNote" xml:space="preserve">
+    <value>Escribe una línea en el chat mientras un barrido cuida, abona, cosecha, planta u omite cada parcela.</value>
+  </data>
+  <data name="Config_Data_Header" xml:space="preserve">
+    <value>Estado de los datos</value>
+  </data>
+  <data name="Config_Data_CollectGrowSamples" xml:space="preserve">
+    <value>Registrar cuánto tardan tus propios cultivos en madurar y volverse cosechables</value>
+  </data>
+  <data name="Config_Data_CollectGrowSamplesNote" xml:space="preserve">
+    <value>Ajusta la ventana de cosecha en la pestaña Recordatorios con los tiempos de tu propio jardín.</value>
+  </data>
+  <data name="Config_Data_ShowGapWarnings" xml:space="preserve">
+    <value>Mostrar avisos de vacíos en los datos</value>
+  </data>
+  <data name="Config_Data_Generated" xml:space="preserve">
+    <value>Generado {0}</value>
+  </data>
+  <data name="Config_Data_LotlabCommit" xml:space="preserve">
+    <value>Commit de Lotlab {0}</value>
+  </data>
+  <data name="Config_Data_Nick75gCommit" xml:space="preserve">
+    <value>Commit de nick75g {0}</value>
+  </data>
+  <data name="Config_Data_XivapiSchema" xml:space="preserve">
+    <value>Esquema de XIVAPI {0}</value>
+  </data>
+  <data name="Config_Data_XivapiVersion" xml:space="preserve">
+    <value>Versión de XIVAPI {0}</value>
+  </data>
+  <data name="Config_Data_GapBundledMissing" xml:space="preserve">
+    <value>Filas incluidas que faltan en la hoja en vivo</value>
+  </data>
+  <data name="Config_Data_GapLiveMissing" xml:space="preserve">
+    <value>Filas exteriores en vivo que faltan en el paquete</value>
+  </data>
+  <data name="Config_Data_GapNoGrowTime" xml:space="preserve">
+    <value>Filas sin tiempo de crecimiento</value>
+  </data>
+  <data name="Config_Data_GapNoCrossData" xml:space="preserve">
+    <value>Filas ausentes de los datos de cruce</value>
+  </data>
+  <data name="Config_Data_GapSoilMissing" xml:space="preserve">
+    <value>Tierras en vivo que faltan en la tabla de tierras</value>
+  </data>
+  <data name="Config_GapCountHeader" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="Config_Theme_Header" xml:space="preserve">
+    <value>Apariencia</value>
+  </data>
+  <data name="Config_Theme_SharedNote" xml:space="preserve">
+    <value>Compartido con todos los complementos de XIV Hub.</value>
+  </data>
+  <data name="Config_Developer_Header" xml:space="preserve">
+    <value>Desarrollador</value>
+  </data>
+  <data name="Config_Developer_TelemetryDesc" xml:space="preserve">
+    <value>Envía instantáneas de actividad y estado en vivo a un servidor de registro local.</value>
+  </data>
+  <data name="Config_Developer_EnableTelemetry" xml:space="preserve">
+    <value>Activar telemetría de desarrollo</value>
+  </data>
+  <data name="Config_Developer_LogUrl" xml:space="preserve">
+    <value>URL del servidor de registro</value>
+  </data>
+  <data name="Command_HelpMessage" xml:space="preserve">
+    <value>Abre la ventana de Gardener. Subcomandos: dump, dump menu.</value>
+  </data>
+  <data name="Common_Unknown" xml:space="preserve">
+    <value>desconocido</value>
+  </data>
+  <data name="Common_Empty" xml:space="preserve">
+    <value>vacío</value>
+  </data>
+  <data name="Garden_TabLabel" xml:space="preserve">
+    <value>Jardín</value>
+  </data>
+  <data name="Reminders_TabLabel" xml:space="preserve">
+    <value>Recordatorios</value>
+  </data>
+  <data name="Garden_NoPatches" xml:space="preserve">
+    <value>No se descubrió ningún huerto. Ponte de pie en un terreno de vivienda al aire libre.</value>
+  </data>
+  <data name="Garden_HarvestLagNote" xml:space="preserve">
+    <value>La disponibilidad para cosechar se revisa aproximadamente cada hora, así que una parcela puede quedar fuera de la lista un rato después de madurar.</value>
+  </data>
+  <data name="Garden_PatchHeaderWithPlot" xml:space="preserve">
+    <value>Huerto {0}, terreno {1}</value>
+  </data>
+  <data name="Garden_PatchHeaderPlotUnknown" xml:space="preserve">
+    <value>Huerto {0}, terreno desconocido</value>
+  </data>
+  <data name="Garden_EstateAccess" xml:space="preserve">
+    <value>Finca: {0}. Accesible por: {1}.</value>
+  </data>
+  <data name="Garden_ColBed" xml:space="preserve">
+    <value>Parcela</value>
+  </data>
+  <data name="Garden_ColSeedStage" xml:space="preserve">
+    <value>Semilla / etapa</value>
+  </data>
+  <data name="Garden_ColWilt" xml:space="preserve">
+    <value>Marchitez</value>
+  </data>
+  <data name="Garden_ColHarvestWindow" xml:space="preserve">
+    <value>Ventana de cosecha</value>
+  </data>
+  <data name="Garden_NoDataForPatch" xml:space="preserve">
+    <value>sin datos para este huerto</value>
+  </data>
+  <data name="Garden_DebugDumpHeader" xml:space="preserve">
+    <value>Volcado de depuración</value>
+  </data>
+  <data name="Garden_DumpButton" xml:space="preserve">
+    <value>Volcar</value>
+  </data>
+  <data name="Garden_DumpMenuButton" xml:space="preserve">
+    <value>Volcar menú</value>
+  </data>
+  <data name="Garden_CopyButton" xml:space="preserve">
+    <value>Copiar</value>
+  </data>
+  <data name="Garden_OrphansHeader" xml:space="preserve">
+    <value>Parcelas registradas antes, no encontradas en esta visita ({0})</value>
+  </data>
+  <data name="Garden_OrphansNote" xml:space="preserve">
+    <value>Este huerto puede estar guardado, o puede haberse movido; en cualquier caso el registro se conserva y sus temporizadores están en pausa. Olvida un registro para dejar de seguirlo.</value>
+  </data>
+  <data name="Garden_OrphanLine" xml:space="preserve">
+    <value>{0}, parcela {1}: {2}</value>
+  </data>
+  <data name="Garden_ForgetButton" xml:space="preserve">
+    <value>Olvidar</value>
+  </data>
+  <data name="Garden_UnresolvedSeedRow" xml:space="preserve">
+    <value>fila {0}</value>
+  </data>
+  <data name="Garden_StageMature" xml:space="preserve">
+    <value>madura (4)</value>
+  </data>
+  <data name="Garden_StageGrowing" xml:space="preserve">
+    <value>creciendo ({0} de 4)</value>
+  </data>
+  <data name="Garden_SeenBy" xml:space="preserve">
+    <value>visto por {0}, hace {1}h</value>
+  </data>
+  <data name="Garden_CropStateNeverObserved" xml:space="preserve">
+    <value>estado del cultivo nunca observado</value>
+  </data>
+  <data name="Garden_CropVigorous" xml:space="preserve">
+    <value>vigoroso</value>
+  </data>
+  <data name="Garden_CropWilted" xml:space="preserve">
+    <value>marchito</value>
+  </data>
+  <data name="Garden_CropRipe" xml:space="preserve">
+    <value>listo para cosechar</value>
+  </data>
+  <data name="Garden_CropWithered" xml:space="preserve">
+    <value>seco</value>
+  </data>
+  <data name="Garden_CropEmpty" xml:space="preserve">
+    <value>vacío</value>
+  </data>
+  <data name="Garden_CropStateAge" xml:space="preserve">
+    <value>{0}, hace {1}h</value>
+  </data>
+  <data name="Garden_PlantedAtUnknown" xml:space="preserve">
+    <value>hora de plantado desconocida; establece una estimación</value>
+  </data>
+  <data name="Garden_NoTimingData" xml:space="preserve">
+    <value>sin datos de tiempo para esta semilla</value>
+  </data>
+  <data name="Harvest_ConfidenceEstimated" xml:space="preserve">
+    <value>estimado</value>
+  </data>
+  <data name="Harvest_ConfidenceBundled" xml:space="preserve">
+    <value>del paquete</value>
+  </data>
+  <data name="Harvest_ConfidenceObserved" xml:space="preserve">
+    <value>observado, {0} muestra(s)</value>
+  </data>
+  <data name="Garden_HarvestWindowRange" xml:space="preserve">
+    <value>{0} a {1}</value>
+  </data>
+  <data name="Garden_HarvestWindowUnknown" xml:space="preserve">
+    <value>?</value>
+  </data>
+  <data name="Garden_HarvestWindowLine" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="Garden_HarvestWindowLineWithUncertainty" xml:space="preserve">
+    <value>{0} ({1}, plantado ±{2})</value>
+  </data>
+  <data name="Garden_UncertaintySeconds" xml:space="preserve">
+    <value>{0}s</value>
+  </data>
+  <data name="Garden_UncertaintyMinutes" xml:space="preserve">
+    <value>{0}m</value>
+  </data>
+  <data name="Garden_UncertaintyHours" xml:space="preserve">
+    <value>{0}h</value>
+  </data>
+  <data name="Sweep_StatusRow" xml:space="preserve">
+    <value>{0}: parcela {1}, quedan {2} ({3})</value>
+  </data>
+  <data name="Sweep_NoActiveBed" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="Sweep_StopButton" xml:space="preserve">
+    <value>Detener</value>
+  </data>
+  <data name="Sweep_AllButton" xml:space="preserve">
+    <value>{0}: todas las parcelas</value>
+  </data>
+  <data name="Sweep_ConfirmTend" xml:space="preserve">
+    <value>¿{0}: todas las parcelas ocupadas de este huerto?</value>
+  </data>
+  <data name="Sweep_ConfirmHarvest" xml:space="preserve">
+    <value>¿{0}: todas las parcelas maduras de este huerto?</value>
+  </data>
+  <data name="Sweep_ConfirmFertilize" xml:space="preserve">
+    <value>¿{0}: todas las parcelas aptas de este huerto?</value>
+  </data>
+  <data name="Sweep_BedOrderVerified" xml:space="preserve">
+    <value>Orden de parcelas verificado: {0}/{1}</value>
+  </data>
+  <data name="RemoveCrop_Header" xml:space="preserve">
+    <value>Retirar un cultivo</value>
+  </data>
+  <data name="RemoveCrop_BedLine" xml:space="preserve">
+    <value>Parcela {0}: {1}</value>
+  </data>
+  <data name="RemoveCrop_ConfirmMessage" xml:space="preserve">
+    <value>¿{0}: {1} en la parcela {2}? Esto no se puede deshacer.</value>
+  </data>
+  <data name="Reminders_HouseFallback" xml:space="preserve">
+    <value>Casa</value>
+  </data>
+  <data name="Garden_PlantedHoursAgoButton" xml:space="preserve">
+    <value>Plantado hace {0}h</value>
+  </data>
+  <data name="Reminders_DueToTendHeader" xml:space="preserve">
+    <value>Pendientes de cuidar</value>
+  </data>
+  <data name="Reminders_AllTended" xml:space="preserve">
+    <value>Todas las parcelas están cuidadas.</value>
+  </data>
+  <data name="Reminders_TendLine" xml:space="preserve">
+    <value>{0}, parcela {1}: se marchita {2}</value>
+  </data>
+  <data name="Reminders_AboutToWitherHeader" xml:space="preserve">
+    <value>A punto de secarse</value>
+  </data>
+  <data name="Reminders_NothingWithering" xml:space="preserve">
+    <value>Nada está cerca de secarse.</value>
+  </data>
+  <data name="Reminders_WitherLine" xml:space="preserve">
+    <value>{0}, parcela {1}: se seca {2}</value>
+  </data>
+  <data name="Reminders_ReadyHeader" xml:space="preserve">
+    <value>Listas para cosechar</value>
+  </data>
+  <data name="Reminders_TimingUnknownHeader" xml:space="preserve">
+    <value>Hora de plantado desconocida</value>
+  </data>
+  <data name="Reminders_AllTimingKnown" xml:space="preserve">
+    <value>Se conoce la hora de plantado de todas las parcelas.</value>
+  </data>
+  <data name="Reminders_TimingUnknownLine" xml:space="preserve">
+    <value>{0}, parcela {1}: hora de plantado desconocida</value>
+  </data>
+  <data name="Reminders_NothingReady" xml:space="preserve">
+    <value>Nada está listo para cosechar todavía.</value>
+  </data>
+  <data name="Reminders_HarvestWindowLine" xml:space="preserve">
+    <value>{0}, parcela {1}: lista entre {2} y {3} ({4})</value>
+  </data>
+  <data name="Reminders_HarvestMatureLine" xml:space="preserve">
+    <value>{0}, parcela {1}: madura (etapa 4)</value>
+  </data>
+  <data name="Reminders_ReachSuffix" xml:space="preserve">
+    <value>({0})</value>
+  </data>
+  <data name="Duration_Minutes_One" xml:space="preserve">
+    <value>{0} minuto</value>
+  </data>
+  <data name="Duration_Minutes_Other" xml:space="preserve">
+    <value>{0} minutos</value>
+  </data>
+  <data name="SeedItems_ProduceRowFallback" xml:space="preserve">
+    <value>fila {0}</value>
+  </data>
+  <data name="SeedItems_ItemRowFallback" xml:space="preserve">
+    <value>semilla de la fila {0}</value>
+  </data>
+  <data name="Goal_TabLabel" xml:space="preserve">
+    <value>Objetivo</value>
+  </data>
+  <data name="Goal_CurrentGoal" xml:space="preserve">
+    <value>Objetivo: {0}</value>
+  </data>
+  <data name="Goal_PickSomethingElseButton" xml:space="preserve">
+    <value>Elegir otra cosa</value>
+  </data>
+  <data name="Goal_ClearGoalButton" xml:space="preserve">
+    <value>Borrar objetivo</value>
+  </data>
+  <data name="Goal_PickerIntro" xml:space="preserve">
+    <value>Elige qué quieres cultivar y Gardener calcula los pasos a partir de lo que ya tienes.</value>
+  </data>
+  <data name="Goal_PickerHeader" xml:space="preserve">
+    <value>Elige una semilla</value>
+  </data>
+  <data name="Goal_PickerSearchHint" xml:space="preserve">
+    <value>Buscar</value>
+  </data>
+  <data name="Goal_PickerRowLabel" xml:space="preserve">
+    <value>{0}   {1}</value>
+  </data>
+  <data name="Goal_TagGatherable" xml:space="preserve">
+    <value>puedes comprarlo o recolectarlo</value>
+  </data>
+  <data name="Goal_TagCrossbreedOnly" xml:space="preserve">
+    <value>solo por cruce</value>
+  </data>
+  <data name="Goal_TagNoCrossData" xml:space="preserve">
+    <value>sin datos de cruce, revisa Configuración</value>
+  </data>
+  <data name="Goal_QuickPicksHeader" xml:space="preserve">
+    <value>Lo más rápido con lo que ya tienes:</value>
+  </data>
+  <data name="Goal_AlreadyHold" xml:space="preserve">
+    <value>Ya tienes {0} {1}.</value>
+  </data>
+  <data name="Goal_GrowTimeUnknown" xml:space="preserve">
+    <value>Gardener no sabe cuánto tarda esta semilla en crecer.</value>
+  </data>
+  <data name="Goal_AlreadyMetPlan" xml:space="preserve">
+    <value>Planta una en {0} y cosecha en {1} para obtener {2} {3} y {4} semilla de vuelta.</value>
+  </data>
+  <data name="Goal_SeedReturnNone" xml:space="preserve">
+    <value>No devuelve semillas al cosecharla, así que planta otra de tu reserva cada vez.</value>
+  </data>
+  <data name="Goal_SeedReturnOne" xml:space="preserve">
+    <value>Devuelve la única semilla que has plantado, en cualquier grado de tierra, así que una parcela se sostiene sola pero nunca se multiplica.</value>
+  </data>
+  <data name="Goal_SeedReturnMany" xml:space="preserve">
+    <value>Devuelve {0} semillas en cualquier grado de tierra, así que una parcela de estas se multiplica con el tiempo.</value>
+  </data>
+  <data name="Goal_NoCrossbreedNeeded" xml:space="preserve">
+    <value>No necesitas cruzar {0}.</value>
+  </data>
+  <data name="Goal_SourcesWhere" xml:space="preserve">
+    <value>Dónde: {0}</value>
+  </data>
+  <data name="Goal_SourcesNotRecorded" xml:space="preserve">
+    <value>Dónde: no registrado.</value>
+  </data>
+  <data name="Goal_NoRouteCannotGrow" xml:space="preserve">
+    <value>Gardener no encuentra una forma de cultivar {0} a partir de semillas que puedas comprar o recolectar.</value>
+  </data>
+  <data name="Goal_NoRouteNoParentPair" xml:space="preserve">
+    <value>Sus datos de cruce no tienen ningún par de origen, así que no hay nada que planear.</value>
+  </data>
+  <data name="Goal_NoRouteCheckSettings" xml:space="preserve">
+    <value>Abre Configuración y revisa Estado de los datos.</value>
+  </data>
+  <data name="Goal_NeverSeenGarden" xml:space="preserve">
+    <value>Gardener nunca ha visto un jardín tuyo. Ponte de pie en tu terreno una vez y sabrá en qué paso estás.</value>
+  </data>
+  <data name="Goal_NotAtGarden" xml:space="preserve">
+    <value>No estás en el jardín.</value>
+  </data>
+  <data name="Goal_LastVisitAge" xml:space="preserve">
+    <value>Esto es lo que Gardener vio en tu última visita, hace {0}.</value>
+  </data>
+  <data name="Goal_StepProgress" xml:space="preserve">
+    <value>Paso {0} de {1}</value>
+  </data>
+  <data name="Goal_TotalStepsCount" xml:space="preserve">
+    <value>{0} pasos.</value>
+  </data>
+  <data name="Goal_BestCaseDuration" xml:space="preserve">
+    <value>Unos {0} si la apuesta sale bien a la primera.</value>
+  </data>
+  <data name="Goal_PeakBeds" xml:space="preserve">
+    <value>{0} parcelas en el paso más exigente.</value>
+  </data>
+  <data name="Goal_StepHeader" xml:space="preserve">
+    <value>Paso {0}: {1}</value>
+  </data>
+  <data name="Goal_MarkerNow" xml:space="preserve">
+    <value>Ahora</value>
+  </data>
+  <data name="Goal_MarkerDone" xml:space="preserve">
+    <value>Listo</value>
+  </data>
+  <data name="Goal_StepDoneWithSeed" xml:space="preserve">
+    <value>Listo. Tienes {0} {1}.</value>
+  </data>
+  <data name="Goal_StepDonePlain" xml:space="preserve">
+    <value>Listo.</value>
+  </data>
+  <data name="Goal_AttemptUnresolved" xml:space="preserve">
+    <value>La parcela {0} está creciendo. Sabrás si cruzó cuando esté lista para cosechar.</value>
+  </data>
+  <data name="Goal_NotStarted" xml:space="preserve">
+    <value>No iniciado.</value>
+  </data>
+  <data name="Goal_GrowingUnknownTiming" xml:space="preserve">
+    <value>Creciendo en la parcela {0}. Gardener no sabe cuándo estará lista. Indícalo cuando la has plantado, en la pestaña Jardín.</value>
+  </data>
+  <data name="Goal_ReadyToHarvest" xml:space="preserve">
+    <value>Lista para cosechar en la parcela {0}.</value>
+  </data>
+  <data name="Goal_WiltedTendBeforeWithers" xml:space="preserve">
+    <value>Creciendo en la parcela {0}. Se ha marchitado; cuídala antes de que se seque.</value>
+  </data>
+  <data name="Goal_TendWithinHours_One" xml:space="preserve">
+    <value>Creciendo en la parcela {0}. Cuídala dentro de {1} hora o se marchita.</value>
+  </data>
+  <data name="Goal_TendWithinHours_Other" xml:space="preserve">
+    <value>Creciendo en la parcela {0}. Cuídala dentro de {1} horas o se marchita.</value>
+  </data>
+  <data name="Goal_GrowingNoEarliest" xml:space="preserve">
+    <value>Creciendo en la parcela {0}.</value>
+  </data>
+  <data name="Goal_GrowingTimeLeft" xml:space="preserve">
+    <value>Creciendo en la parcela {0}. Falta {1} como muy pronto.</value>
+  </data>
+  <data name="Goal_GrowingTimeLeftEstimated" xml:space="preserve">
+    <value>Creciendo en la parcela {0}. Falta {1} como muy pronto, estimado.</value>
+  </data>
+  <data name="Goal_StandAtGardenSeeBeds" xml:space="preserve">
+    <value>Ponte de pie en tu jardín para ver qué parcelas usa esto.</value>
+  </data>
+  <data name="Goal_StandAtGardenPlantHandoff" xml:space="preserve">
+    <value>Ponte de pie en tu jardín para plantar este paso.</value>
+  </data>
+  <data name="Goal_NeedBothSeeds" xml:space="preserve">
+    <value>Necesitas {0} y {1} para plantar este paso.</value>
+  </data>
+  <data name="Goal_NeedOneMoreSeed" xml:space="preserve">
+    <value>Necesitas 1 {0} más para plantar este paso.</value>
+  </data>
+  <data name="Goal_NoSoilForStepFallback" xml:space="preserve">
+    <value>No tienes tierra para este paso.</value>
+  </data>
+  <data name="Goal_MineHint" xml:space="preserve">
+    <value>Mina grado 3 en {0}.</value>
+  </data>
+  <data name="Goal_PairBedPlantHere" xml:space="preserve">
+    <value>parcela {0}: planta {1} aquí</value>
+  </data>
+  <data name="Goal_PairBedExisting" xml:space="preserve">
+    <value>parcela {0}: {1}</value>
+  </data>
+  <data name="Goal_CannotFitStep" xml:space="preserve">
+    <value>Gardener no puede encajar este paso en las parcelas libres de este huerto.</value>
+  </data>
+  <data name="Goal_PlantStepButton" xml:space="preserve">
+    <value>{0}: este paso</value>
+  </data>
+  <data name="Goal_ConfirmPlantStepTitle" xml:space="preserve">
+    <value>¿Plantar este paso?</value>
+  </data>
+  <data name="Goal_ConfirmPlantStepBody" xml:space="preserve">
+    <value>Gardener plantará {0}. Solo planta este paso y se detiene.</value>
+  </data>
+  <data name="Goal_PlantingClause_One" xml:space="preserve">
+    <value>{0} en la parcela {1}, usando {2}</value>
+  </data>
+  <data name="Goal_PlantingClause_Other" xml:space="preserve">
+    <value>{0} en las parcelas {1}, usando {2}</value>
+  </data>
+  <data name="Goal_WarningNoGrowTime" xml:space="preserve">
+    <value>{0} no tiene tiempo de crecimiento incluido en el paquete; su duración en este plan es una suposición.</value>
+  </data>
+  <data name="Goal_WarningMissingCrossData" xml:space="preserve">
+    <value>{0} falta en los datos de cruce; esta ruta puede estar incompleta.</value>
+  </data>
+  <data name="Goal_ObtainTitle" xml:space="preserve">
+    <value>Consigue las semillas iniciales</value>
+  </data>
+  <data name="Goal_ObtainGet" xml:space="preserve">
+    <value>Consigue {0} {1}.</value>
+  </data>
+  <data name="Goal_ObtainHeldCovered" xml:space="preserve">
+    <value>Tienes {0}, así que esto ya está cubierto.</value>
+  </data>
+  <data name="Goal_ObtainHeldShort" xml:space="preserve">
+    <value>Tienes {0}.</value>
+  </data>
+  <data name="Goal_ObtainWhere" xml:space="preserve">
+    <value>Dónde: {0}</value>
+  </data>
+  <data name="Goal_ObtainYieldUnrecorded" xml:space="preserve">
+    <value>El rendimiento de semilla de {0} no está registrado, así que Gardener asume que no devuelve nada; cada una que plantes es una compra nueva.</value>
+  </data>
+  <data name="Goal_ObtainYieldZero" xml:space="preserve">
+    <value>{0} no devuelve semillas al cosecharla, así que cada una que plantes es una compra nueva.</value>
+  </data>
+  <data name="Goal_ObtainYieldRestocks" xml:space="preserve">
+    <value>{0} devuelve semillas al cosecharla, así que esto basta para empezar; la primera cosecha financia el resto.</value>
+  </data>
+  <data name="Goal_CrossPlantLayout" xml:space="preserve">
+    <value>Planta {0} en la mitad de las parcelas del anillo, luego planta {1} en las parcelas que quedan entre ellas, de modo que cada {1} tenga un vecino {0} a cada lado.</value>
+  </data>
+  <data name="Goal_CrossSingleOutcome" xml:space="preserve">
+    <value>Todas estas parcelas se convierten en {0}.</value>
+  </data>
+  <data name="Goal_CrossSingleOutcomeOnly" xml:space="preserve">
+    <value>Este par no da nada más.</value>
+  </data>
+  <data name="Goal_CrossMultiOutcome" xml:space="preserve">
+    <value>Cada una de estas parcelas se convierte en {0}, y no puedes elegir cuál.</value>
+  </data>
+  <data name="Goal_OddsOfThemGive" xml:space="preserve">
+    <value>{0} de ellas dan {1}.</value>
+  </data>
+  <data name="Goal_CrossCoinToss" xml:space="preserve">
+    <value>Nadie ha publicado el reparto entre los dos, así que Gardener lo trata como cara o cruz.</value>
+  </data>
+  <data name="Goal_CrossFinalRoundsPerRound" xml:space="preserve">
+    <value>Una ronda planta {0} pares.</value>
+  </data>
+  <data name="Goal_CrossFinalRoundsPlan" xml:space="preserve">
+    <value>Este cruce necesita unos {0} intentos, así que planea {1} rondas, unos {2} días en total.</value>
+  </data>
+  <data name="Goal_DemandFinalCross" xml:space="preserve">
+    <value>El cruce final necesita {0} {1}.</value>
+  </data>
+  <data name="Goal_DemandNamedStep" xml:space="preserve">
+    <value>Cultivar {0} necesita {1} {2}.</value>
+  </data>
+  <data name="Goal_DemandLaterSteps" xml:space="preserve">
+    <value>Los pasos posteriores necesitan {0} {1}.</value>
+  </data>
+  <data name="Goal_YieldCoversOne_One" xml:space="preserve">
+    <value>Una parcela de {0} devuelve 1 semilla, así que una ronda de {1} parcelas basta.</value>
+  </data>
+  <data name="Goal_YieldCoversOne_Other" xml:space="preserve">
+    <value>Una parcela de {0} devuelve {1} semillas, así que una ronda de {2} parcelas basta.</value>
+  </data>
+  <data name="Goal_YieldNeedsRounds_One" xml:space="preserve">
+    <value>Una parcela de {0} devuelve 1 semilla, así que esto necesita {1} rondas de {2} parcelas, unos {3} días en total.</value>
+  </data>
+  <data name="Goal_YieldNeedsRounds_Other" xml:space="preserve">
+    <value>Una parcela de {0} devuelve {1} semillas, así que esto necesita {2} rondas de {3} parcelas, unos {4} días en total.</value>
+  </data>
+  <data name="Goal_YieldUnknown" xml:space="preserve">
+    <value>El rendimiento de semilla de {0} no está registrado, así que Gardener no pudo calcular cuántas rondas hacen falta; vigila tu cantidad de semillas y planta otra ronda si te quedas corto.</value>
+  </data>
+  <data name="Goal_SoilSameFamily" xml:space="preserve">
+    <value>Tierra: {0} en todas las parcelas.</value>
+  </data>
+  <data name="Goal_SoilTwoFamilies" xml:space="preserve">
+    <value>Tierra: {0} en las parcelas que plantas segundo, las que cruzan; {1} en las parcelas que plantas primero, que no cruzan con nada y se cosechan por su semilla.</value>
+  </data>
+  <data name="Goal_BedsCount" xml:space="preserve">
+    <value>Parcelas: {0} ({1} pares).</value>
+  </data>
+  <data name="Goal_ReadyAfterPlant" xml:space="preserve">
+    <value>Listas {0} después de plantar.</value>
+  </data>
+  <data name="Goal_TendOrWilt" xml:space="preserve">
+    <value>Cuida estas parcelas {0} o se marchitan.</value>
+  </data>
+  <data name="Goal_CrossStepTitle" xml:space="preserve">
+    <value>Cultivar {0}</value>
+  </data>
+  <data name="Goal_NoteRating" xml:space="preserve">
+    <value>ffxivgardening.com califica este par con {0} sobre 100.</value>
+  </data>
+  <data name="Goal_NoteRatingMeaning" xml:space="preserve">
+    <value>Esa calificación es por par, no por resultado, y su significado no está publicado, así que Gardener solo la usa para preferir un par sobre otro, y calcula el tamaño de este paso a partir de la estimación de tierra.</value>
+  </data>
+  <data name="Goal_NoteWiltDisputed" xml:space="preserve">
+    <value>El tiempo de marchitez de {0} es discutido entre fuentes; la cadencia de arriba es la cifra más corta y segura.</value>
+  </data>
+  <data name="Goal_WiltCadence" xml:space="preserve">
+    <value>{0} se marchita después de {1}, así que visítala {2} hasta que la coseches.</value>
+  </data>
+  <data name="Goal_WiltVisitCount_One" xml:space="preserve">
+    <value>Eso es {0} visita.</value>
+  </data>
+  <data name="Goal_WiltVisitCount_Other" xml:space="preserve">
+    <value>Eso es {0} visitas.</value>
+  </data>
+  <data name="Goal_HarvestYieldFixed" xml:space="preserve">
+    <value>La cosecha da {0} {1} y devuelve {2} semilla(s), en cualquier grado de tierra.</value>
+  </data>
+  <data name="Goal_HarvestYieldVaries" xml:space="preserve">
+    <value>La cosecha da {0} {1} y devuelve {2} semilla(s), según tu tierra.</value>
+  </data>
+  <data name="Goal_NeedMoreSeed" xml:space="preserve">
+    <value>Necesitas {0} {1} más.</value>
+  </data>
+  <data name="Goal_NeedSeedsToPlant" xml:space="preserve">
+    <value>Necesitas {0} para plantar este paso.</value>
+  </data>
+  <data name="Odds_AboutNInTen" xml:space="preserve">
+    <value>Alrededor de {0} de cada 10</value>
+  </data>
+  <data name="Plan_NoKnownCross" xml:space="preserve">
+    <value>Ningún cruce conocido produce {0}.</value>
+  </data>
+  <data name="Plan_AdjacencyUnconfirmed" xml:space="preserve">
+    <value>La adyacencia de parcelas de un huerto {0} nunca se ha confirmado, así que aquí todavía no se puede colocar un cruce.</value>
+  </data>
+  <data name="Plan_NoPairAvailable" xml:space="preserve">
+    <value>{0} necesita un par que ya tengas o que ya esté creciendo en este huerto; no hay ninguno disponible.</value>
+  </data>
+  <data name="Plan_NoSoilForCrossingFallback" xml:space="preserve">
+    <value>No hay tierra disponible para el paso de cruce.</value>
+  </data>
+  <data name="Plan_PairCount_One" xml:space="preserve">
+    <value>{0} par</value>
+  </data>
+  <data name="Plan_PairCount_Other" xml:space="preserve">
+    <value>{0} pares</value>
+  </data>
+  <data name="Plan_NoSoilForParentFallback" xml:space="preserve">
+    <value>No hay tierra para las parcelas de origen.</value>
+  </data>
+  <data name="Plan_SoilSharedStock" xml:space="preserve">
+    <value>Tienes {0} {1}, y un par necesita una para la parcela de origen y otra para la parcela de cruce.</value>
+  </data>
+  <data name="Plan_NoCrossSoilLeft" xml:space="preserve">
+    <value>No queda {0} para las parcelas de cruce.</value>
+  </data>
+  <data name="Plan_ParentSoilStock" xml:space="preserve">
+    <value>Tienes {0} {1} para las parcelas de origen.</value>
+  </data>
+  <data name="Plan_NeedParentsToStart" xml:space="preserve">
+    <value>Necesitas {0} y {1} para iniciar este par; no tienes ninguna.</value>
+  </data>
+  <data name="Plan_NoFreeBedsLeft" xml:space="preserve">
+    <value>No quedan parcelas libres en este huerto para iniciar un nuevo par.</value>
+  </data>
+  <data name="Plan_PlantingFewerPairs" xml:space="preserve">
+    <value>Se plantarán {0} en lugar de {1}.</value>
+  </data>
+  <data name="Plan_ReasonBeds" xml:space="preserve">
+    <value>Solo caben {0} de parcelas libres en este huerto.</value>
+  </data>
+  <data name="Plan_ReasonSeeds" xml:space="preserve">
+    <value>Tienes suficientes {0} y {1} para {2}.</value>
+  </data>
+  <data name="Plan_ReasonSoil" xml:space="preserve">
+    <value>Tienes suficiente tierra para {0}.</value>
+  </data>
+  <data name="Plan_WhyParent" xml:space="preserve">
+    <value>Origen de {0}: planta aquí primero para que sus vecinas puedan cruzar con ella.</value>
+  </data>
+  <data name="Plan_WhyCrossRated" xml:space="preserve">
+    <value>Cruza con la parcela vecina que tiene {0} para llegar a {1} (calificación de ffxivgardening.com: {2}/100).</value>
+  </data>
+  <data name="Plan_WhyCrossUnrated" xml:space="preserve">
+    <value>Cruza con la parcela vecina que tiene {0} para llegar a {1} (todavía sin calificación).</value>
+  </data>
+  <data name="Plan_AlsoYields" xml:space="preserve">
+    <value>Este cruce también puede dar {0} en lugar de {1}; el resultado no está garantizado.</value>
+  </data>
+  <data name="Plan_NoSeedReturnAtGrade" xml:space="preserve">
+    <value>{0} no devuelve semillas propias con tierra de grado {1}; cosecharlo no reabastecerá este cruce.</value>
+  </data>
+  <data name="Plan_BedNoLongerEmpty" xml:space="preserve">
+    <value>La parcela {0} ya no está vacía; se descartó el paso de {1}.</value>
+  </data>
+  <data name="Plan_BedCrossMismatch" xml:space="preserve">
+    <value>La parcela {0} ({1}) ya no cruza como esperaba el plan; se omitió.</value>
+  </data>
+  <data name="Chat_Prefix" xml:space="preserve">
+    <value>[Gardener] {0}</value>
+  </data>
+  <data name="Reminders_ReachNone" xml:space="preserve">
+    <value>todavía no se ha visto ningún personaje aquí</value>
+  </data>
+  <data name="Reminders_ReachSwitch" xml:space="preserve">
+    <value>cambia a {0}</value>
+  </data>
+  <data name="Reminders_SummaryToTend_One" xml:space="preserve">
+    <value>{0} parcela por cuidar</value>
+  </data>
+  <data name="Reminders_SummaryToTend_Other" xml:space="preserve">
+    <value>{0} parcelas por cuidar</value>
+  </data>
+  <data name="Reminders_SummaryWither_One" xml:space="preserve">
+    <value>{0} parcela a punto de secarse</value>
+  </data>
+  <data name="Reminders_SummaryWither_Other" xml:space="preserve">
+    <value>{0} parcelas a punto de secarse</value>
+  </data>
+  <data name="Reminders_SummaryReady_One" xml:space="preserve">
+    <value>{0} parcela lista</value>
+  </data>
+  <data name="Reminders_SummaryReady_Other" xml:space="preserve">
+    <value>{0} parcelas listas</value>
+  </data>
+  <data name="Reminders_SummaryUnknown_One" xml:space="preserve">
+    <value>{0} parcela sin datos</value>
+  </data>
+  <data name="Reminders_SummaryUnknown_Other" xml:space="preserve">
+    <value>{0} parcelas sin datos</value>
+  </data>
+  <data name="Reminders_SummaryNothingDue" xml:space="preserve">
+    <value>nada pendiente</value>
+  </data>
+  <data name="Dtr_BarText" xml:space="preserve">
+    <value>Gardener: {0}</value>
+  </data>
+  <data name="Dtr_TooltipNothingDue" xml:space="preserve">
+    <value>Nada pendiente.</value>
+  </data>
+  <data name="Dtr_TooltipDueToTend" xml:space="preserve">
+    <value>{0}, parcela {1}: pendiente de cuidar</value>
+  </data>
+  <data name="Dtr_TooltipAboutToWither" xml:space="preserve">
+    <value>{0}, parcela {1}: a punto de secarse</value>
+  </data>
+  <data name="Dtr_TooltipReadyToHarvest" xml:space="preserve">
+    <value>{0}, parcela {1}: lista para cosechar, {2}</value>
+  </data>
+  <data name="Dtr_TooltipMature" xml:space="preserve">
+    <value>{0}, parcela {1}: madura, {2}</value>
+  </data>
+  <data name="Dtr_TooltipTimingUnknown" xml:space="preserve">
+    <value>{0}, parcela {1}: hora de plantado desconocida, {2}</value>
+  </data>
+  <data name="Guard_OccupiedQuestEvent" xml:space="preserve">
+    <value>El jugador está ocupado en un evento de misión ({0}).</value>
+  </data>
+  <data name="Guard_OccupiedSummoningBell" xml:space="preserve">
+    <value>El jugador está ocupado en una campana de invocación ({0}).</value>
+  </data>
+  <data name="Guard_OccupiedGeneric" xml:space="preserve">
+    <value>El jugador está ocupado ({0}).</value>
+  </data>
+  <data name="Guard_NotInHousing" xml:space="preserve">
+    <value>No estás en una zona de vivienda.</value>
+  </data>
+  <data name="Guard_NoPatchesOnPlot" xml:space="preserve">
+    <value>No se descubrió ningún huerto en el terreno {0}.</value>
+  </data>
+  <data name="Guard_NoPatchesHere" xml:space="preserve">
+    <value>No se descubrió ningún huerto aquí.</value>
+  </data>
+  <data name="Guard_PlayerPositionUnavailable" xml:space="preserve">
+    <value>Posición del jugador no disponible.</value>
+  </data>
+  <data name="Guard_NearestPatchTooFar" xml:space="preserve">
+    <value>El huerto más cercano está a {0}y (límite {1}y).</value>
+  </data>
+  <data name="Guard_FcPermissionsWarning" xml:space="preserve">
+    <value>Este personaje podría no tener permisos de rango de FC aquí; las acciones de jardinería podrían fallar sin avisar.</value>
+  </data>
+  <data name="Scheduler_NoPlanToRun" xml:space="preserve">
+    <value>No hay ningún plan que ejecutar.</value>
+  </data>
+  <data name="Scheduler_NeedFreeSlotsToHarvest" xml:space="preserve">
+    <value>Se necesitan al menos {0} espacios libres en el inventario para cosechar.</value>
+  </data>
+  <data name="Scheduler_NoFertilizerInBag" xml:space="preserve">
+    <value>No hay abono en la bolsa.</value>
+  </data>
+  <data name="Scheduler_AlreadyRunning" xml:space="preserve">
+    <value>Ya se está ejecutando.</value>
+  </data>
+  <data name="Scheduler_Started" xml:space="preserve">
+    <value>Se inició {0} en el huerto {1}.</value>
+  </data>
+  <data name="Scheduler_StartedChat" xml:space="preserve">
+    <value>{0} inició en tu huerto {1}.</value>
+  </data>
+  <data name="Scheduler_NothingToTend" xml:space="preserve">
+    <value>Nada que cuidar en el huerto {0}.</value>
+  </data>
+  <data name="Scheduler_NothingToTendChat" xml:space="preserve">
+    <value>Nada que cuidar en tu huerto {0}.</value>
+  </data>
+  <data name="Scheduler_NothingToHarvest" xml:space="preserve">
+    <value>Nada que cosechar en el huerto {0}.</value>
+  </data>
+  <data name="Scheduler_NothingToHarvestChat" xml:space="preserve">
+    <value>Nada que cosechar en tu huerto {0}.</value>
+  </data>
+  <data name="Scheduler_NothingToFertilize" xml:space="preserve">
+    <value>Nada que abonar en el huerto {0}.</value>
+  </data>
+  <data name="Scheduler_NothingToFertilizeChat" xml:space="preserve">
+    <value>Nada que abonar en tu huerto {0}.</value>
+  </data>
+  <data name="Scheduler_PlanNothingLeft" xml:space="preserve">
+    <value>No queda nada que plantar; ningún paso del plan sigue siendo válido.</value>
+  </data>
+  <data name="Scheduler_PlanNothingLeftChat" xml:space="preserve">
+    <value>No queda nada que plantar; el plan ya no es válido.</value>
+  </data>
+  <data name="Scheduler_LeftHousingArea" xml:space="preserve">
+    <value>has salido de la zona de vivienda.</value>
+  </data>
+  <data name="Scheduler_MovedAwayFromPatch" xml:space="preserve">
+    <value>te has alejado del huerto.</value>
+  </data>
+  <data name="Scheduler_StoppedWithReason" xml:space="preserve">
+    <value>Detenido: {0}</value>
+  </data>
+  <data name="Scheduler_StoppedNoReason" xml:space="preserve">
+    <value>Detenido.</value>
+  </data>
+  <data name="Scheduler_Complete" xml:space="preserve">
+    <value>{0} completado: {1}.</value>
+  </data>
+  <data name="Scheduler_Finished" xml:space="preserve">
+    <value>{0} terminó: {1}.</value>
+  </data>
+  <data name="Scheduler_GenericComplete" xml:space="preserve">
+    <value>Barrido completado.</value>
+  </data>
+  <data name="Scheduler_GenericFinished" xml:space="preserve">
+    <value>Barrido terminado.</value>
+  </data>
+  <data name="Scheduler_CountTended_One" xml:space="preserve">
+    <value>{0} cuidada</value>
+  </data>
+  <data name="Scheduler_CountTended_Other" xml:space="preserve">
+    <value>{0} cuidadas</value>
+  </data>
+  <data name="Scheduler_CountSkipped_One" xml:space="preserve">
+    <value>{0} omitida</value>
+  </data>
+  <data name="Scheduler_CountSkipped_Other" xml:space="preserve">
+    <value>{0} omitidas</value>
+  </data>
+  <data name="Scheduler_CountHarvested_One" xml:space="preserve">
+    <value>{0} cosechada</value>
+  </data>
+  <data name="Scheduler_CountHarvested_Other" xml:space="preserve">
+    <value>{0} cosechadas</value>
+  </data>
+  <data name="Scheduler_CountNoHarvestEntry_One" xml:space="preserve">
+    <value>{0} parcela en etapa 4 sin entrada de Harvest</value>
+  </data>
+  <data name="Scheduler_CountNoHarvestEntry_Other" xml:space="preserve">
+    <value>{0} parcelas en etapa 4 sin entrada de Harvest</value>
+  </data>
+  <data name="Scheduler_CountFertilized_One" xml:space="preserve">
+    <value>{0} abonada</value>
+  </data>
+  <data name="Scheduler_CountFertilized_Other" xml:space="preserve">
+    <value>{0} abonadas</value>
+  </data>
+  <data name="Scheduler_CountPlanted_One" xml:space="preserve">
+    <value>{0} plantada</value>
+  </data>
+  <data name="Scheduler_CountPlanted_Other" xml:space="preserve">
+    <value>{0} plantadas</value>
+  </data>
+  <data name="Log_TabLabel" xml:space="preserve">
+    <value>Registro</value>
+  </data>
+  <data name="Log_EntryLine" xml:space="preserve">
+    <value>[{0}] {1}</value>
+  </data>
+  <data name="OpenBed_NoPredictedEntity" xml:space="preserve">
+    <value>{0} parcela {1}: sin entidad de parcela prevista; se omite.</value>
+  </data>
+  <data name="OpenBed_NoPredictedEntityChat" xml:space="preserve">
+    <value>el juego todavía no ha localizado esta parcela</value>
+  </data>
+  <data name="OpenBed_EntityGone" xml:space="preserve">
+    <value>{0} parcela {1}: la entidad de parcela 0x{2} ya no está en la tabla de objetos; se omite.</value>
+  </data>
+  <data name="OpenBed_EntityGoneChat" xml:space="preserve">
+    <value>la parcela no se puede encontrar ahora mismo</value>
+  </data>
+  <data name="OpenBed_TargetSystemUnavailable" xml:space="preserve">
+    <value>{0} parcela {1}: TargetSystem no disponible; se omite.</value>
+  </data>
+  <data name="OpenBed_TargetSystemUnavailableChat" xml:space="preserve">
+    <value>un error del juego al apuntar</value>
+  </data>
+  <data name="OpenBed_MenuNeverOpened" xml:space="preserve">
+    <value>{0} parcela {1}: el menú de la parcela nunca se abrió; se omite.</value>
+  </data>
+  <data name="OpenBed_MenuNeverOpenedChat" xml:space="preserve">
+    <value>su menú nunca se abrió</value>
+  </data>
+  <data name="OpenBed_PromptUnparsed" xml:space="preserve">
+    <value>{0} parcela {1}: el mensaje «{2}» no se pudo interpretar como números de parcela/huerto; se cierra sin actuar.</value>
+  </data>
+  <data name="OpenBed_PromptUnparsedChat" xml:space="preserve">
+    <value>su menú no se reconoció</value>
+  </data>
+  <data name="OpenBed_GaveUpAfterAttempts" xml:space="preserve">
+    <value>{0} parcela {1}: se desistió después de {2} intentos (el menú seguía sin coincidir con el mapa); se omite.</value>
+  </data>
+  <data name="OpenBed_GaveUpAfterAttemptsChat" xml:space="preserve">
+    <value>su posición seguía sin coincidir con el mapa</value>
+  </data>
+  <data name="Tend_MenuClosed" xml:space="preserve">
+    <value>{0} parcela {1}: el menú se cerró antes de poder cuidarla.</value>
+  </data>
+  <data name="Tend_MenuClosedChat" xml:space="preserve">
+    <value>el menú se cerró antes de poder cuidarla</value>
+  </data>
+  <data name="Tend_NoCareEntry" xml:space="preserve">
+    <value>{0} parcela {1}: sin entrada de {2} (ofrecidas: {3}); se omite.</value>
+  </data>
+  <data name="Tend_NoCareEntryChat" xml:space="preserve">
+    <value>cuidar no estaba disponible para esta parcela</value>
+  </data>
+  <data name="Tend_Tended" xml:space="preserve">
+    <value>{0} parcela {1}: cuidada ({2}).</value>
+  </data>
+  <data name="Tend_TendedChat" xml:space="preserve">
+    <value>Parcela {0} cuidada ({1}).</value>
+  </data>
+  <data name="Harvest_MenuClosed" xml:space="preserve">
+    <value>{0} parcela {1}: el menú se cerró antes de poder cosecharla.</value>
+  </data>
+  <data name="Harvest_MenuClosedChat" xml:space="preserve">
+    <value>el menú se cerró antes de poder cosecharla</value>
+  </data>
+  <data name="Harvest_NoHarvestEntry" xml:space="preserve">
+    <value>{0} parcela {1}: etapa 4 pero sin entrada de {2} ofrecida.</value>
+  </data>
+  <data name="Harvest_NoHarvestEntryChat" xml:space="preserve">
+    <value>en realidad todavía no estaba lista para cosechar</value>
+  </data>
+  <data name="Harvest_Harvested" xml:space="preserve">
+    <value>{0} parcela {1}: cosechada ({2}).</value>
+  </data>
+  <data name="Harvest_HarvestedChat" xml:space="preserve">
+    <value>Parcela {0} cosechada ({1}).</value>
+  </data>
+  <data name="Fertilize_MenuClosed" xml:space="preserve">
+    <value>{0} parcela {1}: el menú se cerró antes de poder abonarla.</value>
+  </data>
+  <data name="Fertilize_MenuClosedChat" xml:space="preserve">
+    <value>el menú se cerró antes de poder abonarla</value>
+  </data>
+  <data name="Fertilize_RecentlyFertilized" xml:space="preserve">
+    <value>{0} parcela {1}: abonada hace menos de {2}min; se omite.</value>
+  </data>
+  <data name="Fertilize_RecentlyFertilizedChat" xml:space="preserve">
+    <value>ya se abonó recientemente</value>
+  </data>
+  <data name="Fertilize_AlreadyMature" xml:space="preserve">
+    <value>{0} parcela {1}: ya está madura; el abono no haría nada.</value>
+  </data>
+  <data name="Fertilize_AlreadyMatureChat" xml:space="preserve">
+    <value>ya está madura; el abono no ayudaría</value>
+  </data>
+  <data name="Fertilize_NoFertilizeEntry" xml:space="preserve">
+    <value>{0} parcela {1}: sin entrada de {2} (ofrecidas: {3}); se omite.</value>
+  </data>
+  <data name="Fertilize_NoFertilizeEntryChat" xml:space="preserve">
+    <value>abonar no estaba disponible para esta parcela</value>
+  </data>
+  <data name="Fertilize_ModeNeverEngaged" xml:space="preserve">
+    <value>{0} parcela {1}: el modo de abonar nunca se activó; se omite.</value>
+  </data>
+  <data name="Fertilize_ModeNeverEngagedChat" xml:space="preserve">
+    <value>abonar no llegó a empezar</value>
+  </data>
+  <data name="Fertilize_NoLongerInBag" xml:space="preserve">
+    <value>{0} parcela {1}: el abono ya no está en la bolsa; se omite.</value>
+  </data>
+  <data name="Fertilize_NoLongerInBagChat" xml:space="preserve">
+    <value>no tienes abono en las bolsas</value>
+  </data>
+  <data name="Fertilize_AgentUnavailable" xml:space="preserve">
+    <value>{0} parcela {1}: agente de contexto de inventario no disponible; se omite.</value>
+  </data>
+  <data name="Fertilize_AgentUnavailableChat" xml:space="preserve">
+    <value>un error del juego al abrir el menú del objeto</value>
+  </data>
+  <data name="Fertilize_ContextMenuNotOpen" xml:space="preserve">
+    <value>{0} parcela {1}: {2} no está abierto; se omite.</value>
+  </data>
+  <data name="Fertilize_ContextMenuNotOpenChat" xml:space="preserve">
+    <value>el menú del objeto no se abrió</value>
+  </data>
+  <data name="Fertilize_NoFertilizeOnItem" xml:space="preserve">
+    <value>{0} parcela {1}: sin entrada de {2} en el menú contextual del objeto (ofrecidas: {3}); se cierra y se omite.</value>
+  </data>
+  <data name="Fertilize_NoFertilizeOnItemChat" xml:space="preserve">
+    <value>abonar no estaba disponible en el objeto</value>
+  </data>
+  <data name="Fertilize_EntryDisabledOnItem" xml:space="preserve">
+    <value>{0} parcela {1}: la entrada de {2} estaba deshabilitada en el menú contextual del objeto; se cierra y se omite.</value>
+  </data>
+  <data name="Fertilize_EntryDisabledOnItemChat" xml:space="preserve">
+    <value>abonar estaba deshabilitado en el objeto</value>
+  </data>
+  <data name="Fertilize_Fertilized" xml:space="preserve">
+    <value>{0} parcela {1}: abonada ({2}).</value>
+  </data>
+  <data name="Fertilize_FertilizedChat" xml:space="preserve">
+    <value>Parcela {0} abonada ({1}).</value>
+  </data>
+  <data name="Fertilize_ManagerUnavailable" xml:space="preserve">
+    <value>{0} parcela {1}: RaptureAtkUnitManager no disponible; no se pueden listar los addons abiertos.</value>
+  </data>
+  <data name="Fertilize_NoContextAddonOpen" xml:space="preserve">
+    <value>{0} parcela {1}: no hay ningún addon con «Context» en el nombre abierto actualmente.</value>
+  </data>
+  <data name="Fertilize_ContextAddonsFound" xml:space="preserve">
+    <value>{0} parcela {1}: addon(s) con nombre Context abiertos: {2}.</value>
+  </data>
+  <data name="Plant_NoSoilAvailableFallback" xml:space="preserve">
+    <value>No hay tierra disponible.</value>
+  </data>
+  <data name="Plant_PlanSoilGone" xml:space="preserve">
+    <value>{0}, del plan, ya no está en la bolsa.</value>
+  </data>
+  <data name="Plant_MenuClosed" xml:space="preserve">
+    <value>{0} parcela {1}: el menú se cerró antes de poder plantarla.</value>
+  </data>
+  <data name="Plant_MenuClosedChat" xml:space="preserve">
+    <value>el menú se cerró antes de poder plantarla</value>
+  </data>
+  <data name="Plant_NoPlantSeedsEntry" xml:space="preserve">
+    <value>{0} parcela {1}: sin entrada de {2} (ofrecidas: {3}); se omite.</value>
+  </data>
+  <data name="Plant_NoPlantSeedsEntryChat" xml:space="preserve">
+    <value>plantar no estaba disponible para esta parcela</value>
+  </data>
+  <data name="Plant_DialogNeverOpened" xml:space="preserve">
+    <value>{0} parcela {1}: {2} nunca se abrió; se omite.</value>
+  </data>
+  <data name="Plant_DialogNeverOpenedChat" xml:space="preserve">
+    <value>el diálogo de plantado nunca se abrió</value>
+  </data>
+  <data name="Plant_SoilProblem" xml:space="preserve">
+    <value>{0} parcela {1}: {2}</value>
+  </data>
+  <data name="Plant_SeedGone" xml:space="preserve">
+    <value>{0} parcela {1}: la semilla de la fila {2} ya no está en la bolsa; se omite.</value>
+  </data>
+  <data name="Plant_SeedGoneChat" xml:space="preserve">
+    <value>esa semilla ya no está en tus bolsas</value>
+  </data>
+  <data name="Plant_SoilStaleGone" xml:space="preserve">
+    <value>{0} parcela {1}: {2} ya no está en la bolsa; se omite.</value>
+  </data>
+  <data name="Plant_SoilStaleGoneChat" xml:space="preserve">
+    <value>tu {0} ya no está</value>
+  </data>
+  <data name="Plant_AgentUnavailable" xml:space="preserve">
+    <value>{0} parcela {1}: AgentHousingPlant no disponible; se omite.</value>
+  </data>
+  <data name="Plant_AgentUnavailableChat" xml:space="preserve">
+    <value>un error del juego al plantar</value>
+  </data>
+  <data name="Plant_NotConfirmed" xml:space="preserve">
+    <value>{0} parcela {1}: no se pudo confirmar el plantado en la siguiente lectura pasiva; se detiene el barrido.</value>
+  </data>
+  <data name="Plant_NotConfirmedChat" xml:space="preserve">
+    <value>Detenido: no se pudo confirmar el plantado de la parcela {0}.</value>
+  </data>
+  <data name="Plant_Planted" xml:space="preserve">
+    <value>{0} parcela {1}: plantada {2} en {3}.</value>
+  </data>
+  <data name="Plant_PlantedChat" xml:space="preserve">
+    <value>Plantada {0} en la parcela {1}, {2}.</value>
+  </data>
+  <data name="RemoveCrop_SweepRunning" xml:space="preserve">
+    <value>No se puede retirar un cultivo mientras se ejecuta un barrido.</value>
+  </data>
+  <data name="RemoveCrop_MenuClosed" xml:space="preserve">
+    <value>{0} parcela {1}: el menú se cerró antes de poder retirar el cultivo.</value>
+  </data>
+  <data name="RemoveCrop_NoEntry" xml:space="preserve">
+    <value>{0} parcela {1}: sin entrada de {2} (ofrecidas: {3}).</value>
+  </data>
+  <data name="RemoveCrop_WrongConfirmation" xml:space="preserve">
+    <value>{0} parcela {1}: la confirmación abierta no era la de {2} («{3}»); se deja intacta.</value>
+  </data>
+  <data name="RemoveCrop_StillOccupied" xml:space="preserve">
+    <value>{0} parcela {1}: sigue ocupada después de {2}; puede que la retirada no se haya completado.</value>
+  </data>
+  <data name="RemoveCrop_Removed" xml:space="preserve">
+    <value>{0} parcela {1}: {2} retirada.</value>
+  </data>
+  <data name="RemoveCrop_RemovedChat" xml:space="preserve">
+    <value>Se retiró {0} de la parcela {1}.</value>
+  </data>
+  <data name="Cleanup_NoQuitEntry" xml:space="preserve">
+    <value>Detención: el menú de parcela abierto no tiene entrada de {0}; se cierra directamente.</value>
+  </data>
+  <data name="Cleanup_ClosedBedMenu" xml:space="preserve">
+    <value>Detención: se cerró el menú de parcela abierto.</value>
+  </data>
+  <data name="Cleanup_ClosedAddon" xml:space="preserve">
+    <value>Detención: se cerró el {0} abierto.</value>
+  </data>
+  <data name="Cleanup_AddonWouldNotClose" xml:space="preserve">
+    <value>Detención: {0} estaba abierto pero no se pudo cerrar.</value>
+  </data>
+  <data name="ActivityLog_SkippedBeds_One" xml:space="preserve">
+    <value>Se omitió la parcela {0}: {1}.</value>
+  </data>
+  <data name="ActivityLog_SkippedBeds_Other" xml:space="preserve">
+    <value>Se omitieron {0} parcelas: {1}.</value>
+  </data>
+</root>

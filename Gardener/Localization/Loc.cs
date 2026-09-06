@@ -40,12 +40,23 @@ namespace Gardener.Localization
         /// <see cref="Strings"/> lookup and every <see cref="Format"/> call agree on the same
         /// language from the same call. English maps to the invariant culture, not
         /// <c>CultureInfo("en")</c>, because the neutral resx's own culture is invariant and
-        /// numeric/date formatting should match it exactly.
+        /// numeric/date formatting should match it exactly. Spanish maps to
+        /// <c>CultureInfo("es-ES")</c>, not the neutral <c>CultureInfo("es")</c>, so numbers and
+        /// dates render Spain's own conventions (decimal comma, day/month/year, 24-hour clock)
+        /// for the peninsular Spanish this UI is translated into; <see cref="Strings"/>'s
+        /// <c>ResourceManager</c> still resolves the <c>Strings.es.resx</c> satellite assembly
+        /// through .NET's ordinary culture-fallback chain (es-ES -&gt; es -&gt; neutral), so no
+        /// second resx or "es-ES" file name is needed.
         /// </summary>
         public static void SetLanguage(string langCode)
         {
             var resolved = Resolve(langCode);
-            Culture = resolved == "en" ? CultureInfo.InvariantCulture : new CultureInfo(resolved);
+            Culture = resolved switch
+            {
+                "en" => CultureInfo.InvariantCulture,
+                "es" => new CultureInfo("es-ES"),
+                _ => new CultureInfo(resolved),
+            };
             Strings.Culture = Culture;
         }
 
