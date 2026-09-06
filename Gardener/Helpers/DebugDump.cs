@@ -1,3 +1,4 @@
+using System.Numerics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -194,6 +195,10 @@ public static class DebugDump
             ? $"Current plot: plot {p + 1} (index {p}) (owned={diag.CurrentPlotOwned})"
             : $"Current plot: none (apartment or unresolved) (owned={diag.CurrentPlotOwned})");
 
+        sb.AppendLine(diag.PlayerPosition is { } pp
+            ? $"Player position: ({pp.X:F2},{pp.Y:F2},{pp.Z:F2})"
+            : "Player position: unavailable (attribution's proximity test cannot run)");
+
         sb.AppendLine("Per-patch attribution:");
         if (diag.AttributedPatches.Count == 0)
             sb.AppendLine("  (no patches discovered)");
@@ -201,8 +206,27 @@ public static class DebugDump
         {
             var plotText = a.PlotIndex is { } pi ? $"plot {pi + 1} (index {pi})" : "unresolved";
             var distText = a.DistanceToMarker is { } d ? $"{d:F2}y" : "n/a";
-            sb.AppendLine($"  {a.Patch.Key}: nearest plot marker={plotText} distance={distText} " +
-                          $"=> {(a.Kept ? "KEPT (player's own plot)" : "REJECTED")}");
+            var playerDist = diag.PlayerPosition is { } origin
+                ? $"{Vector3.Distance(a.Patch.Center, origin):F2}y"
+                : "n/a";
+            sb.AppendLine($"  {a.Patch.Key}: centre=({a.Patch.Center.X:F2},{a.Patch.Center.Y:F2},{a.Patch.Center.Z:F2}) " +
+                          $"nearest plot marker={plotText} distance={distText} playerDistance={playerDist} " +
+                          $"=> {(a.Kept ? "KEPT" : "REJECTED")}");
+        }
+
+        // A patch object the furniture array reported that never became a Patch. Without these the
+        // dump shows only survivors, which hides the case where the patches in front of the player
+        // are dropped and a neighbour's are the ones attributed.
+        sb.AppendLine($"Patch objects skipped before attribution ({diag.SkippedPatches.Count}):");
+        if (diag.SkippedPatches.Count == 0)
+            sb.AppendLine("  (none)");
+        foreach (var skip in diag.SkippedPatches)
+        {
+            var playerDist = diag.PlayerPosition is { } origin
+                ? $"{Vector3.Distance(skip.Position, origin):F2}y"
+                : "n/a";
+            sb.AppendLine($"  ({skip.Position.X:F2},{skip.Position.Y:F2},{skip.Position.Z:F2}) " +
+                          $"beds={skip.AssociatedBeds} playerDistance={playerDist}: {skip.Reason}");
         }
 
         // SAFETY: HousingManager.Instance() is a static client pointer; OutdoorTerritory is only

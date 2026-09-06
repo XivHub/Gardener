@@ -122,6 +122,11 @@ public readonly record struct PatchAttribution(Patch Patch, int? PlotIndex, floa
 /// Counters from the most recent <see cref="PatchDiscovery.Refresh"/>, kept so a zero-patch result
 /// can say why it is zero without another round trip into the game.
 /// </summary>
+/// <summary>One patch object the furniture array reported that never became a <see cref="Patch"/>,
+/// with the reason. Without these a dump shows only what survived, which hides the case where the
+/// patches in front of the player are dropped and a neighbour's are the ones attributed.</summary>
+public readonly record struct SkippedPatchObject(Vector3 Position, int AssociatedBeds, string Reason);
+
 public readonly record struct DiscoveryDiagnostics(
     int FurnitureArrayWalked,
     int ObjectTableWalked,
@@ -130,11 +135,13 @@ public readonly record struct DiscoveryDiagnostics(
     IReadOnlyList<(uint DataId, Vector3 Position)> UnassociatedBeds,
     sbyte? CurrentPlot,
     bool CurrentPlotOwned,
-    IReadOnlyList<PatchAttribution> AttributedPatches)
+    IReadOnlyList<PatchAttribution> AttributedPatches,
+    Vector3? PlayerPosition,
+    IReadOnlyList<SkippedPatchObject> SkippedPatches)
 {
     public static readonly DiscoveryDiagnostics Empty = new(
         0, 0, new Dictionary<uint, int>(), new Dictionary<uint, int>(), Array.Empty<(uint, Vector3)>(),
-        null, false, Array.Empty<PatchAttribution>());
+        null, false, Array.Empty<PatchAttribution>(), null, Array.Empty<SkippedPatchObject>());
 }
 
 /// <summary>
@@ -232,6 +239,7 @@ public static class PatchDiscovery
             .ToList();
 
         var builtPatches = new List<Patch>();
+        var skippedPatches = new List<SkippedPatchObject>();
         foreach (var patchObj in patchObjects)
         {
             var associated = bedObjects
@@ -239,6 +247,7 @@ public static class PatchDiscovery
                 .ToList();
             if (associated.Count == 0)
             {
+                skippedPatches.Add(new SkippedPatchObject(patchObj.Position, 0, "no beds within the association radius"));
                 Plugin.Logger.Debug($"[PatchDiscovery] patch at {patchObj.Position} has no beds within {BedAssociationRadius}y; skipping");
                 continue;
             }
@@ -246,6 +255,7 @@ public static class PatchDiscovery
             var dataIds = associated.Select(b => b.BaseId).Distinct().ToList();
             if (dataIds.Count != 1)
             {
+                skippedPatches.Add(new SkippedPatchObject(patchObj.Position, associated.Count, $"mixed bed DataIds ({string.Join(",", dataIds)})"));
                 Plugin.Logger.Warning(
                     $"[PatchDiscovery] patch at {patchObj.Position} has beds with mixed DataIds " +
                     $"({string.Join(",", dataIds)}); skipping rather than guessing a shape");
@@ -260,6 +270,7 @@ public static class PatchDiscovery
                 case OblongBedDataId: kind = PatchKind.Oblong; expectedCount = 6; break;
                 case RoundBedDataId: kind = PatchKind.Round; expectedCount = 4; break;
                 default:
+                    skippedPatches.Add(new SkippedPatchObject(patchObj.Position, associated.Count, $"unrecognised bed DataId {dataIds[0]}"));
                     Plugin.Logger.Warning($"[PatchDiscovery] patch at {patchObj.Position} has beds with unrecognised DataId {dataIds[0]}; skipping");
                     continue;
             }
@@ -269,6 +280,8 @@ public static class PatchDiscovery
                 Plugin.Logger.Warning(
                     $"[PatchDiscovery] patch at {patchObj.Position} looks like {kind} ({associated.Count} beds) but " +
                     $"expected {expectedCount}; skipping rather than guessing a shape");
+                skippedPatches.Add(new SkippedPatchObject(
+                    patchObj.Position, associated.Count, $"{associated.Count} beds, expected {expectedCount} for {kind}"));
                 continue;
             }
 
@@ -320,7 +333,7 @@ public static class PatchDiscovery
 
         LastDiagnostics = new DiscoveryDiagnostics(
             furnitureWalked, objectTableWalked, nearbyPatchBaseIds, nearbyBedDataIds, unassociatedBeds,
-            currentPlot, ownsCurrentPlot, attributions);
+            currentPlot, ownsCurrentPlot, attributions, playerPosition, skippedPatches);
 
         Patches = kept;
     }
