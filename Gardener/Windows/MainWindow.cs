@@ -73,7 +73,7 @@ namespace Gardener.Windows
 
         public override void Draw()
         {
-            if (!ImGui.BeginTabBar("##gardenerTabs"))
+            if (!HubTabs.Begin("##gardenerTabs"))
                 return;
 
             // ###-suffixed: BeginTabItem derives tab identity (and so which tab stays selected
@@ -101,7 +101,7 @@ namespace Gardener.Windows
                 ImGui.EndTabItem();
             }
 
-            ImGui.EndTabBar();
+            HubTabs.End();
         }
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace Gardener.Windows
 
             var patches = PatchDiscovery.Patches;
             if (patches.Count == 0)
-                ImGui.TextColored(HubStyle.Faint, Strings.Garden_NoPatches);
+                HubText.Faint(Strings.Garden_NoPatches);
 
             var plot = PatchDiscovery.LastDiagnostics.CurrentPlot;
 
@@ -145,7 +145,7 @@ namespace Gardener.Windows
                 var due = Reminders.SummaryTextFor(patch.Key);
                 var dueWidth = ImGui.CalcTextSize(due).X;
                 ImGui.SameLine(ImGui.GetContentRegionMax().X - dueWidth - ImGui.GetStyle().FramePadding.X * 2f);
-                ImGui.TextColored(HubStyle.Faint, due);
+                HubText.Inline(HubStyle.Faint, due);
 
                 if (!open)
                     continue;
@@ -153,7 +153,7 @@ namespace Gardener.Windows
                 var states = GardenMemory.Read(patch);
                 if (states.Count == 0)
                 {
-                    ImGui.TextColored(HubStyle.Faint, Strings.Garden_NoDataForPatch);
+                    HubText.Faint(Strings.Garden_NoDataForPatch);
                     ImGui.Spacing();
                     continue;
                 }
@@ -170,7 +170,7 @@ namespace Gardener.Windows
             DrawOrphans();
 
             if (patches.Count > 0)
-                ImGui.TextColored(HubStyle.Faint, Strings.Garden_HarvestLagNote);
+                HubText.Faint(Strings.Garden_HarvestLagNote);
 
             ImGui.Separator();
             ImGui.TextDisabled(Strings.Garden_DebugDumpHeader);
@@ -182,7 +182,7 @@ namespace Gardener.Windows
 
             if (DebugDump.LastDumpPath != null)
             {
-                ImGui.TextColored(HubStyle.Faint, DebugDump.LastDumpPath);
+                HubText.Faint(DebugDump.LastDumpPath);
                 ImGui.SameLine();
                 if (ImGui.Button($"{Strings.Garden_CopyButton}##copyLastDump"))
                     DebugDump.QueueClipboardCopy();
@@ -212,8 +212,8 @@ namespace Gardener.Windows
                 return;
 
             ImGui.Separator();
-            ImGui.TextColored(HubStyle.Warn, Loc.Format(Strings.Garden_OrphansHeader, Formats.Number(orphans.Count)));
-            ImGui.TextColored(HubStyle.Faint, Strings.Garden_OrphansNote);
+            HubText.Warn(Loc.Format(Strings.Garden_OrphansHeader, Formats.Number(orphans.Count)));
+            HubText.Faint(Strings.Garden_OrphansNote);
             foreach (var orphan in orphans)
             {
                 ImGui.TextUnformatted(Loc.Format(Strings.Garden_OrphanLine, PatchLabel.FromKey(orphan.PatchKey),
@@ -251,14 +251,13 @@ namespace Gardener.Windows
                 var observers = observedRecords.Select(r => r.LastSeenByCharacter!).Distinct().ToList();
                 var oldest = observedRecords.Min(r => r.LastSeenAt);
                 var ageHours = (DateTimeOffset.UtcNow - oldest).TotalHours;
-                ImGui.TextColored(HubStyle.Faint,
-                    Loc.Format(Strings.Garden_LastSeenLine, TextList.And(observers), Formats.Number(ageHours, "F0")));
+                HubText.Faint(Loc.Format(Strings.Garden_LastSeenLine, TextList.And(observers), Formats.Number(ageHours, "F0")));
             }
 
             var unknownCount = patchRecords.Count(r => r.PlantedAt is null);
             if (unknownCount > 0)
             {
-                ImGui.TextColored(HubStyle.Faint, Loc.Format(
+                HubText.Faint(Loc.Format(
                     unknownCount == 1 ? Strings.Garden_UnknownPlantingTimeCount_One : Strings.Garden_UnknownPlantingTimeCount_Other,
                     Formats.Number(unknownCount)));
                 ImGui.SameLine();
@@ -268,7 +267,7 @@ namespace Gardener.Windows
             DrawSetAllPlantingTimesPopup(patch, patchRecords);
 
             if (BedTargeting.VerifiedBedCount(patch) < patch.Kind.BedCount())
-                ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Sweep_BedOrderVerified,
+                HubText.Faint(Loc.Format(Strings.Sweep_BedOrderVerified,
                     Formats.Number(BedTargeting.VerifiedBedCount(patch)), Formats.Number(patch.Kind.BedCount())));
         }
 
@@ -315,19 +314,18 @@ namespace Gardener.Windows
         {
             // Stretch rather than fit-to-content for Crop/When: a fitted column sizes itself to the
             // longest sentence and pushes the rest off the window.
-            const ImGuiTableFlags flags = ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg |
-                                          ImGuiTableFlags.Resizable | ImGuiTableFlags.SizingStretchProp;
-            if (!ImGui.BeginTable($"##bedgrid-{patch.Key}", 5, flags))
+            const ImGuiTableFlags flags = ImGuiTableFlags.Borders | ImGuiTableFlags.SizingStretchProp;
+            if (!HubTable.Begin($"##bedgrid-{patch.Key}", 5, extra: flags))
                 return;
 
             // ###-suffixed: the table is Resizable, and a translated header label must not read as
             // a different column from the one whose width the player already dragged.
-            ImGui.TableSetupColumn($"{Strings.Garden_ColBed}###col-bed", ImGuiTableColumnFlags.WidthFixed, 32f);
-            ImGui.TableSetupColumn($"{Strings.Garden_ColCrop}###col-crop", ImGuiTableColumnFlags.WidthStretch, 4f);
-            ImGui.TableSetupColumn($"{Strings.Garden_ColGrowth}###col-growth", ImGuiTableColumnFlags.WidthFixed, StageIndicator.Width());
-            ImGui.TableSetupColumn($"{Strings.Garden_ColWhen}###col-when", ImGuiTableColumnFlags.WidthStretch, 5f);
+            HubTable.Fit($"{Strings.Garden_ColBed}###col-bed");
+            HubTable.Stretch($"{Strings.Garden_ColCrop}###col-crop", 4f);
+            HubTable.Fit($"{Strings.Garden_ColGrowth}###col-growth");
+            HubTable.Stretch($"{Strings.Garden_ColWhen}###col-when", 5f);
             // No header label: the column holds one icon button, nothing a header word would describe.
-            ImGui.TableSetupColumn("##col-action", ImGuiTableColumnFlags.NoHeaderLabel | ImGuiTableColumnFlags.WidthFixed, 32f);
+            HubTable.Fit("##col-action", ImGuiTableColumnFlags.NoHeaderLabel);
             ImGui.TableHeadersRow();
 
             for (var bedNumber = 1; bedNumber <= patch.Kind.BedCount(); bedNumber++)
@@ -339,7 +337,7 @@ namespace Gardener.Windows
 
                 if (!byBed.TryGetValue(bedNumber, out var state) || state.IsEmpty)
                 {
-                    ImGui.TextColored(HubStyle.Faint, Strings.Common_Empty);
+                    HubText.Faint(Strings.Common_Empty);
                     ImGui.TableNextColumn();
                     ImGui.TableNextColumn();
                     ImGui.TableNextColumn();
@@ -356,7 +354,7 @@ namespace Gardener.Windows
                 // Wrap at the cell's own right edge, which is what PushTextWrapPos(0) means inside a
                 // table; without it every cell here is one unbroken line and the last column is cut off.
                 ImGui.PushTextWrapPos(0f);
-                ImGui.TextColored(color, SeedName(state.SeedRow));
+                HubText.Colored(color, SeedName(state.SeedRow));
                 if (ImGui.IsItemHovered())
                     DrawBedTooltip(patch, bedNumber, state, record, window);
 
@@ -373,7 +371,7 @@ namespace Gardener.Windows
                 DrawRemoveCropButton(patch, state);
             }
 
-            ImGui.EndTable();
+            HubTable.End();
         }
 
         /// <summary>The running sweep's own row: what it is doing and the Stop that ends it. Drawn
@@ -387,7 +385,7 @@ namespace Gardener.Windows
                 return;
 
             var bedText = SchedulerMain.CurrentBedNumber is { } bed ? Formats.Number(bed) : Strings.Sweep_NoActiveBed;
-            ImGui.TextColored(HubStyle.Warn, Loc.Format(Strings.Sweep_StatusRow,
+            HubText.Warn(Loc.Format(Strings.Sweep_StatusRow,
                 GameWords.Action(SchedulerMain.CurrentKind!.Value), bedText, Formats.Number(SchedulerMain.Worklist.Count),
                 SchedulerMain.State));
             ImGui.SameLine();
@@ -405,11 +403,11 @@ namespace Gardener.Windows
         private static void DrawSweepButtons(Patch patch)
         {
             if (GardenerGuard.PermissionsWarning() is { } permissionsWarning)
-                ImGui.TextColored(HubStyle.Warn, permissionsWarning);
+                HubText.Warn(permissionsWarning);
 
             if (GardenerGuard.BlockingReason() is { } reason)
             {
-                ImGui.TextColored(HubStyle.Faint, reason);
+                HubText.Faint(reason);
                 return;
             }
 
@@ -656,7 +654,7 @@ namespace Gardener.Windows
             var yieldSoilName = GardeningItems.SoilName(SoilFamily.Shroud, 3);
             if (growHours is null)
             {
-                ImGui.TextColored(HubStyle.Faint, Strings.Goal_GrowTimeUnknown);
+                HubText.Faint(Strings.Goal_GrowTimeUnknown);
                 return;
             }
 
@@ -686,7 +684,7 @@ namespace Gardener.Windows
             var produceName = SeedItems.ProduceName(goalRow);
             ImGui.TextUnformatted(Loc.Format(Strings.Goal_NoCrossbreedNeeded, produceName));
             var sources = SeedTable.Sources(goalRow);
-            ImGui.TextColored(HubStyle.Faint, sources.Count > 0
+            HubText.Faint(sources.Count > 0
                 ? Loc.Format(Strings.Goal_SourcesWhere, string.Join("; ", sources))
                 : Strings.Goal_SourcesNotRecorded);
         }
@@ -723,7 +721,7 @@ namespace Gardener.Windows
                 var records = GardenJournal.AllRecords;
                 if (records.Count == 0)
                 {
-                    ImGui.TextColored(HubStyle.Faint, Strings.Goal_NeverSeenGarden);
+                    HubText.Faint(Strings.Goal_NeverSeenGarden);
                     beds = Array.Empty<BedState>();
                     observedAt = null;
                 }
@@ -733,8 +731,8 @@ namespace Gardener.Windows
                         .Select(r => new BedState(r.PatchKey, r.BedNumber, r.SeedRow, r.LastSeenStage, 0, 0, 0, r.LastSeenAt))
                         .ToList();
                     observedAt = records.Max(r => r.LastSeenAt);
-                    ImGui.TextColored(HubStyle.Faint, Strings.Goal_NotAtGarden);
-                    ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Goal_LastVisitAge, GoalAgePhrase(observedAt.Value)));
+                    HubText.Faint(Strings.Goal_NotAtGarden);
+                    HubText.Faint(Loc.Format(Strings.Goal_LastVisitAge, GoalAgePhrase(observedAt.Value)));
                 }
             }
 
@@ -747,11 +745,11 @@ namespace Gardener.Windows
             var bestCaseDuration = bestCase.TotalHours > 48
                 ? Phrases.Days(Math.Round(bestCase.TotalDays))
                 : Phrases.Hours(Math.Round(bestCase.TotalHours));
-            ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Goal_RouteSummary,
+            HubText.Faint(Loc.Format(Strings.Goal_RouteSummary,
                 Formats.Number(totalSteps), bestCaseDuration, Formats.Number(plan.PeakBeds)));
 
             foreach (var warning in plan.Warnings)
-                ImGui.TextColored(HubStyle.Warn, warning);
+                HubText.Warn(warning);
 
             ImGui.Separator();
 
@@ -800,7 +798,7 @@ namespace Gardener.Windows
             {
                 var markerWidth = ImGui.CalcTextSize(marker).X;
                 ImGui.SameLine(ImGui.GetContentRegionMax().X - markerWidth - ImGui.GetStyle().FramePadding.X * 2f);
-                ImGui.TextColored(isCurrent ? HubStyle.Accent : HubStyle.Good, marker);
+                HubText.Inline(isCurrent ? HubStyle.Accent : HubStyle.Good, marker);
             }
 
             if (open)
@@ -833,14 +831,14 @@ namespace Gardener.Windows
             {
                 var heldCount = held.GetValueOrDefault(obtain.SeedRow);
                 var needColor = heldCount >= obtain.Needed ? HubStyle.Good : HubStyle.Text;
-                ImGui.TextColored(needColor, Loc.Format(Strings.Goal_ObtainNeedAndHeld,
+                HubText.Colored(needColor, Loc.Format(Strings.Goal_ObtainNeedAndHeld,
                     Formats.Number(obtain.Needed), SeedItems.SeedItemName(obtain.SeedRow), Formats.Number(heldCount)));
 
                 foreach (var section in obtain.Body)
                 {
                     ImGui.Indent();
                     foreach (var line in section.Lines)
-                        ImGui.TextColored(HubStyle.Faint, line);
+                        HubText.Faint(line);
                     ImGui.Unindent();
                 }
             }
@@ -851,19 +849,19 @@ namespace Gardener.Windows
                     if (section.Lines.Length == 0)
                         continue;
 
-                    ImGui.TextColored(HubStyle.Faint, SectionHeading(section.Kind));
+                    HubText.Faint(SectionHeading(section.Kind));
                     ImGui.Indent();
                     foreach (var line in section.Lines)
-                        ImGui.TextColored(color, line);
+                        HubText.Colored(color, line);
                     ImGui.Unindent();
                 }
             }
 
             foreach (var note in step.Notes)
-                ImGui.TextColored(HubStyle.Faint, note);
+                HubText.Faint(note);
 
             var (text, statusColor) = StatusLine(step, progress, held);
-            ImGui.TextColored(statusColor, text);
+            HubText.Colored(statusColor, text);
             ImGui.PopTextWrapPos();
         }
 
@@ -968,7 +966,7 @@ namespace Gardener.Windows
 
             if (!atGarden)
             {
-                ImGui.TextColored(HubStyle.Faint, Strings.Goal_StandAtGardenSeeBeds);
+                HubText.Faint(Strings.Goal_StandAtGardenSeeBeds);
                 DrawGoalHandoffDisabled(Strings.Goal_StandAtGardenPlantHandoff);
                 return;
             }
@@ -1013,7 +1011,7 @@ namespace Gardener.Windows
             ImGui.TextUnformatted(Strings.Goal_PlantsIntoHeader);
 
             foreach (var warning in split.Warnings)
-                ImGui.TextColored(HubStyle.Warn, warning);
+                HubText.Warn(warning);
 
             if (split.Patches.Count == 0)
             {
@@ -1043,14 +1041,14 @@ namespace Gardener.Windows
                     : Loc.Format(Strings.Goal_PatchPairCount_Other, Formats.Number(layout.Pairs));
                 var pairsWidth = ImGui.CalcTextSize(pairsText).X;
                 ImGui.SameLine(ImGui.GetContentRegionMax().X - pairsWidth - ImGui.GetStyle().FramePadding.X * 2f);
-                ImGui.TextColored(HubStyle.Faint, pairsText);
+                HubText.Inline(HubStyle.Faint, pairsText);
 
                 // Fit-to-content, and no host extension: every cell is a short bracketed bed label, so
                 // two equal stretched columns leave a band of empty table between them the width of
                 // the window.
                 const ImGuiTableFlags pairFlags = ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit |
                                                   ImGuiTableFlags.NoHostExtendX;
-                if (ImGui.BeginTable($"##goalpair-{layout.Patch.Key}", 2, pairFlags))
+                if (HubTable.Begin($"##goalpair-{layout.Patch.Key}", 2, extra: pairFlags))
                 {
                     ImGui.TableNextRow();
                     foreach (var step in layout.Plan.Steps.OrderBy(s => s.BedNumber))
@@ -1061,11 +1059,11 @@ namespace Gardener.Windows
                             : Loc.Format(Strings.Goal_PairBedExisting, Formats.Number(step.BedNumber), SeedItems.ProduceName(step.SeedRow));
                         ImGui.TextUnformatted($"[{label}]");
                     }
-                    ImGui.EndTable();
+                    HubTable.End();
                 }
 
                 foreach (var warning in layout.Plan.Warnings)
-                    ImGui.TextColored(HubStyle.Warn, warning);
+                    HubText.Warn(warning);
 
                 var otherBedsWaiting = split.Patches.Where(p => p.Patch.Key != layout.Patch.Key).Sum(p => p.Plan.Steps.Count);
                 DrawGoalHandoff(layout, layout.Patch.Key == nearestReachableKey, multiplePatches, otherBedsWaiting, plotIndex);
@@ -1095,19 +1093,17 @@ namespace Gardener.Windows
             {
                 var need = pairs * 2;
                 var heldCount = stock.Count(crossSoilItem.ItemId);
-                ImGui.TextColored(heldCount >= need ? HubStyle.Good : HubStyle.Warn,
-                    Loc.Format(Strings.Goal_SoilHeldSame, Formats.Number(heldCount),
-                        ItemSheet.Name(crossSoilItem.ItemId)));
+                HubText.Colored(heldCount >= need ? HubStyle.Good : HubStyle.Warn, Loc.Format(Strings.Goal_SoilHeldSame, Formats.Number(heldCount),
+                    ItemSheet.Name(crossSoilItem.ItemId)));
             }
             else
             {
                 var crossHeld = stock.Count(crossSoilItem.ItemId);
                 var yieldHeld = stock.Count(yieldSoilItem.ItemId);
                 var covers = crossHeld >= pairs && yieldHeld >= pairs;
-                ImGui.TextColored(covers ? HubStyle.Good : HubStyle.Warn,
-                    Loc.Format(Strings.Goal_SoilHeld,
-                        Formats.Number(crossHeld), ItemSheet.Name(crossSoilItem.ItemId),
-                        Formats.Number(yieldHeld), ItemSheet.Name(yieldSoilItem.ItemId)));
+                HubText.Colored(covers ? HubStyle.Good : HubStyle.Warn, Loc.Format(Strings.Goal_SoilHeld,
+                    Formats.Number(crossHeld), ItemSheet.Name(crossSoilItem.ItemId),
+                    Formats.Number(yieldHeld), ItemSheet.Name(yieldSoilItem.ItemId)));
             }
         }
 
@@ -1128,7 +1124,7 @@ namespace Gardener.Windows
             return null;
         }
 
-        private static void DrawGoalHandoffDisabled(string reason) => ImGui.TextColored(HubStyle.Faint, reason);
+        private static void DrawGoalHandoffDisabled(string reason) => HubText.Faint(reason);
 
         /// <summary>The per-patch handoff: a control that plants exactly the beds named above, on this
         /// one patch, and stops. Never queues a second step, never plants a second patch, and never
@@ -1280,8 +1276,7 @@ namespace Gardener.Windows
 
             if (ImGui.BeginPopup(popupId))
             {
-                ImGui.TextColored(HubStyle.Warn,
-                    Loc.Format(Strings.RemoveCrop_ConfirmMessage, GameWords.Action(MenuKey.Dispose), name, Formats.Number(state.BedNumber)));
+                HubText.Warn(Loc.Format(Strings.RemoveCrop_ConfirmMessage, GameWords.Action(MenuKey.Dispose), name, Formats.Number(state.BedNumber)));
                 if (ImGui.Button(Strings.Common_Confirm))
                 {
                     Task_RemoveCrop.TryEnqueue(patch, state.BedNumber, state.SeedRow);
@@ -1299,7 +1294,7 @@ namespace Gardener.Windows
         private static void DrawLogTab()
         {
             foreach (var entry in ActivityLog.Entries)
-                ImGui.TextColored(entry.Color, Loc.Format(Strings.Log_EntryLine, entry.Time, entry.Message));
+                HubText.Colored(entry.Color, Loc.Format(Strings.Log_EntryLine, entry.Time, entry.Message));
         }
 
         /// <summary>
@@ -1329,7 +1324,7 @@ namespace Gardener.Windows
 
             // Outside the section body on purpose: the note explains why a bed that has matured may
             // not be listed here, so an empty list is exactly when the player needs to read it.
-            ImGui.TextColored(HubStyle.Faint, Strings.Garden_HarvestLagNote);
+            HubText.Faint(Strings.Garden_HarvestLagNote);
 
             ImGui.Separator();
             DrawReminderSection(Reminders.TimingUnknown.Count, HubStyle.Faint, Strings.Reminders_TimingUnknownHeader, Strings.Reminders_AllTimingKnown,
@@ -1343,11 +1338,11 @@ namespace Gardener.Windows
         {
             if (count == 0)
             {
-                ImGui.TextColored(HubStyle.Faint, emptyText);
+                HubText.Faint(emptyText);
                 return;
             }
 
-            ImGui.TextColored(headerColor, Loc.Format(headerTemplate, Formats.Number(count)));
+            HubText.Colored(headerColor, Loc.Format(headerTemplate, Formats.Number(count)));
             drawBody();
         }
 
@@ -1362,7 +1357,7 @@ namespace Gardener.Windows
                 {
                     ImGui.Indent();
                     if (showPatchLine)
-                        ImGui.TextColored(HubStyle.Faint, PatchLabel.FromKey(patchGroup.Key));
+                        HubText.Faint(PatchLabel.FromKey(patchGroup.Key));
                     foreach (var entry in patchGroup.OrderBy(e => e.BedNumber))
                         DrawReminderLine(color, lineText(entry), showReach ? entry.ReachableBy : null);
                     ImGui.Unindent();
@@ -1383,7 +1378,7 @@ namespace Gardener.Windows
                 {
                     ImGui.Indent();
                     if (showPatchLine)
-                        ImGui.TextColored(HubStyle.Faint, PatchLabel.FromKey(patchGroup.Key));
+                        HubText.Faint(PatchLabel.FromKey(patchGroup.Key));
                     foreach (var harvest in patchGroup.OrderBy(h => h.Entry.BedNumber))
                     {
                         var text = harvest.FromWindow
@@ -1417,13 +1412,13 @@ namespace Gardener.Windows
                 {
                     ImGui.Indent();
                     if (showPatchLine)
-                        ImGui.TextColored(HubStyle.Faint, PatchLabel.FromKey(patchGroup.Key));
+                        HubText.Faint(PatchLabel.FromKey(patchGroup.Key));
 
                     var count = patchGroup.Count();
                     var line = Loc.Format(
                         count == 1 ? Strings.Reminders_TimingUnknownCollapsed_One : Strings.Reminders_TimingUnknownCollapsed_Other,
                         Formats.Number(count));
-                    ImGui.TextColored(HubStyle.Faint, line);
+                    HubText.Faint(line);
                     ImGui.SameLine();
 
                     var patchKey = patchGroup.Key;
@@ -1437,7 +1432,7 @@ namespace Gardener.Windows
                     }
                     else if (Reminders.ReachText(patchGroup.First().ReachableBy) is { } reach)
                     {
-                        ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, reach));
+                        HubText.Inline(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, reach));
                     }
 
                     ImGui.Unindent();
@@ -1450,11 +1445,11 @@ namespace Gardener.Windows
         /// <see cref="Reminders.ReachText"/> for the actions that still need it.</summary>
         private static void DrawReminderLine(Vector4 color, string text, IReadOnlyList<string>? reachableBy)
         {
-            ImGui.TextColored(color, text);
+            HubText.Colored(color, text);
             if (reachableBy is null || Reminders.ReachText(reachableBy) is not { } reach)
                 return;
             ImGui.SameLine();
-            ImGui.TextColored(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, reach));
+            HubText.Inline(HubStyle.Faint, Loc.Format(Strings.Reminders_ReachSuffix, reach));
         }
 
         /// <summary>Shared by <see cref="DrawWhenCell"/> and <see cref="DrawHarvestGroup"/> so the
@@ -1513,13 +1508,13 @@ namespace Gardener.Windows
         {
             if (record is not { } rec)
             {
-                ImGui.TextColored(HubStyle.Faint, Strings.Garden_WhenNotRecordedYet);
+                HubText.Faint(Strings.Garden_WhenNotRecordedYet);
                 return;
             }
 
             if (rec.ObservedWithered)
             {
-                ImGui.TextColored(HubStyle.Bad, Strings.Garden_WhenWithered);
+                HubText.Bad(Strings.Garden_WhenWithered);
                 return;
             }
 
@@ -1528,28 +1523,27 @@ namespace Gardener.Windows
             if (wiltsAt is { } wa && wa <= now)
             {
                 if (Growth.WithersAt(rec) is { } withersAt && withersAt > now)
-                    ImGui.TextColored(HubStyle.Bad,
-                        Loc.Format(Strings.Garden_WhenWiltedTendWithin, Phrases.Until(withersAt - now)));
+                    HubText.Bad(Loc.Format(Strings.Garden_WhenWiltedTendWithin, Phrases.Until(withersAt - now)));
                 else
-                    ImGui.TextColored(HubStyle.Warn, Strings.Garden_WhenWiltedTendNow);
+                    HubText.Warn(Strings.Garden_WhenWiltedTendNow);
                 return;
             }
 
             if (window.Earliest is { } earliest && earliest <= now)
             {
-                ImGui.TextColored(HubStyle.Good, Strings.Garden_WhenReadyNow);
+                HubText.Good(Strings.Garden_WhenReadyNow);
                 return;
             }
 
             if (state.Maturity == Maturity.MatureCandidate && window.Confidence == HarvestConfidence.Unknown)
             {
-                ImGui.TextColored(HubStyle.Good, Strings.Garden_WhenMature);
+                HubText.Good(Strings.Garden_WhenMature);
                 return;
             }
 
             if (wiltsAt is { } upcomingWilt && upcomingWilt <= now + TimeSpan.FromHours(Plugin.C.WiltWarningHours))
             {
-                ImGui.TextColored(HubStyle.Warn, Loc.Format(Strings.Garden_WhenTendWithin, Phrases.Until(upcomingWilt - now)));
+                HubText.Warn(Loc.Format(Strings.Garden_WhenTendWithin, Phrases.Until(upcomingWilt - now)));
                 return;
             }
 
@@ -1575,7 +1569,7 @@ namespace Gardener.Windows
                 return;
             }
 
-            ImGui.TextColored(HubStyle.Faint, Strings.Common_Unknown);
+            HubText.Faint(Strings.Common_Unknown);
         }
 
         /// <summary>Every fact the density pass moved off the row: growth stage, soil, exact wilt time,
@@ -1589,7 +1583,7 @@ namespace Gardener.Windows
             ImGui.BeginTooltip();
             ImGui.PushTextWrapPos(400f);
 
-            ImGui.TextColored(HubStyle.Text, Loc.Format(Strings.Garden_BedTooltipHeading, Formats.Number(bedNumber)));
+            HubText.Inline(HubStyle.Text, Loc.Format(Strings.Garden_BedTooltipHeading, Formats.Number(bedNumber)));
 
             var stageText = state.Maturity switch
             {
@@ -1597,17 +1591,17 @@ namespace Gardener.Windows
                 Maturity.Growing => Loc.Format(Strings.Garden_StageGrowing, Formats.Number(state.Stage)),
                 _ => Strings.Common_Empty,
             };
-            ImGui.TextColored(HubStyle.Text, stageText);
+            HubText.Inline(HubStyle.Text, stageText);
 
             // Only ever known for a bed Gardener planted itself: nothing in the game's own read says
             // what soil a bed went in with, so a bed planted by hand shows no soil rather than a guess.
             if (record?.SoilItemId is { } soilItemId and not 0)
-                ImGui.TextColored(HubStyle.Text, ItemSheet.Name(soilItemId));
+                HubText.Inline(HubStyle.Text, ItemSheet.Name(soilItemId));
 
             if (record is { } rec)
             {
                 if (Growth.WiltsAt(rec) is { } wiltsAt)
-                    ImGui.TextColored(HubStyle.Text, Formats.LocalDateTime(wiltsAt.ToLocalTime()));
+                    HubText.Inline(HubStyle.Text, Formats.LocalDateTime(wiltsAt.ToLocalTime()));
 
                 if (window.Confidence != HarvestConfidence.Unknown)
                 {
@@ -1621,7 +1615,7 @@ namespace Gardener.Windows
                     var line = window.AnchorUncertainty is { } anchorUncertainty
                         ? Loc.Format(Strings.Garden_HarvestWindowLineWithUncertainty, when, confidenceText, FormatUncertainty(anchorUncertainty))
                         : Loc.Format(Strings.Garden_HarvestWindowLine, when, confidenceText);
-                    ImGui.TextColored(HubStyle.Text, line);
+                    HubText.Inline(HubStyle.Text, line);
                 }
 
                 // The most recent TALK_* sentence chat has echoed for this bed (see CropChatState) —
@@ -1642,13 +1636,13 @@ namespace Gardener.Windows
                         _ => (cropState.ToString(), HubStyle.Faint),
                     };
                     var agoHours = (DateTimeOffset.UtcNow - observedAt).TotalHours;
-                    ImGui.TextColored(color, Loc.Format(Strings.Garden_CropStateAge, text, Formats.Number(agoHours, "F0")));
+                    HubText.Inline(color, Loc.Format(Strings.Garden_CropStateAge, text, Formats.Number(agoHours, "F0")));
                 }
 
                 if (rec.LastSeenByCharacter is { Length: > 0 } observer)
                 {
                     var agoHours = (DateTimeOffset.UtcNow - rec.LastSeenAt).TotalHours;
-                    ImGui.TextColored(HubStyle.Text, Loc.Format(Strings.Garden_SeenBy, observer, Formats.Number(agoHours, "F0")));
+                    HubText.Inline(HubStyle.Text, Loc.Format(Strings.Garden_SeenBy, observer, Formats.Number(agoHours, "F0")));
                 }
             }
 

@@ -103,9 +103,9 @@ namespace Gardener.Windows
         {
             ImGui.TextDisabled(Strings.Config_Automation_Header);
             IntSlider(Strings.Config_Automation_StepDelayMs, () => cfg.StepDelayMs, v => cfg.StepDelayMs = v, 100, 4000);
-            ImGui.TextColored(HubStyle.Faint, Strings.Config_Automation_SlowerReliable);
+            HubText.Faint(Strings.Config_Automation_SlowerReliable);
             IntSlider(Strings.Config_Automation_BedDelayMs, () => cfg.BedDelayMs, v => cfg.BedDelayMs = v, 200, 6000);
-            ImGui.TextColored(HubStyle.Faint, Strings.Config_Automation_SlowerReliable);
+            HubText.Faint(Strings.Config_Automation_SlowerReliable);
             IntSlider(Strings.Config_Automation_MenuTimeoutMs, () => cfg.MenuTimeoutMs, v => cfg.MenuTimeoutMs = v, 1000, 15000);
             BoolInput(Strings.Config_Automation_StopIfPlayerMoves, () => cfg.StopIfPlayerMoves, v => cfg.StopIfPlayerMoves = v);
             if (cfg.StopIfPlayerMoves)
@@ -124,7 +124,7 @@ namespace Gardener.Windows
         {
             ImGui.Separator();
             ImGui.TextDisabled(Strings.Config_Planting_Header);
-            ImGui.TextColored(HubStyle.Faint, Strings.Config_Planting_Intro);
+            HubText.Faint(Strings.Config_Planting_Intro);
             SoilCombo(Strings.Config_Planting_SoilForCross, () => cfg.SoilForCross, v => cfg.SoilForCross = v);
             SoilCombo(Strings.Config_Planting_SoilForYield, () => cfg.SoilForYield, v => cfg.SoilForYield = v);
 
@@ -160,7 +160,7 @@ namespace Gardener.Windows
                 if (!held)
                 {
                     ImGui.SameLine();
-                    ImGui.TextColored(HubStyle.Faint, Strings.Config_NotHeld);
+                    HubText.Faint(Strings.Config_NotHeld);
                 }
             }
             ImGui.Unindent();
@@ -173,7 +173,7 @@ namespace Gardener.Windows
             ImGui.TextDisabled(Strings.Config_Fertilizer_Header);
             BoolInput(Strings.Config_Fertilizer_OnlyGrowing, () => cfg.FertilizeOnlyGrowing, v => cfg.FertilizeOnlyGrowing = v);
             IntSlider(Strings.Config_Fertilizer_CooldownMinutes, () => cfg.FertilizeCooldownMin, v => cfg.FertilizeCooldownMin = v, 30, 180);
-            ImGui.TextColored(HubStyle.Faint, Strings.Config_Fertilizer_CooldownNote);
+            HubText.Faint(Strings.Config_Fertilizer_CooldownNote);
 
             ImGui.Spacing();
             ImGui.TextUnformatted(Strings.Config_Fertilizer_WhichHeader);
@@ -210,7 +210,7 @@ namespace Gardener.Windows
                 if (!held)
                 {
                     ImGui.SameLine();
-                    ImGui.TextColored(HubStyle.Faint, Strings.Config_NotHeld);
+                    HubText.Faint(Strings.Config_NotHeld);
                 }
             }
             ImGui.Unindent();
@@ -232,7 +232,7 @@ namespace Gardener.Windows
 
             ImGui.Spacing();
             BoolInput(Strings.Config_Reminders_NarrateSweeps, () => cfg.NarrateSweepActions, v => cfg.NarrateSweepActions = v);
-            ImGui.TextColored(HubStyle.Faint, Strings.Config_Reminders_NarrateSweepsNote);
+            HubText.Faint(Strings.Config_Reminders_NarrateSweepsNote);
         }
 
         private void SoilCombo(string label, Func<SoilPreference> get, Action<SoilPreference> set)
@@ -258,7 +258,7 @@ namespace Gardener.Windows
 
             BoolInput(Strings.Config_Data_CollectGrowSamples,
                 () => cfg.CollectGrowSamples, v => cfg.CollectGrowSamples = v);
-            ImGui.TextColored(HubStyle.Faint, Strings.Config_Data_CollectGrowSamplesNote);
+            HubText.Faint(Strings.Config_Data_CollectGrowSamplesNote);
 
             BoolInput(Strings.Config_Data_ShowGapWarnings, () => cfg.ShowDataGapWarnings, v => cfg.ShowDataGapWarnings = v);
             if (!cfg.ShowDataGapWarnings)
@@ -325,7 +325,7 @@ namespace Gardener.Windows
         {
             ImGui.Separator();
             ImGui.TextDisabled(Strings.Config_Theme_Header);
-            ImGui.TextColored(HubStyle.Faint, Strings.Config_Theme_SharedNote);
+            HubText.Faint(Strings.Config_Theme_SharedNote);
             ImGui.Spacing();
             HubThemeEditor.Draw(Plugin.ThemeConfig);
         }
