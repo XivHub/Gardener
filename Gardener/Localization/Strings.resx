@@ -508,6 +508,22 @@
     <value>wilted</value>
     <comment>MainWindow.DrawBedTooltip, MenuKey.TalkDepressed branch. Gardener's own summary word.</comment>
   </data>
+  <data name="Garden_KeepCheckbox" xml:space="preserve">
+    <value>Don't harvest</value>
+    <comment>MainWindow.DrawKeepToggle, checkbox in the crop name's right-click menu that sets BedRecord.KeepUnharvested. No slots.</comment>
+  </data>
+  <data name="Garden_KeptMarker" xml:space="preserve">
+    <value>(kept)</value>
+    <comment>MainWindow.DrawKeepToggle, marker drawn beside the crop name while BedRecord.KeepUnharvested is set. No slots.</comment>
+  </data>
+  <data name="Garden_KeptTooltip" xml:space="preserve">
+    <value>Kept: harvest sweeps skip this bed. Clears when the bed is replanted.</value>
+    <comment>MainWindow.DrawBedTooltip, line shown while BedRecord.KeepUnharvested is set. No slots.</comment>
+  </data>
+  <data name="Garden_KeepHint" xml:space="preserve">
+    <value>Right-click the crop name to keep it out of harvest sweeps.</value>
+    <comment>MainWindow.DrawBedTooltip, discoverability hint for the KeepUnharvested toggle, shown while it is not set. No slots.</comment>
+  </data>
   <data name="Garden_CropRipe" xml:space="preserve">
     <value>ripe</value>
     <comment>MainWindow.DrawBedTooltip, MenuKey.TalkRipe branch. Gardener's own summary word.</comment>
@@ -1651,6 +1667,14 @@
   <data name="Tend_TendedChat" xml:space="preserve">
     <value>Tended bed {0} ({1}).</value>
     <comment>Scheduler.Tasks.Task_Tend.Enqueue, chatMessage counterpart of Tend_Tended. {0} is the bed number via Formats.Number; {1} is the seed's produce name, a client-language name.</comment>
+  </data>
+  <data name="Harvest_Kept" xml:space="preserve">
+    <value>{0} bed {1}: marked don't harvest; skipping.</value>
+    <comment>Scheduler.SchedulerMain.HarvestCandidates, ActivityLog.SkippedBed's Log tab message for a mature bed with BedRecord.KeepUnharvested set. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>
+  </data>
+  <data name="Harvest_KeptChat" xml:space="preserve">
+    <value>it's marked don't harvest</value>
+    <comment>Scheduler.SchedulerMain.HarvestCandidates, chatReason counterpart of Harvest_Kept. No slots.</comment>
   </data>
   <data name="Harvest_MenuClosed" xml:space="preserve">
     <value>{0} bed {1}: menu closed before it could be harvested.</value>

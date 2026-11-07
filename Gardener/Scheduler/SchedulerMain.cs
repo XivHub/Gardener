@@ -281,7 +281,7 @@ public static class SchedulerMain
         IEnumerable<int> beds = CurrentKind switch
         {
             SweepKind.Tend => states.Where(s => !s.IsEmpty).Select(s => s.BedNumber),
-            SweepKind.Harvest => states.Where(s => s.Maturity == Maturity.MatureCandidate).Select(s => s.BedNumber),
+            SweepKind.Harvest => HarvestCandidates(states),
             // Every occupied bed is visited; Task_Fertilize itself applies the cooldown and
             // FertilizeOnlyGrowing skips per bed, the same split Tend uses.
             SweepKind.Fertilize => states.Where(s => !s.IsEmpty).Select(s => s.BedNumber),
@@ -309,6 +309,31 @@ public static class SchedulerMain
         }
 
         State = GardenerState.OpeningBed;
+    }
+
+    /// <summary>The mature beds a harvest sweep should open: every one not marked
+    /// <see cref="BedRecord.KeepUnharvested"/>, which are logged as skipped here instead.</summary>
+    private static IEnumerable<int> HarvestCandidates(IReadOnlyList<BedState> states)
+    {
+        var beds = new List<int>();
+        foreach (var state in states)
+        {
+            if (state.Maturity != Maturity.MatureCandidate)
+                continue;
+
+            if (GardenJournal.Get(CurrentPatch!.Key, state.BedNumber) is { KeepUnharvested: true })
+            {
+                ActivityLog.SkippedBed(state.BedNumber,
+                    Loc.Format(Strings.Harvest_Kept, CurrentPatch.Key, Formats.Number(state.BedNumber)),
+                    Strings.Harvest_KeptChat);
+                SkippedCount++;
+                continue;
+            }
+
+            beds.Add(state.BedNumber);
+        }
+
+        return beds;
     }
 
     /// <summary>

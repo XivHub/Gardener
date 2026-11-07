@@ -357,6 +357,8 @@ namespace Gardener.Windows
                 HubText.Colored(color, SeedName(state.SeedRow));
                 if (ImGui.IsItemHovered())
                     DrawBedTooltip(patch, bedNumber, state, record, window);
+                if (record is { } keepRecord)
+                    DrawKeepToggle(patch.Key, bedNumber, keepRecord);
 
                 ImGui.TableNextColumn();
                 StageIndicator.Draw(state.Stage, color);
@@ -372,6 +374,28 @@ namespace Gardener.Windows
             }
 
             HubTable.End();
+        }
+
+        /// <summary>Right-click menu on the crop name with the <see cref="BedRecord.KeepUnharvested"/>
+        /// checkbox, plus the "(kept)" marker beside the name while it is set.</summary>
+        private static void DrawKeepToggle(string patchKey, int bedNumber, BedRecord record)
+        {
+            if (ImGui.BeginPopupContextItem($"##keep-{patchKey}-{bedNumber}"))
+            {
+                var keep = record.KeepUnharvested;
+                if (ImGui.Checkbox(Strings.Garden_KeepCheckbox, ref keep))
+                {
+                    record.KeepUnharvested = keep;
+                    GardenJournal.Upsert(record);
+                }
+                ImGui.EndPopup();
+            }
+
+            if (record.KeepUnharvested)
+            {
+                ImGui.SameLine();
+                HubText.Faint(Strings.Garden_KeptMarker);
+            }
         }
 
         /// <summary>The running sweep's own row: what it is doing and the Stop that ends it. Drawn
@@ -1617,6 +1641,8 @@ namespace Gardener.Windows
                         : Loc.Format(Strings.Garden_HarvestWindowLine, when, confidenceText);
                     HubText.Inline(HubStyle.Text, line);
                 }
+
+                HubText.Faint(rec.KeepUnharvested ? Strings.Garden_KeptTooltip : Strings.Garden_KeepHint);
 
                 // The most recent TALK_* sentence chat has echoed for this bed (see CropChatState) —
                 // the only source for wilted and true harvest-readiness the bed menu itself never

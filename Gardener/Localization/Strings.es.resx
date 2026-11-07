@@ -1272,6 +1272,24 @@
   <data name="Fertilize_RecentlyFertilizedChat" xml:space="preserve">
     <value>ya se abonó recientemente</value>
   </data>
+  <data name="Harvest_Kept" xml:space="preserve">
+    <value>{0} parcela {1}: marcada como no cosechar; se omite.</value>
+  </data>
+  <data name="Harvest_KeptChat" xml:space="preserve">
+    <value>está marcada como no cosechar</value>
+  </data>
+  <data name="Garden_KeepCheckbox" xml:space="preserve">
+    <value>No cosechar</value>
+  </data>
+  <data name="Garden_KeptMarker" xml:space="preserve">
+    <value>(conservada)</value>
+  </data>
+  <data name="Garden_KeptTooltip" xml:space="preserve">
+    <value>Conservada: las cosechas automáticas omiten esta parcela. Se borra al replantar.</value>
+  </data>
+  <data name="Garden_KeepHint" xml:space="preserve">
+    <value>Haz clic derecho en el nombre del cultivo para excluirlo de las cosechas automáticas.</value>
+  </data>
   <data name="Fertilize_AlreadyMature" xml:space="preserve">
     <value>{0} parcela {1}: ya está madura; el abono no haría nada.</value>
   </data>
