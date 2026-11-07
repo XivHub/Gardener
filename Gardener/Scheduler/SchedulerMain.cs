@@ -282,9 +282,11 @@ public static class SchedulerMain
         {
             SweepKind.Tend => states.Where(s => !s.IsEmpty).Select(s => s.BedNumber),
             SweepKind.Harvest => states.Where(s => s.Maturity == Maturity.MatureCandidate).Select(s => s.BedNumber),
-            // Every occupied bed is visited; Task_Fertilize itself applies the cooldown and
-            // FertilizeOnlyGrowing skips per bed, the same split Tend uses.
-            SweepKind.Fertilize => states.Where(s => !s.IsEmpty).Select(s => s.BedNumber),
+            // Every occupied bed is visited except, under FertilizeOnlyGrowing, a mature one: that
+            // skip is decided here from the same GardenMemory read rather than after opening the bed,
+            // since opening a ripe bed only to close it again costs two menu-timeout waits per bed.
+            // Task_Fertilize keeps its own per-bed check as a backstop and still applies the cooldown.
+            SweepKind.Fertilize => FertilizeCandidates(states),
             _ => Enumerable.Empty<int>(),
         };
 
@@ -309,6 +311,32 @@ public static class SchedulerMain
         }
 
         State = GardenerState.OpeningBed;
+    }
+
+    /// <summary>The occupied beds a fertilize sweep should open. Under
+    /// <see cref="Configuration.FertilizeOnlyGrowing"/>, mature beds are logged as skipped here and left
+    /// out of the worklist, with the same message <see cref="Task_Fertilize"/> uses for them.</summary>
+    private static IEnumerable<int> FertilizeCandidates(IReadOnlyList<BedState> states)
+    {
+        var beds = new List<int>();
+        foreach (var state in states)
+        {
+            if (state.IsEmpty)
+                continue;
+
+            if (Plugin.C.FertilizeOnlyGrowing && state.Maturity == Maturity.MatureCandidate)
+            {
+                ActivityLog.SkippedBed(state.BedNumber,
+                    Loc.Format(Strings.Fertilize_AlreadyMature, CurrentPatch!.Key, Formats.Number(state.BedNumber)),
+                    Strings.Fertilize_AlreadyMatureChat);
+                SkippedCount++;
+                continue;
+            }
+
+            beds.Add(state.BedNumber);
+        }
+
+        return beds;
     }
 
     /// <summary>
