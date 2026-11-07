@@ -37,6 +37,7 @@ namespace Gardener
         [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
         [PluginService] public static IDtrBar DtrBar { get; private set; } = null!;
         [PluginService] public static IGameGui GameGui { get; private set; } = null!;
+        [PluginService] public static IToastGui ToastGui { get; private set; } = null!;
         [PluginService] public static ISeStringEvaluator SeStringEvaluator { get; private set; } = null!;
 
         public static TaskManager TaskManager { get; private set; } = null!;

@@ -1708,6 +1708,14 @@
     <value>fertilizing wasn't offered for this bed</value>
     <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, chatReason counterpart of Fertilize_NoFertilizeEntry. No slots.</comment>
   </data>
+  <data name="Fertilize_GameRefused" xml:space="preserve">
+    <value>{0} bed {1}: the game refused the fertilizer ("{2}"); skipping.</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.SkipRefused, ActivityLog.SkippedBed's Log tab message when an error toast arrived while the bed was being fertilized. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number; {2} is the toast's own client-language text, verbatim.</comment>
+  </data>
+  <data name="Fertilize_GameRefusedChat" xml:space="preserve">
+    <value>the game refused the fertilizer</value>
+    <comment>Scheduler.Tasks.Task_Fertilize.SkipRefused, chatReason counterpart of Fertilize_GameRefused. No slots.</comment>
+  </data>
   <data name="Fertilize_ModeNeverEngaged" xml:space="preserve">
     <value>{0} bed {1}: fertilize mode never engaged; skipping.</value>
     <comment>Scheduler.Tasks.Task_Fertilize.Enqueue, ActivityLog.SkippedBed's Log tab message when AgentHousingPlant.PlotType never reached FertilizePlotType. {0} is patch.Key, an internal identifier token; {1} is the bed number via Formats.Number.</comment>

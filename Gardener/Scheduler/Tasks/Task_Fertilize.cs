@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.Gui.Toast;
+using Dalamud.Game.Text.SeStringHandling;
 using ECommons.Automation.NeoTaskManager;
 using ECommons.UIHelpers;
 using ECommons.UIHelpers.AddonMasterImplementations;
@@ -25,6 +27,16 @@ namespace Gardener.Scheduler.Tasks;
 /// bag's own context menu (<c>AgentInventoryContext.OpenForItemSlot</c>) — the same route DailyRoutines
 /// takes. Confirmed live: no <c>HousingGardening</c> addon opens, <c>SelectableItemCount</c> stays 0,
 /// and both <c>SelectedItems</c> entries stay zeroed throughout.
+/// <para>Every skip branch returns <c>null</c>, not <c>true</c>: <c>true</c> only completes the
+/// current step, so the two timed waits queued after it (fertilize mode, then the context menu) used
+/// to run out their full <see cref="Configuration.MenuTimeoutMs"/> each for a bed already given up
+/// on. <c>null</c> aborts the rest of this bed's queue, the same way <see cref="Task_OpenBed"/> gives
+/// up; the <see cref="GardenerState.ClosingMenu"/> state set just before is what runs next.</para>
+/// <para>When the game itself refuses the fertilizer ("This crop has already been sufficiently
+/// fertilized." for one applied by hand, which the journal's cooldown cannot know about) it says so
+/// with an error toast and fertilize mode simply never engages. <see cref="StartListening"/> catches
+/// that toast so the waits below end on it instead of on their timeouts; any error toast in that
+/// window counts, so no language's wording is matched.</para>
 /// </summary>
 public static class Task_Fertilize
 {
@@ -34,6 +46,10 @@ public static class Task_Fertilize
     // it: 14 is the seed/soil dialog, 15 is this item-context-menu flow, and there is no third value
     // to confuse it with.
     private const uint FertilizePlotType = 15;
+
+    // The text of the error toast the game showed while the current bed was being fertilized, or
+    // null. Static because the toast events are, and only one bed is ever in progress at a time.
+    private static string? refusal;
 
     public static void Enqueue()
     {
@@ -59,7 +75,7 @@ public static class Task_Fertilize
                     Strings.Fertilize_MenuClosedChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null;
             }
 
             var record = GardenJournal.Get(patch.Key, bedNumber);
@@ -71,7 +87,7 @@ public static class Task_Fertilize
                     Strings.Fertilize_RecentlyFertilizedChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null;
             }
 
             var state = GardenMemory.Read(patch).FirstOrDefault(s => s.BedNumber == bedNumber);
@@ -82,7 +98,7 @@ public static class Task_Fertilize
                     Strings.Fertilize_AlreadyMatureChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null;
             }
 
             var entries = select.Entries;
@@ -95,20 +111,27 @@ public static class Task_Fertilize
                     Strings.Fertilize_NoFertilizeEntryChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null;
             }
 
+            StartListening();
             entries[index].Select();
             return true;
         }, $"Fertilize: select SetFertilizer (bed {bedNumber})");
 
         // No addon opens for this flow, so PlotType is the only readiness signal there is: it is 0
         // before the entry is accepted and 15 once fertilize mode is active.
-        tm.Enqueue(() => IsInFertilizeMode(), $"Fertilize: wait for fertilize mode (bed {bedNumber})",
+        tm.Enqueue(() => refusal is not null || IsInFertilizeMode(), $"Fertilize: wait for fertilize mode (bed {bedNumber})",
             new TaskManagerConfiguration { TimeLimitMS = Plugin.C.MenuTimeoutMs, AbortOnTimeout = false });
 
         tm.Enqueue(() =>
         {
+            if (refusal is { } refusedBeforeMode)
+            {
+                SkipRefused(patch.Key, bedNumber, refusedBeforeMode);
+                return null;
+            }
+
             if (!IsInFertilizeMode())
             {
                 ActivityLog.SkippedBed(bedNumber,
@@ -116,7 +139,7 @@ public static class Task_Fertilize
                     Strings.Fertilize_ModeNeverEngagedChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null;
             }
 
             var bag = Bags.Scan();
@@ -129,7 +152,7 @@ public static class Task_Fertilize
                     Strings.Fertilize_NoLongerInBagChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null;
             }
 
             unsafe
@@ -148,7 +171,7 @@ public static class Task_Fertilize
                         Strings.Fertilize_AgentUnavailableChat);
                     SchedulerMain.SkippedCount++;
                     SchedulerMain.State = GardenerState.ClosingMenu;
-                    return true;
+                    return null;
                 }
 
                 // OpenForItemSlot creates ContextMenu synchronously, before this PostSetup listener's
@@ -162,7 +185,7 @@ public static class Task_Fertilize
             return true;
         }, $"Fertilize: open the fertilizer's context menu (bed {bedNumber})");
 
-        tm.Enqueue(() => addonSeen || FindReadyContextMenu() is not null,
+        tm.Enqueue(() => refusal is not null || addonSeen || FindReadyContextMenu() is not null,
             $"Fertilize: wait for {ContextMenuAddonName} (bed {bedNumber})",
             new TaskManagerConfiguration { TimeLimitMS = Plugin.C.MenuTimeoutMs, AbortOnTimeout = false });
 
@@ -171,6 +194,14 @@ public static class Task_Fertilize
             Plugin.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, ContextMenuAddonName, OnContextMenuPostSetup);
 
             var contextMenu = FindReadyContextMenu();
+            if (refusal is { } refusedBeforeMenu)
+            {
+                if (contextMenu is not null)
+                    unsafe { contextMenu.Base->Close(true); }
+                SkipRefused(patch.Key, bedNumber, refusedBeforeMenu);
+                return null;
+            }
+
             if (contextMenu is null)
             {
                 ActivityLog.SkippedBed(bedNumber,
@@ -179,7 +210,7 @@ public static class Task_Fertilize
                 LogContextAddonsForDiagnosis(patch.Key, bedNumber);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null;
             }
 
             if (!addonSeen)
@@ -198,7 +229,7 @@ public static class Task_Fertilize
                 SchedulerMain.SkippedCount++;
                 unsafe { contextMenu.Base->Close(true); }
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null;
             }
 
             if (!entries[index].Select())
@@ -209,7 +240,7 @@ public static class Task_Fertilize
                 SchedulerMain.SkippedCount++;
                 unsafe { contextMenu.Base->Close(true); }
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null;
             }
 
             fertilizeSent = true;
@@ -225,10 +256,22 @@ public static class Task_Fertilize
         }, $"Fertilize: confirm (bed {bedNumber})",
         new TaskManagerConfiguration { TimeLimitMS = Plugin.C.MenuTimeoutMs, AbortOnTimeout = false });
 
+        // A refusal can also arrive after the item is used; give its toast a moment to land so it is
+        // never recorded as a success.
+        tm.EnqueueDelay(SchedulerPacing.StepDelay());
+
         tm.Enqueue(() =>
         {
+            StopListening();
+
             if (!fertilizeSent)
                 return true; // an earlier step already skipped this bed; nothing to record
+
+            if (refusal is { } refusedAfterUse)
+            {
+                SkipRefused(patch.Key, bedNumber, refusedAfterUse);
+                return null;
+            }
 
             var record = GardenJournal.Get(patch.Key, bedNumber);
             if (record is null)
@@ -255,6 +298,50 @@ public static class Task_Fertilize
             SchedulerMain.State = GardenerState.ClosingMenu;
             return true;
         }, $"Fertilize: record (bed {bedNumber})");
+    }
+
+    /// <summary>Arms the toast listeners for one bed, clearing any refusal left from the last one.
+    /// Called right before the bed's Fertilize Crop entry is selected; <see cref="StopListening"/>
+    /// runs at the end of the bed and from <see cref="SchedulerMain.DisablePlugin"/>, so an aborted
+    /// sweep never leaves them attached.</summary>
+    internal static void StartListening()
+    {
+        StopListening();
+        refusal = null;
+        Plugin.ToastGui.ErrorToast += OnErrorToast;
+        Plugin.ToastGui.Toast += OnNormalToast;
+        Plugin.ToastGui.QuestToast += OnQuestToast;
+    }
+
+    internal static void StopListening()
+    {
+        Plugin.ToastGui.ErrorToast -= OnErrorToast;
+        Plugin.ToastGui.Toast -= OnNormalToast;
+        Plugin.ToastGui.QuestToast -= OnQuestToast;
+    }
+
+    private static void OnErrorToast(ref SeString message, ref bool isHandled)
+    {
+        refusal ??= message.TextValue;
+        Plugin.Logger.Information($"[Gardener] error toast while fertilizing: \"{message.TextValue}\"");
+    }
+
+    // Diagnostic only: logged so a refusal shown as a non-error toast is visible in the devlog, but
+    // never treated as one, since ordinary toasts are not refusals.
+    private static void OnNormalToast(ref SeString message, ref ToastOptions options, ref bool isHandled) =>
+        Plugin.Logger.Information($"[Gardener] toast while fertilizing: \"{message.TextValue}\"");
+
+    private static void OnQuestToast(ref SeString message, ref QuestToastOptions options, ref bool isHandled) =>
+        Plugin.Logger.Information($"[Gardener] quest toast while fertilizing: \"{message.TextValue}\"");
+
+    private static void SkipRefused(string patchKey, int bedNumber, string toastText)
+    {
+        StopListening();
+        ActivityLog.SkippedBed(bedNumber,
+            Loc.Format(Strings.Fertilize_GameRefused, patchKey, Formats.Number(bedNumber), toastText),
+            Strings.Fertilize_GameRefusedChat);
+        SchedulerMain.SkippedCount++;
+        SchedulerMain.State = GardenerState.ClosingMenu;
     }
 
     private static unsafe bool IsInFertilizeMode()

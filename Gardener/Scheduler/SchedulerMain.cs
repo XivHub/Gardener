@@ -172,6 +172,7 @@ public static class SchedulerMain
     public static bool DisablePlugin(string? reason = null)
     {
         Plugin.TaskManager.Abort();
+        Task_Fertilize.StopListening();
         State = GardenerState.Idle;
         CropChatState.CaptureUnclassified = false;
         CurrentKind = null;

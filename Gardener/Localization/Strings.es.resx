@@ -1272,6 +1272,12 @@
   <data name="Fertilize_RecentlyFertilizedChat" xml:space="preserve">
     <value>ya se abonó recientemente</value>
   </data>
+  <data name="Fertilize_GameRefused" xml:space="preserve">
+    <value>{0} parcela {1}: el juego rechazó el abono («{2}»); se omite.</value>
+  </data>
+  <data name="Fertilize_GameRefusedChat" xml:space="preserve">
+    <value>el juego rechazó el abono</value>
+  </data>
   <data name="Fertilize_AlreadyMature" xml:space="preserve">
     <value>{0} parcela {1}: ya está madura; el abono no haría nada.</value>
   </data>
