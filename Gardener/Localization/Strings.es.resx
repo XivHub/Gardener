@@ -477,6 +477,12 @@
   <data name="Sweep_ConfirmFertilize" xml:space="preserve">
     <value>¿{0}: todas las parcelas aptas de este huerto?</value>
   </data>
+  <data name="Sweep_FertilizeNextIn" xml:space="preserve">
+    <value>Próximo abono en {0}.</value>
+  </data>
+  <data name="Sweep_FertilizeNothing" xml:space="preserve">
+    <value>No hay nada que abonar en este huerto.</value>
+  </data>
   <data name="Sweep_BedOrderVerified" xml:space="preserve">
     <value>Orden de parcelas verificado: {0}/{1}</value>
   </data>

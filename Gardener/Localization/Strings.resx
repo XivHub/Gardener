@@ -652,6 +652,14 @@
     <value>{0}: every eligible bed on this patch?</value>
     <comment>MainWindow.DrawSweepButtons, SweepKind.Fertilize confirm message. {0} is GameWords.Action(MenuKey.SetFertilizer).</comment>
   </data>
+  <data name="Sweep_FertilizeNextIn" xml:space="preserve">
+    <value>Next fertilize in {0}.</value>
+    <comment>MainWindow.FertilizeBlockedReason, tooltip on the disabled "Fertilize all" button while every eligible bed is on the fertilizer cooldown. {0} is a duration from Phrases.Until.</comment>
+  </data>
+  <data name="Sweep_FertilizeNothing" xml:space="preserve">
+    <value>Nothing on this patch can be fertilized.</value>
+    <comment>MainWindow.FertilizeBlockedReason, tooltip on the disabled "Fertilize all" button when the patch has no bed a fertilize sweep would visit. No slots.</comment>
+  </data>
   <data name="Sweep_BedOrderVerified" xml:space="preserve">
     <value>Bed order verified: {0}/{1}</value>
     <comment>MainWindow.DrawPatchMetaLine, shown only while BedTargeting.VerifiedBedCount is below the patch's own bed count. {0} is BedTargeting.VerifiedBedCount, {1} is the patch's own bed count, both integers via Formats.Number.</comment>
