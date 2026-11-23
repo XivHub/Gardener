@@ -53,12 +53,15 @@ public static class Growth
 
     /// <summary>Null when <c>LastTendedAt</c> is unset, the seed does not wilt,
     /// <see cref="BedRecord.ObservedWithered"/> is set — a withered plant has nothing left to tend —
-    /// or <see cref="BedRecord.Parked"/> is set: storage freezes every timer, so a parked bed neither
-    /// wilts nor withers while its patch is gone. <see cref="WithersAt"/> inherits this through its own
-    /// call to <see cref="WiltsAt"/>.</summary>
+    /// <see cref="BedRecord.Parked"/> is set: storage freezes every timer, so a parked bed neither
+    /// wilts nor withers while its patch is gone — or <see cref="BedRecord.FirstSeenStage4At"/> is set:
+    /// a mature planting does not wilt, and its bed menu offers no Tend entry to act on a wilt warning
+    /// with. <see cref="WithersAt"/> inherits this through its own call to <see cref="WiltsAt"/>.</summary>
     public static DateTimeOffset? WiltsAt(BedRecord record)
     {
         if (record.Parked)
+            return null;
+        if (record.FirstSeenStage4At is not null)
             return null;
         if (record.ObservedWithered)
             return null;

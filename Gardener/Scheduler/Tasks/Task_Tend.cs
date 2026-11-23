@@ -13,6 +13,10 @@ namespace Gardener.Scheduler.Tasks;
 /// is open and correct. There is no re-open confirmation step afterwards: the <c>TALK_VIGOROUS</c>
 /// sentence a re-check would read is unreachable through this menu, so success
 /// is simply having selected the entry.
+/// <para>Every skip branch returns <c>null</c>, not <c>true</c>: <c>true</c> only completes the
+/// current step, and the record step queued after it would then still run and log a tend that never
+/// happened. <c>null</c> aborts the rest of this bed's queue, the same way <see cref="Task_OpenBed"/>
+/// gives up; the <see cref="GardenerState.ClosingMenu"/> state set just before is what runs next.</para>
 /// </summary>
 public static class Task_Tend
 {
@@ -32,7 +36,7 @@ public static class Task_Tend
                     Strings.Tend_MenuClosedChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null; // abort the rest of this bed's queue; see the class summary
             }
 
             var entries = select.Entries;
@@ -47,7 +51,7 @@ public static class Task_Tend
                     Strings.Tend_NoCareEntryChat);
                 SchedulerMain.SkippedCount++;
                 SchedulerMain.State = GardenerState.ClosingMenu;
-                return true;
+                return null; // abort the rest of this bed's queue; see the class summary
             }
 
             entries[index].Select();
