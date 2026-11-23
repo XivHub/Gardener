@@ -2,7 +2,7 @@
   "Author": "Zhyra",
   "Name": "Gardener",
   "Punchline": "Reminds you when your garden beds need care, and tends a whole patch in one go.",
-  "Description": "Keeps a persistent journal of every outdoor garden bed you own — personal, FC and shared estates — and reminds you when a crop needs tending, fertilizing or harvesting no matter where you are in the world. While standing at the plot, runs a guarded tend-all, fertilize-all, harvest-all or plant-a-plan sweep across the patch, and plans crossbreed layouts from a bundled dataset. Never travels, mounts or pathfinds on your behalf. This automates gameplay, which violates the FFXIV User Agreement and can get your account penalized or banned; use entirely at your own risk.",
+  "Description": "Keeps a journal of every outdoor garden bed you own, on personal, FC and shared estates, and reminds you wherever you are when a crop needs tending, fertilizing or harvesting. While you stand at the plot, it can tend, fertilize, harvest or plant the whole patch in one pass, and it plans crossbreed layouts from a bundled dataset. It never travels, mounts or pathfinds for you.\n\nThis automates gameplay, which breaks the FFXIV User Agreement and can get your account penalized or banned. Use it at your own risk.",
   "RepoUrl": "https://github.com/XivHub/Gardener",
   "InternalName": "Gardener",
   "ApplicableVersion": "any",
