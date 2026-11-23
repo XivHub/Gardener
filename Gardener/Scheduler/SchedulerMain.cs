@@ -282,7 +282,7 @@ public static class SchedulerMain
         IEnumerable<int> beds = CurrentKind switch
         {
             SweepKind.Tend => states.Where(s => !s.IsEmpty).Select(s => s.BedNumber),
-            SweepKind.Harvest => states.Where(s => s.Maturity == Maturity.MatureCandidate).Select(s => s.BedNumber),
+            SweepKind.Harvest => HarvestCandidates(states),
             // Every occupied bed is visited except, under FertilizeOnlyGrowing, a mature one: that
             // skip is decided here from the same GardenMemory read rather than after opening the bed,
             // since opening a ripe bed only to close it again costs two menu-timeout waits per bed.
@@ -330,6 +330,31 @@ public static class SchedulerMain
                 ActivityLog.SkippedBed(state.BedNumber,
                     Loc.Format(Strings.Fertilize_AlreadyMature, CurrentPatch!.Key, Formats.Number(state.BedNumber)),
                     Strings.Fertilize_AlreadyMatureChat);
+                SkippedCount++;
+                continue;
+            }
+
+            beds.Add(state.BedNumber);
+        }
+
+        return beds;
+    }
+
+    /// <summary>The mature beds a harvest sweep should open: every one not marked
+    /// <see cref="BedRecord.KeepUnharvested"/>, which are logged as skipped here instead.</summary>
+    private static IEnumerable<int> HarvestCandidates(IReadOnlyList<BedState> states)
+    {
+        var beds = new List<int>();
+        foreach (var state in states)
+        {
+            if (state.Maturity != Maturity.MatureCandidate)
+                continue;
+
+            if (GardenJournal.Get(CurrentPatch!.Key, state.BedNumber) is { KeepUnharvested: true })
+            {
+                ActivityLog.SkippedBed(state.BedNumber,
+                    Loc.Format(Strings.Harvest_Kept, CurrentPatch.Key, Formats.Number(state.BedNumber)),
+                    Strings.Harvest_KeptChat);
                 SkippedCount++;
                 continue;
             }

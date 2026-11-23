@@ -51,6 +51,11 @@ public sealed class BedRecord
     public DateTimeOffset LastSeenAt { get; set; }
     public bool PlantedByGardener { get; set; }
 
+    /// <summary>Set from the Garden tab for a crop the player keeps in the bed rather than
+    /// harvesting (e.g. a permanent crossbreeding parent): Harvest sweeps leave the bed out. Clears
+    /// itself on replant, since a new planting always gets a fresh record.</summary>
+    public bool KeepUnharvested { get; set; }
+
     /// <summary>Display-only: the name of the character that produced the last passive read or
     /// action recorded here. Never used as a key or a filter — a garden belongs to the plot, and an
     /// alt tending a bed tends it exactly as much as the main would.</summary>

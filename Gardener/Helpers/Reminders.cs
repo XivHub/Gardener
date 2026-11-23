@@ -101,7 +101,8 @@ public static class Reminders
 
             var window = Growth.HarvestWindow(record);
             var windowPassed = window.Earliest is { } earliest && earliest <= now;
-            if (windowPassed || record.LastSeenStage == 4)
+            // A bed marked "Don't harvest" is kept on purpose, so it is never a harvest reminder.
+            if ((windowPassed || record.LastSeenStage == 4) && !record.KeepUnharvested)
             {
                 var at = windowPassed ? window.Earliest!.Value : record.FirstSeenStage4At ?? record.LastSeenAt;
                 readyToHarvest.Add(new HarvestReminderEntry(BuildEntry(record, at), windowPassed, window));
