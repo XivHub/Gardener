@@ -13,3 +13,4 @@ __pycache__/
 
 # Scraped page cache; reproducible with tools/fetch_sources.py
 data/vendor/ffxivgardening/
+.playwright-mcp/
