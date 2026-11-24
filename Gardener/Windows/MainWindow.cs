@@ -160,7 +160,7 @@ namespace Gardener.Windows
 
                 var byBed = states.ToDictionary(s => s.BedNumber);
 
-                DrawSweepButtons(patch);
+                DrawSweepButtons(patch, byBed);
                 DrawPatchMetaLine(patch, byBed);
                 DrawBedTable(patch, byBed);
 
@@ -424,7 +424,7 @@ namespace Gardener.Windows
         /// <see cref="Configuration.ConfirmBeforeRun"/>, replaced by <see cref="GardenerGuard.BlockingReason"/>
         /// when a sweep cannot start at all. <see cref="GardenerGuard.PermissionsWarning"/> renders
         /// above them regardless, since it is independent of whether a run can start.</summary>
-        private static void DrawSweepButtons(Patch patch)
+        private static void DrawSweepButtons(Patch patch, IReadOnlyDictionary<int, BedState> byBed)
         {
             if (GardenerGuard.PermissionsWarning() is { } permissionsWarning)
                 HubText.Warn(permissionsWarning);
@@ -470,6 +470,9 @@ namespace Gardener.Windows
                 Loc.Format(Strings.Sweep_ConfirmHarvest, GameWords.Action(MenuKey.Harvest)), SweepKind.Harvest);
 
             ImGui.SameLine();
+            var fertilizeBlocked = FertilizeBlockedReason(patch, byBed);
+            if (fertilizeBlocked is not null)
+                ImGui.BeginDisabled();
             if (ImGui.Button($"{fertilizeLabel}##fertilize-{patch.Key}"))
             {
                 if (Plugin.C.ConfirmBeforeRun)
@@ -477,8 +480,47 @@ namespace Gardener.Windows
                 else
                     SchedulerMain.EnablePlugin(SweepKind.Fertilize, patch);
             }
+            if (fertilizeBlocked is not null)
+            {
+                ImGui.EndDisabled();
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                    ImGui.SetTooltip(fertilizeBlocked);
+            }
             DrawConfirmPopup(patch, $"Confirm fertilize##{patch.Key}",
                 Loc.Format(Strings.Sweep_ConfirmFertilize, GameWords.Action(MenuKey.SetFertilizer)), SweepKind.Fertilize);
+        }
+
+        /// <summary>Why "Fertilize all" can do nothing on this patch right now, or null when at least
+        /// one bed can take fertilizer. Beds a sweep would skip anyway (empty, and mature under
+        /// <see cref="Configuration.FertilizeOnlyGrowing"/>) don't count. A bed with no
+        /// <see cref="BedRecord.LastFertilizedAt"/> counts as ready: fertilizer applied by hand is not
+        /// recorded, so the button is only ever disabled when the game would refuse every bed.</summary>
+        private static string? FertilizeBlockedReason(Patch patch, IReadOnlyDictionary<int, BedState> byBed)
+        {
+            var now = DateTimeOffset.UtcNow;
+            var cooldown = TimeSpan.FromMinutes(Plugin.C.FertilizeCooldownMin);
+            DateTimeOffset? nextReady = null;
+
+            foreach (var state in byBed.Values)
+            {
+                if (state.IsEmpty)
+                    continue;
+                if (Plugin.C.FertilizeOnlyGrowing && state.Maturity == Maturity.MatureCandidate)
+                    continue;
+
+                if (GardenJournal.Get(patch.Key, state.BedNumber)?.LastFertilizedAt is not { } last)
+                    return null;
+
+                var readyAt = last + cooldown;
+                if (readyAt <= now)
+                    return null;
+                if (nextReady is null || readyAt < nextReady)
+                    nextReady = readyAt;
+            }
+
+            return nextReady is { } next
+                ? Loc.Format(Strings.Sweep_FertilizeNextIn, Phrases.Until(next - now))
+                : Strings.Sweep_FertilizeNothing;
         }
 
         private static void DrawConfirmPopup(Patch patch, string popupId, string message, SweepKind kind)
